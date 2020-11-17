@@ -9,6 +9,8 @@ import LedGauge from './gauges/led';
 import StatusTimerGauge from './gauges/status-timer';
 import DewGauge from './gauges/dew';
 import HumGauge from './gauges/hum';
+import RainGauge from './gauges/rain';
+import RainRateGauge from './gauges/rain-rate';
 
 interface Props {
   text: string
@@ -40,6 +42,8 @@ class ExampleComponent extends React.Component<Props, {}> {
             <TempGauge controller={this.controller} size={GaugeSize.Sml} />
             <DewGauge controller={this.controller} size={GaugeSize.Sml} />
             <HumGauge controller={this.controller} size={GaugeSize.Sml} />
+            <RainGauge controller={this.controller} size={GaugeSize.Sml} />
+            <RainRateGauge controller={this.controller} size={GaugeSize.Sml} />
           </div>
         </div>
         
