@@ -1,14 +1,13 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
 import GaugeUtils from '../utils/gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
 import DataUtils from '../utils/data-utils';
+import GaugesController from '../gauges-controller';
 
-
+//TODO docs
 class TempGauge extends Component<Props, State> {
-    static propTypes: { controller: PropTypes.Validator<any>; size: PropTypes.Validator<number>; };
-    static NAME: string;
+    static NAME = "TEMP_GAUGE";
 
     canvasRef: React.RefObject<HTMLCanvasElement>;
     //outTempRef: React.RefObject<HTMLInputElement>;
@@ -17,7 +16,7 @@ class TempGauge extends Component<Props, State> {
     params: any;
     style: any;
 
-    constructor(props: any) {
+    constructor(props: Props) {
         super(props);
 
         this.canvasRef = React.createRef();
@@ -204,7 +203,7 @@ class TempGauge extends Component<Props, State> {
 }
 
 interface Props {
-    controller: any,
+    controller: GaugesController,
     size: number
 }
 
@@ -222,14 +221,6 @@ interface State {
     title: string,
     popUpTxt: string,
     areas: any[],
-}
-
-
-TempGauge.NAME = "TEMP_GAUGE";
-
-TempGauge.propTypes = {
-    controller: PropTypes.any.isRequired,
-    size: PropTypes.number.isRequired
 }
 
 export default TempGauge;
