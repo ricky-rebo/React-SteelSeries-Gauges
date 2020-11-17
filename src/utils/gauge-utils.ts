@@ -60,4 +60,43 @@ export default class GaugeUtils {
             borderRadius: Math.floor(size / 2) + 'px'
         };
     }
+
+    /**
+     * Returns an array of section highlights for total rainfall in mm or inches
+     * @param metric 
+     */
+    static createRainfallSections = (metric: boolean) => {
+        var factor = metric ? 1 : 1 / 25;
+        return [
+            steelseries.Section(0, 5 * factor, 'rgba(0, 250, 0, 1)'),
+            steelseries.Section(5 * factor, 10 * factor, 'rgba(0, 250, 117, 1)'),
+            steelseries.Section(10 * factor, 25 * factor, 'rgba(218, 246, 0, 1)'),
+            steelseries.Section(25 * factor, 40 * factor, 'rgba(250, 186, 0, 1)'),
+            steelseries.Section(40 * factor, 50 * factor, 'rgba(250, 95, 0, 1)'),
+            steelseries.Section(50 * factor, 65 * factor, 'rgba(250, 0, 0, 1)'),
+            steelseries.Section(65 * factor, 75 * factor, 'rgba(250, 6, 80, 1)'),
+            steelseries.Section(75 * factor, 100 * factor, 'rgba(205, 18, 158, 1)'),
+            steelseries.Section(100 * factor, 125 * factor, 'rgba(0, 0, 250, 1)'),
+            steelseries.Section(125 * factor, 500 * factor, 'rgba(0, 219, 212, 1)')
+        ];
+    }
+
+		/**
+		 * Returns an array of SS colours for continuous gradient colouring of the total rainfall LED gauge
+		 * @param metric 
+		 */
+    static createRainfallGradient = (metric: boolean) => {
+        var grad = new steelseries.gradientWrapper(
+            0,
+            (metric ? 100 : 4),
+            [0, 0.1, 0.62, 1],
+            [
+                new steelseries.rgbaColor(15, 148, 0, 1),
+                new steelseries.rgbaColor(213, 213, 0, 1),
+                new steelseries.rgbaColor(213, 0, 25, 1),
+                new steelseries.rgbaColor(250, 0, 0, 1)
+            ]
+        );
+        return grad;
+    }
 }
