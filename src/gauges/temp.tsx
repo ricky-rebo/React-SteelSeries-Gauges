@@ -4,6 +4,7 @@ import GaugeUtils from '../utils/gauge-utils';
 import steelseries from '../libs/steelseries.js';
 import DataUtils from '../utils/data-utils';
 import GaugesController from '../gauges-controller';
+import styles from '../style/common.css';
 
 //TODO docs
 class TempGauge extends Component<Props, State> {
@@ -74,6 +75,7 @@ class TempGauge extends Component<Props, State> {
         let newState = {...this.state};
 
         if(sel) newState.selected = sel;
+        //TODO set cookie sel
 
         newState.minValue = this.state.displayUnit === 'C'
             ? this.props.controller.gaugeGlobals.tempScaleDefMinC
@@ -183,12 +185,10 @@ class TempGauge extends Component<Props, State> {
         //FIXME setValueAnimated() from steelseries lib not working!
         //this.gauge.setValueAnimated(this.state.value);
         this.gauge.setValue(this.state.value);
-        //console.log("Value: " + this.state.value)
-        //console.log("Gauge Value: " + this.gauge.getValue());
     }
 
     render() {
-        return <div className="gauge">
+        return <div className={styles.gauge}>
             <div id="tip_0">
                 <canvas 
                     ref={this.canvasRef}
