@@ -220,7 +220,7 @@ class DewGauge extends Component<Props, State> {
 
     render() {
         return <div className={styles.gauge}>
-            <div id="tip_0">
+            <div id="tip_1">
                 <canvas 
                     ref={this.canvasRef}
                     width={this.params.size}
