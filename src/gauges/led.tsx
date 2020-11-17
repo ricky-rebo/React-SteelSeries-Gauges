@@ -1,55 +1,88 @@
 import React, { Component } from 'react';
+import GaugesController from '../gauges-controller';
 // @ts-ignore
 import steelseries from '../libs/steelseries';
 
-type gaugeParams = {
-  width: number,
-  height: number
-}
+interface Props {
+  controller: GaugesController,
+  size?: number
+};
+interface State {}
 
-type Props = {};
-type State = {
-  gauge: object,
-  instance: object,
-  params: gaugeParams
-}
-
+//TODO docs
 class LedGauge extends Component<Props, State> {
+  static NAME = "LED";
+
   canvasRef: React.RefObject<HTMLCanvasElement>;
 
-  constructor(props: any) {
+  gauge: any;
+  size: number;
+
+  constructor(props: Props) {
     super(props);
 
     this.canvasRef = React.createRef();
+    this.size = this.props.size ? this.props.size : 25;
 
-    this.state = {
-      gauge: {},
-      instance: {},
-      params: {
-        width: 25,
-        height: 25
+    this.setTitle = this.setTitle.bind(this);
+    this.setLedColor = this.setLedColor.bind(this);
+    this.setLedOnOff = this.setLedOnOff.bind(this);
+    this.blink = this.blink.bind(this);
+
+    props.controller.subLed(
+      LedGauge.NAME,
+      {
+        setTitle: this.setTitle,
+        setLedColor: this.setLedColor,
+        setLedOnOff: this.setLedOnOff,
+        blink: this.blink
       }
-    }
+    );
   }
 
+  //TODO docs
   setTitle(newTitle: string) {
     if(this.canvasRef.current)
       this.canvasRef.current.title = newTitle;
   }
 
+  //TODO docs
+  //FIXME set params type
+  setLedColor(newColour: any) {
+      if (this.gauge) {
+        this.gauge.setLedColor(newColour);
+      }
+  }
+
+  //TODO docs
+  //FIXME set params type
+  setLedOnOff(onState: any) {
+      if (this.gauge) {
+        this.gauge.setLedOnOff(onState);
+      }
+  }
+
+  //TODO docs
+  //FIXME set params type
+  blink(blinkState: any) {
+      if (this.gauge) {
+        this.gauge.blink(blinkState);
+      }
+  }
+
   componentDidMount() {
-    let gauge = new steelseries.Led(
+    if(this.canvasRef.current) {
+      this.gauge = new steelseries.Led(
         this.canvasRef.current,
         {
             ledColor: steelseries.LedColor.GREEN_LED,
-            size    : this.canvasRef.current?.width
+            size    : this.size
         })
-
-    this.setState({ gauge: gauge });
+    }
   }
 
   render() {
-    return <canvas ref={this.canvasRef} width={this.state.params.width} height={this.state.params.height}></canvas>
+    return <canvas ref={this.canvasRef} width={this.size} height={this.size}></canvas>
   }
 }
 

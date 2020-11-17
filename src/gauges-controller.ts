@@ -79,6 +79,10 @@ export default class GaugesController {
   userUnitsSet: boolean;
   firstRun: any;
 
+  led: any;
+  statusScroller: any;
+  statusTimer: any;
+
   constructor(/*config: configDef*/) {
     //this.config = config;
     //this.getRealTime();
@@ -168,16 +172,32 @@ export default class GaugesController {
 
   }
 
+  subLed(gaugeName: string, gaugeRef: any) {
+    this.gauges = this.gauges.concat(gaugeName);
+    this.led = gaugeRef;
+  }
+
+  subStatusScroller(gaugeName: string, gaugeRef: any) {
+    this.gauges = this.gauges.concat(gaugeName);
+    this.statusScroller = gaugeRef;
+  }
+
+  subStatusTimer(gaugeName: string, gaugeRef: any) {
+    this.gauges = this.gauges.concat(gaugeName);
+    this.statusTimer = gaugeRef;
+  }
+
   init = () => {
     //TODO
     this.displayUnits = {...DEF_UNITS};
-    /*
+    
+    //FIXME set default units in a proper way
     this.data.tempunit = '°' + this.displayUnits.temp;
     this.data.rainunit = this.displayUnits.rain;
     this.data.pressunit = this.displayUnits.press;
     this.data.windunit = this.displayUnits.wind;
     this.data.cloudunit = this.displayUnits.cloud;
-    */
+    
     this.userUnitsSet = false;
     this.firstRun = true;
   }
@@ -213,11 +233,10 @@ export default class GaugesController {
       // *** CHECK IF STATION IS OFFLINE ***
       let stationOffMsg = DataUtils.isStationOffline(data, this.config.stationTimeout, this.lang);
       if(stationOffMsg !== null) {
-        /*TODO
-        **  set led to red
-        **  set led title - use stationOffMsg.trim(' ')[0]
-        */
-       data.forecast = stationOffMsg;
+        this.led.setLedColor(steelseries.LedColor.RED_LED);
+        this.led.setTitle(this.lang.led_title_offline);
+        this.led.blink(true);
+        data.forecast = stationOffMsg;
       }
 
       // de-encode the forecast string if required (Cumulus support for extended characters)
@@ -316,13 +335,17 @@ export default class GaugesController {
       }
 
       
-      // TODO assign data.forecast to statusScroller
+      this.statusScroller.setText(data.forecast);
 
 
       // TODO eventually, run doFirst if firstrun = true (?)
 
       
       // TODO pubblish data update (eventually using redux?)
+
+
+      //Just for testing
+      if(this.statusTimer) this.statusTimer.start();
 
 
 
