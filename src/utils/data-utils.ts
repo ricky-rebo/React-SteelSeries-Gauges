@@ -5,6 +5,7 @@ class DataUtils {
    * @param dateFormat 
    * @param lang 
    */
+  //FIXME destructure data object instead of use single attributes
   static parseLastRain = (lastRainISO: any, dateFormat: string, lang: any) => {
     try {
       let [date, time] = lastRainISO.split(' '); 
@@ -434,6 +435,20 @@ class DataUtils {
     }
     return ret;
   }
+
+  /**
+   * Returns the next highest number in the step sequence
+   * @param value 
+   * @param step 
+   */
+  static nextHighest = (value: number, step: number) => (value == 0 ? step : Math.ceil(+value / step) * step)
+
+  /**
+   * Returns the next lowest number in the step sequence
+   * @param value 
+   * @param step 
+   */
+  static nextLowest = (value: number, step: number) => (value == 0 ? -step : Math.floor(+value / step) * step)
 }
 
 type getMinTempDataDef = { tempTL: number, dewpointTL: number, apptempTL: number, wchillTL: number }
