@@ -7,6 +7,7 @@ import GaugeSize from './style/gaugeSize';
 import StatusScrollerGauge from './gauges/status-scroller';
 import LedGauge from './gauges/led';
 import StatusTimerGauge from './gauges/status-timer';
+import DewGauge from './gauges/dew';
 
 interface Props {
   text: string
@@ -36,6 +37,7 @@ class ExampleComponent extends React.Component<Props, {}> {
           </div>
           <div>
             <TempGauge controller={this.controller} size={GaugeSize.Sml} />
+            <DewGauge controller={this.controller} size={GaugeSize.Sml} />
           </div>
         </div>
         
