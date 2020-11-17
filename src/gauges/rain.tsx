@@ -69,7 +69,7 @@ class RainGauge extends Component<Props, State> {
 
     _initGauge() {
       if(this.canvasRef.current) {
-        this.gauge = new steelseries.Radial(this.canvasRef.current, this.params);
+        this.gauge = new steelseries.RadialBargraph(this.canvasRef.current, this.params);
         this.gauge.setValue(this.state.value);
       }
     }
@@ -118,15 +118,12 @@ class RainGauge extends Component<Props, State> {
 
     render() {
         return <div className={styles.gauge}>
-            <div id="tip_1">
-                <canvas 
-                    ref={this.canvasRef}
-                    width={this.params.size}
-                    height={this.params.size}
-                    style={this.style}
-                ></canvas>
-            </div>
-            //TODO add radiobox
+          <canvas 
+            ref={this.canvasRef}
+            width={this.params.size}
+            height={this.params.size}
+            style={this.style}
+          ></canvas>
         </div>
     }
 }

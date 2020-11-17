@@ -39,7 +39,7 @@ class RainRateGauge extends Component<Props, State> {
           maxValue: this.state.maxValue,
           thresholdVisible: false,
           maxMeasuredValueVisible: true,
-          titleString: props.controller.lang.rrate_titl,
+          titleString: props.controller.lang.rrate_title,
           //FIXME get unit string in a proper way, dont access directly data
           unitString: props.controller.data.rainunit+'/h',
           lcdDecimals: 1,
@@ -59,7 +59,7 @@ class RainRateGauge extends Component<Props, State> {
 
     _initGauge() {
       if(this.canvasRef.current) {
-        this.gauge = new steelseries.RadialBargraph(this.canvasRef.current, this.params);
+        this.gauge = new steelseries.Radial(this.canvasRef.current, this.params);
         this.gauge.setValue(this.state.value);
       }
     }
@@ -72,22 +72,20 @@ class RainRateGauge extends Component<Props, State> {
       let overallMax = Math.max(newState.maxMeasured, newState.value)
 
       if (data.rainunit === 'mm') { // 10, 20, 30...
-        newState.maxValue = DataUtils.nextHighest(newState.overallMax, 10);
+        newState.maxValue = DataUtils.nextHighest(overallMax, 10);
       } else {
         // inches 0.5, 1.0, 2.0, 3.0 ... 10, 20, 30...
         if (overallMax <= 0.5) {
           newState.maxValue = 0.5;
         }
         else if (overallMax <= 10) {
-          newState.maxValue = DataUtils.nextHighest(newState.overallMax, 1);
+          newState.maxValue = DataUtils.nextHighest(overallMax, 1);
         }
         else {
-          newState.maxValue = DataUtils.nextHighest(newState.overallMax, 10);
+          newState.maxValue = DataUtils.nextHighest(overallMax, 10);
         }
         newState.scaleDecimals = newState.maxValue < 1 ? 2 : (newState.maxValue < 7 ? 1 : 0);
       }
-
-      
 
       this.setState(newState);
     }
@@ -98,7 +96,7 @@ class RainRateGauge extends Component<Props, State> {
 
     componentDidUpdate() {
       if (this.state.maxValue !== this.gauge.getMaxValue()) {
-        this.gauge.setValue(0);
+        this.gauge.setValue(0.0001);
         this.gauge.setFractionalScaleDecimals(this.state.scaleDecimals);
         this.gauge.setMaxValue(this.state.maxValue);
       }
