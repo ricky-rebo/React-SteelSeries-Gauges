@@ -12,6 +12,7 @@ import HumGauge from './gauges/hum';
 import RainGauge from './gauges/rain';
 import RainRateGauge from './gauges/rain-rate';
 import UVGauge from './gauges/uv';
+import SolarGauge from './gauges/solar';
 
 interface Props {
   text: string
@@ -46,6 +47,7 @@ class ExampleComponent extends React.Component<Props, {}> {
             <RainGauge controller={this.controller} size={GaugeSize.Sml} />
             <RainRateGauge controller={this.controller} size={GaugeSize.Sml} />
             <UVGauge controller={this.controller} size={GaugeSize.Sml} />
+            <SolarGauge controller={this.controller} size={GaugeSize.Sml} />
           </div>
         </div>
         
