@@ -48,6 +48,36 @@ export default class GaugeUtils {
         }
     }
 
+
+    /**
+     * Create an array of section highlights for the CloudBase gauge
+     * @param metric 
+     */
+    static createCloudBaseSections =  (metric: boolean) => {
+
+        if (metric) {
+            return [
+                steelseries.Section(0, 150, 'rgba(245, 86, 59, 0.5)'),
+                steelseries.Section(150, 300, 'rgba(225, 155, 105, 0.5)'),
+                steelseries.Section(300, 750, 'rgba(212, 203, 109, 0.5)'),
+                steelseries.Section(750, 1000, 'rgba(150, 203, 150, 0.5)'),
+                steelseries.Section(1000, 1500, 'rgba(80, 192, 80, 0.5)'),
+                steelseries.Section(1500, 2500, 'rgba(0, 140, 0, 0.5)'),
+                steelseries.Section(2500, 5500, 'rgba(19, 103, 186, 0.5)')
+            ];
+        } else {
+            return [
+                steelseries.Section(0, 500, 'rgba(245, 86, 59, 0.5)'),
+                steelseries.Section(500, 1000, 'rgba(225, 155, 105, 0.5)'),
+                steelseries.Section(1000, 2500, 'rgba(212, 203, 109, 0.5)'),
+                steelseries.Section(2500, 3500, 'rgba(150, 203, 150, 0.5)'),
+                steelseries.Section(3500, 5500, 'rgba(80, 192, 80, 0.5)'),
+                steelseries.Section(5500, 8500, 'rgba(0, 140, 0, 0.5)'),
+                steelseries.Section(8500, 18000, 'rgba(19, 103, 186, 0.5)')
+            ];
+        }
+    }
+
     /**
      * Create a shadow effect for the gauge using CSS
      * @param size The size of the gauge
