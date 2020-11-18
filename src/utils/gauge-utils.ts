@@ -159,5 +159,23 @@ export default class GaugeUtils {
 					steelseries.Section(16 * factor, 50 * factor, 'rgba(225, 155, 105, 0.5)'),
 					steelseries.Section(50 * factor, 1000 * factor, 'rgba(245, 86, 59, 0.5)')
 			];
-	}
+    }
+    
+
+    static gradient = (startCol : string, endCol : string, fraction :number) => {
+        var redOrigin, grnOrigin, bluOrigin,
+            gradientSizeRed, gradientSizeGrn, gradientSizeBlu;
+
+        redOrigin = parseInt(startCol.substr(0, 2), 16);
+        grnOrigin = parseInt(startCol.substr(2, 2), 16);
+        bluOrigin = parseInt(startCol.substr(4, 2), 16);
+
+        gradientSizeRed = parseInt(endCol.substr(0, 2), 16)  - redOrigin; // Graduation Size Red
+        gradientSizeGrn = parseInt(endCol.substr(2, 2), 16)  - grnOrigin;
+        gradientSizeBlu = parseInt(endCol.substr(4, 2), 16)  - bluOrigin;
+
+        return (redOrigin + (gradientSizeRed * fraction)).toFixed(0) + ',' +
+            (grnOrigin + (gradientSizeGrn * fraction)).toFixed(0) + ',' +
+            (bluOrigin + (gradientSizeBlu * fraction)).toFixed(0);
+    }
 }
