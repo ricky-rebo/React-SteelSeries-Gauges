@@ -83,14 +83,14 @@ class SolarGauge extends Component<Props, State> {
 		newState.maxValue = DataUtils.nextHighest(newState.maxValue, 100);
 
 
-		let sunshineThresoldPct = this.props.controller.gaugeGlobals.sunshineThresoldPct;
-		let sunshineThresold = this.props.controller.gaugeGlobals.sunshineThreshold;
+		let sunshineThresholdPct = this.props.controller.gaugeGlobals.sunshineThresholdPct;
+		let sunshineThreshold = this.props.controller.gaugeGlobals.sunshineThreshold;
 
 		if(data.CurrentSolarMax!== 'N/A'){
 			newState.area=[
 				// Sunshine threshold
 				steelseries.Section(
-					Math.max(newState.currMaxValue * sunshineThresoldPct / 100, sunshineThresold),
+					Math.max(newState.currMaxValue * sunshineThresholdPct / 100, sunshineThreshold),
 					newState.currMaxValue,
 					'rgba(255,255,50,0.4)'
 				),
@@ -104,13 +104,9 @@ class SolarGauge extends Component<Props, State> {
 		}
 
 		let percent = ( +newState.currMaxValue === 0 ? '--' : Math.round( +newState.value / +newState.currMaxValue * 100 ));
-
+		console.log("prova");
 		if(this.params.userLedVisible){
-			newState.ledState = 
-				percent !== '--' && 
-				percent >= sunshineThresoldPct && 
-				newState.value >= sunshineThresold
-			;
+			newState.ledState = (percent !== '--') && (percent >= sunshineThresholdPct) && (newState.value >= sunshineThreshold);
 		}
 
         this.setState(newState);
@@ -132,6 +128,7 @@ class SolarGauge extends Component<Props, State> {
 		if(prevState.ledState !== this.state.ledState){
 			this.gauge.setUserLedOnOff(this.state.ledState);
 		}
+		
 
         //FIXME setValueAnimated() from steelseries lib not working!
 		//this.gauge.setValueAnimated(this.state.value);
