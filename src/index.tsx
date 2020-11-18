@@ -13,6 +13,7 @@ import RainGauge from './gauges/rain';
 import RainRateGauge from './gauges/rain-rate';
 import UVGauge from './gauges/uv';
 import SolarGauge from './gauges/solar';
+import CloudBaseGauge from './gauges/cloudbase';
 
 interface Props {
   text: string
@@ -31,6 +32,8 @@ class ExampleComponent extends React.Component<Props, {}> {
 	}
 
   render() {
+    let dim=GaugeSize.Lrg;
+    let controller=this.controller
     return (
       <div>
         <div className={styles.test}>Example Component: {this.props.text}</div>
@@ -41,13 +44,14 @@ class ExampleComponent extends React.Component<Props, {}> {
             <StatusTimerGauge controller={this.controller} width={70} />
           </div>
           <div>
-            <TempGauge controller={this.controller} size={GaugeSize.Sml} />
-            <DewGauge controller={this.controller} size={GaugeSize.Sml} />
-            <HumGauge controller={this.controller} size={GaugeSize.Sml} />
-            <RainGauge controller={this.controller} size={GaugeSize.Sml} />
-            <RainRateGauge controller={this.controller} size={GaugeSize.Sml} />
-            <UVGauge controller={this.controller} size={GaugeSize.Sml} />
-            <SolarGauge controller={this.controller} size={GaugeSize.Sml} />
+            <TempGauge controller={controller} size={dim} />
+            <DewGauge controller={controller} size={dim} />
+            <HumGauge controller={controller} size={dim} />
+            <RainGauge controller={controller} size={dim} />
+            <RainRateGauge controller={controller} size={dim} />
+            <UVGauge controller={controller} size={dim} />
+            <SolarGauge controller={controller} size={dim} />
+            <CloudBaseGauge controller={controller} size={dim} />
           </div>
         </div>
         
