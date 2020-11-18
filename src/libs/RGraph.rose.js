@@ -22,10 +22,12 @@
     * @param object canvas
     * @param array data
     */
-    RGraph.Rose = function (id, data)
+   //EDIT constructor takes the canvas instead of its id
+    RGraph.Rose = function (canvas, data)
     {
-        this.id                = id;
-        this.canvas            = document.getElementById(id);
+        //this.id                = id;
+        //this.canvas            = document.getElementById(id);
+        this.canvas            = canvas;
         this.context           = this.canvas.getContext('2d');
         this.data              = data;
         this.canvas.__object__ = this;
