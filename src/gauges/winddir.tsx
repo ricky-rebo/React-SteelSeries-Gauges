@@ -11,8 +11,6 @@ class WindDirGauge extends Component<Props, State> {
     static NAME = "WINDDIR_GAUGE";
 
     canvasRef: React.RefObject<HTMLCanvasElement>;
-    //outTempRef: React.RefObject<HTMLInputElement>;
-    //inTempRef: React.RefObject<HTMLInputElement>;
     gauge: any;
     params: any;
     style: any;
