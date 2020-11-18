@@ -17,6 +17,7 @@ import CloudBaseGauge from './gauges/cloudbase';
 import BaroGauge from './gauges/baro';
 import WindDirGauge from './gauges/winddir';
 import WindSpeedGauge from './gauges/wind-speed';
+import WindRoseGauge from './gauges/rose';
 
 interface Props {
   text: string
@@ -50,14 +51,18 @@ class ExampleComponent extends React.Component<Props, {}> {
             <TempGauge controller={controller} size={dim} />
             <DewGauge controller={controller} size={dim} />
             <HumGauge controller={controller} size={dim} />
+
             <BaroGauge controller={controller} size={dim} />
             <RainGauge controller={controller} size={dim} />
             <RainRateGauge controller={controller} size={dim} />
+            
             <UVGauge controller={controller} size={dim} />
             <SolarGauge controller={controller} size={dim} />
             <CloudBaseGauge controller={controller} size={dim} />
-            <WindDirGauge controller={controller} size={dim}/>
+            
             <WindSpeedGauge controller={controller} size={dim}/>
+            <WindDirGauge controller={controller} size={dim}/>
+            <WindRoseGauge controller={controller} size={dim}/>
           </div>
         </div>
         
