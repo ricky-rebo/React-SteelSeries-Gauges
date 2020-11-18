@@ -437,6 +437,48 @@ class DataUtils {
   }
 
   /**
+   * Converts a pressure trend value into a localised string, or +1, 0, -1 depending on the value of bTxt
+   * @param trend 
+   * @param units 
+   * @param bTxt 
+   * @param strings 
+   */
+  static baroTrend = (trend: number, units: string, bTxt: boolean, strings?: any) =>  {
+    var val = trend * 3,
+        ret;
+    // The terms below are the UK Met Office terms for a 3 hour change in hPa
+    // trend is supplied as an hourly change, so multiply by 3
+    if (units === 'inHg') {
+        val *= 33.8639;
+    } else if (units === 'kPa') {
+        val *= 10;
+        // assume everything else is hPa or mb, could be dangerous!
+    }
+    if (trend === -9999) {
+        ret = (bTxt ? '--' : trend);
+    } else if (val > 6.0) {
+        ret = (bTxt ? strings.RisingVeryRapidly : 1);
+    } else if (val > 3.5) {
+        ret = (bTxt ? strings.RisingQuickly : 1);
+    } else if (val > 1.5) {
+        ret = (bTxt ? strings.Rising : 1);
+    } else if (val > 0.1) {
+        ret = (bTxt ? strings.RisingSlowly : 1);
+    } else if (val >= -0.1) {
+        ret = (bTxt ? strings.Steady : 0);
+    } else if (val >= -1.5) {
+        ret = (bTxt ? strings.FallingSlowly : -1);
+    } else if (val >= -3.5) {
+        ret = (bTxt ? strings.Falling : -1);
+    } else if (val >= -6.0) {
+        ret = (bTxt ? strings.FallingQuickly : -1);
+    } else {
+        ret = (bTxt ? strings.FallingVeryRapidly : -1);
+    }
+    return ret;
+  }
+
+  /**
    * Returns the next highest number in the step sequence
    * @param value 
    * @param step 
