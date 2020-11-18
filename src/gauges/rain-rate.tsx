@@ -10,7 +10,7 @@ import styles from '../style/common.css';
 
 //TODO docs
 class RainRateGauge extends Component<Props, State> {
-    static NAME = "DEW_GAUGE";
+    static NAME = "RAINRATE_GAUGE";
 
     canvasRef: React.RefObject<HTMLCanvasElement>;
     gauge: any;
