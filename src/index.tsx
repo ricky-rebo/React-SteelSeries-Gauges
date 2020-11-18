@@ -16,6 +16,7 @@ import SolarGauge from './gauges/solar';
 import CloudBaseGauge from './gauges/cloudbase';
 import BaroGauge from './gauges/baro';
 import WindDirGauge from './gauges/winddir';
+import WindSpeedGauge from './gauges/wind-speed';
 
 interface Props {
   text: string
@@ -56,6 +57,7 @@ class ExampleComponent extends React.Component<Props, {}> {
             <SolarGauge controller={controller} size={dim} />
             <CloudBaseGauge controller={controller} size={dim} />
             <WindDirGauge controller={controller} size={dim}/>
+            <WindSpeedGauge controller={controller} size={dim}/>
           </div>
         </div>
         
