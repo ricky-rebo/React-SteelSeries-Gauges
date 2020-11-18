@@ -53,7 +53,8 @@ class SolarGauge extends Component<Props, State> {
 			thresholdVisible: false,
 			lcdDecimals: 0,
 			userLedVisible : this.props.controller.config.showSunshineLed,
-			userLedColor : steelseries.LedColor.YELLOW_LED
+			userLedColor : steelseries.LedColor.YELLOW_LED,
+			maxMeasuredValueVisible: true,
 		};
 
         this.style = this.props.controller.config.showGaugeShadow
@@ -118,7 +119,7 @@ class SolarGauge extends Component<Props, State> {
 
     componentDidUpdate(_prevProps: Props, prevState: State) {
         if(prevState.maxValue !== this.state.maxValue) {
-            this.gauge.setMaxValue(this.state.maxValue)
+			this.gauge.setMaxValue(this.state.maxValue)
 		}
 		
 		if(prevState.area !== this.state.area){
@@ -129,7 +130,6 @@ class SolarGauge extends Component<Props, State> {
 			this.gauge.setUserLedOnOff(this.state.ledState);
 		}
 		
-
         //FIXME setValueAnimated() from steelseries lib not working!
 		//this.gauge.setValueAnimated(this.state.value);
 		this.gauge.setMaxMeasuredValue(this.state.maxToday);
