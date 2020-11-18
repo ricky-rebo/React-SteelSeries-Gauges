@@ -105,7 +105,6 @@ class SolarGauge extends Component<Props, State> {
 		}
 
 		let percent = ( +newState.currMaxValue === 0 ? '--' : Math.round( +newState.value / +newState.currMaxValue * 100 ));
-		console.log("prova");
 		if(this.params.userLedVisible){
 			newState.ledState = (percent !== '--') && (percent >= sunshineThresholdPct) && (newState.value >= sunshineThreshold);
 		}
