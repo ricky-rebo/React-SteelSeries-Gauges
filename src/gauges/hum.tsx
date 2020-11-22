@@ -9,154 +9,194 @@ import styles from '../style/common.css';
 
 //TODO docs
 class HumGauge extends Component<Props, State> {
-    static NAME = "HUM_GAUGE";
+	static NAME = "HUM_GAUGE";
 
-    canvasRef: React.RefObject<HTMLCanvasElement>;
-    //outTempRef: React.RefObject<HTMLInputElement>;
-    //inTempRef: React.RefObject<HTMLInputElement>;
-    gauge: any;
-    params: any;
-    style: any;
+	canvasRef: React.RefObject<HTMLCanvasElement>;
+	gauge: any;
+	params: any;
+	style: any;
 
-    constructor(props: Props) {
-        super(props);
+	constructor(props: Props) {
+		super(props);
 
-        this.canvasRef = React.createRef();
-        this.state = {
-            areas: [],
-            title: this.props.controller.lang.hum_title_out,
-            value: 0.0001,
+		this.canvasRef = React.createRef();
+		
+		this.state = {
+			areas: [],
+			title: this.props.controller.lang.hum_title_out,
+			value: 0.0001,
 
-            //popUpTxt: '',
+			//popUpTxt: '',
 			//popUpGraph: '',
 			
-            selected: 'out'
-        }
+			selected: 'out'
+		}
 
-        this.params = {
-            ...this.props.controller.commonParams,
-            size: Math.ceil(this.props.size * this.props.controller.config.gaugeScaling),
-            section: [
+		this.params = {
+			...this.props.controller.commonParams,
+			size: Math.ceil(this.props.size * this.props.controller.config.gaugeScaling),
+			section: [
 				steelseries.Section(0, 20, 'rgba(255,255,0,0.3)'),
 				steelseries.Section(20, 80, 'rgba(0,255,0,0.3)'),
 				steelseries.Section(80, 100, 'rgba(255,0,0,0.3)')
 			],
-            area: [],
-            maxValue: 100,
-            thresholdVisible: false,
+			area: [],
+			maxValue: 100,
+			thresholdVisible: false,
 			titleString: this.state.title,
-            unitString: this.props.controller.data.humUnit,
-        };
+			unitString: 'RH%',
+		};
 
-        this.style = this.props.controller.config.showGaugeShadow
-            ? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeGlobals.shadowColour)
-            : {};
+		this.style = this.props.controller.config.showGaugeShadow
+			? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeGlobals.shadowColour)
+			: {};
 
-        this.update = this.update.bind(this);
+		this.update = this.update.bind(this);
 
-        this.props.controller.subscribe(HumGauge.NAME, this.update);
-    }
+		this.props.controller.subscribe(HumGauge.NAME, this.update);
+	}
 
-    _initGauge() {
-        if(this.canvasRef.current) {
-            this.gauge = new steelseries.Radial(this.canvasRef.current, this.params);
-            this.gauge.setValue(this.state.value);
-        }
-    }
+	componentDidMount() {
+		if(this.canvasRef.current) {
+			this.gauge = new steelseries.Radial(this.canvasRef.current, this.params);
+			this.gauge.setValue(this.state.value);
+		}
+	}
 
-    update(data: any, sel?: string) {
-        let newState = {...this.state};
+	async update(data: any) {
+		if(this.state.selected === 'out')
+			this._setStateOut(mapLocalData(data), true);
+		else
+			this._setStateIn(mapLocalData(data), true);
+	}
 
-        if(sel) newState.selected = sel;
-        //TODO set cookie sel
+	setInOutHum(sel: string) {
+		if(this.state.data) {
+			if(sel === 'out')
+				this._setStateOut(this.state.data, false);
+			else
+				this._setStateIn(this.state.data, false);
+		}
+		
+	}
 
-        
-        if(newState.selected === 'out') {
-			newState.value = DataUtils.extractDecimal(data.hum);
+	_setStateOut(data: LocalDataDef, fromUpdate: boolean) {
+		let newState: any = {};
+
+		if(fromUpdate) newState.data = data;
+		else {
+			newState.selected = 'out';
+			newState.title = this.props.controller.lang.hum_title_out;
+		}
+
+		newState.value = DataUtils.extractDecimal(data.hum);
+		
+		newState.areas = [
+			steelseries.Section(
+				DataUtils.extractDecimal(data.humTL), 
+				DataUtils.extractDecimal(data.humTH), 
+				this.props.controller.gaugeGlobals.minMaxArea
+			)
+		];
+		
+		this.setState(newState);
+	}
+
+	_setStateIn(data: LocalDataDef, fromUpdate: boolean) {
+		let newState: any = {};
+
+		if(fromUpdate)
+			newState.data = data;
+		else {
+			newState.selected = 'in';
+			newState.title = this.props.controller.lang.hum_title_in;
+		}
 			
-            newState.title = this.props.controller.lang.hum_title_out;
-			newState.areas = [
+		newState.value = DataUtils.extractDecimal(data.inhum);
+		if (data.inhumTL && data.inhumTH) {
+			// Indoor - and Max/Min values supplied
+			newState.areas=[
 				steelseries.Section(
-					+DataUtils.extractDecimal(data.humTL), 
-					+DataUtils.extractDecimal(data.humTH), 
+					DataUtils.extractDecimal(data.inhumTL), 
+					DataUtils.extractDecimal(data.inhumTH), 
 					this.props.controller.gaugeGlobals.minMaxArea
 				)
 			];
-			//cache.popupImg = 0;
-
-        }
-        else {
-            //Indoor selected
-            newState.title = this.props.controller.lang.hum_title_in;
-            newState.value = DataUtils.extractDecimal(data.inHum);
-            //cache.popupImg = 1;
-            if (data.intempTL && data.intempTH) {
-				// Indoor - and Max/Min values supplied
-				newState.areas=[
-					steelseries.Section(
-						+DataUtils.extractDecimal(data.inhumTL), 
-						+DataUtils.extractDecimal(data.inhumTH), 
-						this.props.controller.gaugeGlobals.minMaxArea
-					)
-				];
-            } else {
-                // Indoor - no Max/Min values supplied
-                newState.areas=[];
-            }
-        }
-
-        // has the gauge type changed?
-        if(newState.selected !== this.state.selected) {
-            //TODO change title and setMin/MaxMeasuredValueVisible of gauge
-            //Here or in componentDidUpdate? And How?
+		}
+		else {
+			// Indoor - no Max/Min values supplied
+			newState.areas=[];
 		}
 		
-        this.setState(newState);
-    }
+		this.setState(newState);
+	}
 
-    componentDidMount() {
-        this._initGauge();
-    }
+	componentDidUpdate(_prevProps: Props, prevState: State) {
+		if(prevState.selected !== this.state.selected) {
+			this.gauge.setTitleString(this.state.title);
+		}
 
-    componentDidUpdate(_prevProps: Props, prevState: State) {
-        if(prevState.selected !== this.state.selected) {
-            this.gauge.setTitleString(this.state.title);
-        }
-
-        this.gauge.setArea(this.state.areas);
-        //FIXME setValueAnimated() from steelseries lib not working!
-        //this.gauge.setValueAnimated(this.state.value);
+		this.gauge.setArea(this.state.areas);
+		//FIXME setValueAnimated() from steelseries lib not working!
+		//this.gauge.setValueAnimated(this.state.value);
 		this.gauge.setValue(this.state.value);
-    }
+	}
 
-    render() {
-        return <div className={styles.gauge}>
-            <div id="tip_4">
-                <canvas 
-                    ref={this.canvasRef}
-                    width={this.params.size}
-                    height={this.params.size}
-                    style={this.style}
-                ></canvas>
-				
-            </div>
-			//TODO add radiobox
-        </div>
-    }
+	render() {
+		return (
+			<div className={styles.gauge}>
+				<div id="tip_4">
+					<canvas 
+						ref={this.canvasRef}
+						width={this.params.size}
+						height={this.params.size}
+						style={this.style}
+					></canvas>
+				</div>
+				<button onClick={() => this.setInOutHum('out')}>Out</button>
+				<button onClick={() => this.setInOutHum('in')}>In</button>
+			</div>
+		);
+	}
 }
 
 interface Props {
-    controller: GaugesController,
-    size: number
+	controller: GaugesController,
+	size: number
 }
 
 interface State {
-    selected: string,
+	data?: LocalDataDef,
 
-    value: number,
-    title: string,
-    //popUpTxt: string,
-    areas: any[],
+	value: number,
+	title: string,
+	areas: any[],
+
+	selected: string,
+
+	//popUpTxt: string,
+	//graph: string
+}
+
+interface LocalDataDef {
+	hum: any, 
+	humTL: any,
+	humTH: any,
+	inhum: any,
+	inhumTL: any,
+	inhumTH: any
+}
+
+function mapLocalData(data: any) {
+	let locData: LocalDataDef = {
+		hum			: data.hum,
+		humTL		: data.humTL,
+		humTH		: data.humTH,
+		inhum		: data.inhum,
+		inhumTL	: data.inhumTL,
+		inhumTH	: data.inhumTH
+	}
+	return locData;
 }
 
 export default HumGauge;

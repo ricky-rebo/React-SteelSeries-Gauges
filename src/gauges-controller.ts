@@ -220,7 +220,7 @@ export default class GaugesController {
         data.dateFormat = data.dateFormat.replace('%', '');
 
       // mainpulate the last rain time into something more friendly
-      data.LastRained = DataUtils.parseLastRain(data.LastRainTipISO, data.dateFormat, this.lang);
+      data.LastRained = DataUtils.parseLastRain(data, this.lang);
 
       if (data.tempunit.length > 1)
         // clean up temperature units - remove html encoded degree symbols

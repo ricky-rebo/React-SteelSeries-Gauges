@@ -8,42 +8,37 @@ import styles from '../style/common.css';
 
 //TODO docs
 class SolarGauge extends Component<Props, State> {
-    static NAME = "SOLAR_GAUGE";
+	static NAME = "SOLAR_GAUGE";
 
-    canvasRef: React.RefObject<HTMLCanvasElement>;
-    //outTempRef: React.RefObject<HTMLInputElement>;
-    //inTempRef: React.RefObject<HTMLInputElement>;
-    gauge: any;
-    params: any;
-    style: any;
+	canvasRef: React.RefObject<HTMLCanvasElement>;
+	gauge: any;
+	params: any;
+	style: any;
 
-    constructor(props: Props) {
-        super(props);
+	constructor(props: Props) {
+		super(props);
 
 		this.canvasRef = React.createRef();
-		
-        this.state = {
+	
+		this.state = {
 			value:  0.0001,
-            sections: [
-				steelseries.Section(0, 600, 'rgba(40,149,0,0.3)'),
-                steelseries.Section(600, 800, 'rgba(248,89,0,0.3)'),
-                steelseries.Section(800, 1000, 'rgba(216,0,29,0.3)'),
-                steelseries.Section(1000, 1800, 'rgba(107,73,200,0.3)')
-			],
-			
-			maxValue:  this.props.controller.gaugeGlobals.solarGaugeScaleMax,
+			maxValue: this.props.controller.gaugeGlobals.solarGaugeScaleMax,
 			maxToday: 0,
-
+			sections: [
+				steelseries.Section(0, 600, 'rgba(40,149,0,0.3)'),
+				steelseries.Section(600, 800, 'rgba(248,89,0,0.3)'),
+				steelseries.Section(800, 1000, 'rgba(216,0,29,0.3)'),
+				steelseries.Section(1000, 1800, 'rgba(107,73,200,0.3)')
+			],
 			area: [],
-
 			ledState : false,
-            //popUpTxt: '',
-            //popUpGraph: '',
-            
-        }
 
-        this.params = {
-            ...this.props.controller.commonParams,
+			//popUpTxt: '',
+			//popUpGraph: '',
+		};
+
+		this.params = {
+			...this.props.controller.commonParams,
 			size: Math.ceil(this.props.size * this.props.controller.config.gaugeScaling),
 			section: this.state.sections,
 			maxValue: this.state.maxValue,
@@ -57,37 +52,37 @@ class SolarGauge extends Component<Props, State> {
 			maxMeasuredValueVisible: true,
 		};
 
-        this.style = this.props.controller.config.showGaugeShadow
-            ? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeGlobals.shadowColour)
-            : {};
+		this.style = this.props.controller.config.showGaugeShadow
+			? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeGlobals.shadowColour)
+			: {};
 
-        this.update = this.update.bind(this);
+		this.update = this.update.bind(this);
 
-        this.props.controller.subscribe(SolarGauge.NAME, this.update);
-    }
+		this.props.controller.subscribe(SolarGauge.NAME, this.update);
+	}
 
-    _initGauge() {
-        if(this.canvasRef.current) {
-            this.gauge = new steelseries.Radial(this.canvasRef.current, this.params);
+	componentDidMount() {
+		if(this.canvasRef.current) {
+			this.gauge = new steelseries.Radial(this.canvasRef.current, this.params);
 			this.gauge.setValue(this.state.value);
-        }
-    }
+		}
+	}
 
-    update(data: any) {
-        let newState: any = {};
+	async update({ SolarRad, SolarTM, CurrentSolarMax } : DataParamDef) {
+		let newState: any = {};
 
-		newState.value = +DataUtils.extractInteger(data.SolarRad);
-		newState.maxToday = +DataUtils.extractInteger(data.SolarTM);
-		newState.currMaxValue = +DataUtils.extractInteger(data.CurrentSolarMax);
+		newState.value = DataUtils.extractInteger(SolarRad);
+		newState.maxToday = DataUtils.extractInteger(SolarTM);
+		newState.currMaxValue = DataUtils.extractInteger(CurrentSolarMax);
 
 		newState.maxValue = Math.max(newState.value, newState.currMaxValue, newState.maxToday, this.props.controller.gaugeGlobals.solarGaugeScaleMax);
-		newState.maxValue = DataUtils.nextHighest(newState.maxValue, 100);
+		newState.maxValue = GaugeUtils.nextHighest(newState.maxValue, 100);
 
 
 		let sunshineThresholdPct = this.props.controller.gaugeGlobals.sunshineThresholdPct;
 		let sunshineThreshold = this.props.controller.gaugeGlobals.sunshineThreshold;
 
-		if(data.CurrentSolarMax!== 'N/A'){
+		if(CurrentSolarMax!== 'N/A'){
 			newState.area=[
 				// Sunshine threshold
 				steelseries.Section(
@@ -104,20 +99,16 @@ class SolarGauge extends Component<Props, State> {
 			]
 		}
 
-		let percent = ( +newState.currMaxValue === 0 ? '--' : Math.round( +newState.value / +newState.currMaxValue * 100 ));
-		if(this.params.userLedVisible){
+		if(this.params.userLedVisible) {
+			let percent = newState.currMaxValue === 0 ? '--' : Math.round(newState.value / newState.currMaxValue * 100);
 			newState.ledState = (percent !== '--') && (percent >= sunshineThresholdPct) && (newState.value >= sunshineThreshold);
 		}
 
-        this.setState(newState);
-    }
+		this.setState(newState);
+	}
 
-    componentDidMount() {
-        this._initGauge();
-    }
-
-    componentDidUpdate(_prevProps: Props, prevState: State) {
-        if(prevState.maxValue !== this.state.maxValue) {
+	componentDidUpdate(_prevProps: Props, prevState: State) {
+		if(prevState.maxValue !== this.state.maxValue) {
 			this.gauge.setMaxValue(this.state.maxValue)
 		}
 		
@@ -129,39 +120,45 @@ class SolarGauge extends Component<Props, State> {
 			this.gauge.setUserLedOnOff(this.state.ledState);
 		}
 		
-        //FIXME setValueAnimated() from steelseries lib not working!
+		//FIXME setValueAnimated() from steelseries lib not working!
 		//this.gauge.setValueAnimated(this.state.value);
+		this.gauge.setValue(this.state.value);
 		this.gauge.setMaxMeasuredValue(this.state.maxToday);
-        this.gauge.setValue(this.state.value);
-    }
+	}
 
-    render() {
-        return <div className={styles.gauge}>
-			<canvas 
-				ref={this.canvasRef}
-				width={this.params.size}
-				height={this.params.size}
-				style={this.style}
-			></canvas>
-        </div>
-    }
+	render() {
+		return (
+			<div className={styles.gauge}>
+				<canvas 
+					ref={this.canvasRef}
+					width={this.params.size}
+					height={this.params.size}
+					style={this.style}
+				></canvas>
+			</div>
+		);
+	}
 }
 
 interface Props {
-    controller: GaugesController,
-    size: number
+	controller: GaugesController,
+	size: number
 }
 
 interface State {
-
 	value: number,
-    sections: any[],
-
+	sections: any[],
 	maxValue: number,
 	maxToday: number,
 	area: [],
 
 	ledState: boolean,
+}
+
+type DataParamDef = { 
+	SolarRad: any,
+	SolarTM: any,
+	CurrentSolarMax: any
 }
 
 export default SolarGauge;

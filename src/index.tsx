@@ -15,9 +15,9 @@ import UVGauge from './gauges/uv';
 import SolarGauge from './gauges/solar';
 import CloudBaseGauge from './gauges/cloudbase';
 import BaroGauge from './gauges/baro';
-import WindDirGauge from './gauges/winddir';
+import WindDirGauge from './gauges/wind-dir';
 import WindSpeedGauge from './gauges/wind-speed';
-import WindRoseGauge from './gauges/rose';
+import WindRoseGauge from './gauges/wind-rose';
 
 interface Props {
   text: string
@@ -36,8 +36,8 @@ class ExampleComponent extends React.Component<Props, {}> {
 	}
 
   render() {
-    let dim=GaugeSize.Lrg;
-    let controller=this.controller
+    let dim = GaugeSize.Lrg;
+    let controller = this.controller
     return (
       <div>
         <div className={styles.test}>Example Component: {this.props.text}</div>

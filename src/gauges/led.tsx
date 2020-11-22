@@ -4,86 +4,89 @@ import GaugesController from '../gauges-controller';
 import steelseries from '../libs/steelseries';
 
 interface Props {
-  controller: GaugesController,
-  size?: number
+	controller: GaugesController,
+	size?: number
 };
 interface State {}
 
 //TODO docs
 class LedGauge extends Component<Props, State> {
-  static NAME = "LED";
+	static NAME = "LED";
 
-  canvasRef: React.RefObject<HTMLCanvasElement>;
+	canvasRef: React.RefObject<HTMLCanvasElement>;
 
-  gauge: any;
-  size: number;
+	gauge: any;
+	params: any;
 
-  constructor(props: Props) {
-    super(props);
+	constructor(props: Props) {
+		super(props);
 
-    this.canvasRef = React.createRef();
-    this.size = this.props.size ? this.props.size : 25;
+		this.canvasRef = React.createRef();
 
-    this.setTitle = this.setTitle.bind(this);
-    this.setLedColor = this.setLedColor.bind(this);
-    this.setLedOnOff = this.setLedOnOff.bind(this);
-    this.blink = this.blink.bind(this);
+		this.params = {
+			ledColor: steelseries.LedColor.GREEN_LED,
+			size    : props.size ? props.size : 25
+		};
 
-    props.controller.subLed(
-      LedGauge.NAME,
-      {
-        setTitle: this.setTitle,
-        setLedColor: this.setLedColor,
-        setLedOnOff: this.setLedOnOff,
-        blink: this.blink
-      }
-    );
-  }
+		this.setTitle = this.setTitle.bind(this);
+		this.setLedColor = this.setLedColor.bind(this);
+		this.setLedOnOff = this.setLedOnOff.bind(this);
+		this.blink = this.blink.bind(this);
 
-  //TODO docs
-  setTitle(newTitle: string) {
-    if(this.canvasRef.current)
-      this.canvasRef.current.title = newTitle;
-  }
+		props.controller.subLed(
+			LedGauge.NAME,
+			{
+				setTitle: this.setTitle,
+				setLedColor: this.setLedColor,
+				setLedOnOff: this.setLedOnOff,
+				blink: this.blink
+			}
+		);
+	}
 
-  //TODO docs
-  //FIXME set params type
-  setLedColor(newColour: any) {
-      if (this.gauge) {
-        this.gauge.setLedColor(newColour);
-      }
-  }
+	//TODO docs
+	setTitle(newTitle: string) {
+		if(this.canvasRef.current)
+			this.canvasRef.current.title = newTitle;
+	}
 
-  //TODO docs
-  //FIXME set params type
-  setLedOnOff(onState: any) {
-      if (this.gauge) {
-        this.gauge.setLedOnOff(onState);
-      }
-  }
+	//TODO docs
+	//FIXME set param type
+	setLedColor(newColour: any) {
+			if (this.gauge) {
+				this.gauge.setLedColor(newColour);
+			}
+	}
 
-  //TODO docs
-  //FIXME set params type
-  blink(blinkState: any) {
-      if (this.gauge) {
-        this.gauge.blink(blinkState);
-      }
-  }
+	//TODO docs
+	setLedOnOff(onState: boolean) {
+			if (this.gauge) {
+				this.gauge.setLedOnOff(onState);
+			}
+	}
 
-  componentDidMount() {
-    if(this.canvasRef.current) {
-      this.gauge = new steelseries.Led(
-        this.canvasRef.current,
-        {
-            ledColor: steelseries.LedColor.GREEN_LED,
-            size    : this.size
-        })
-    }
-  }
+	//TODO docs
+	blink(blinkState: boolean) {
+			if (this.gauge) {
+				this.gauge.blink(blinkState);
+			}
+	}
 
-  render() {
-    return <canvas ref={this.canvasRef} width={this.size} height={this.size}></canvas>
-  }
+	componentDidMount() {
+		if(this.canvasRef.current) {
+			this.gauge = new steelseries.Led(this.canvasRef.current, this.params);
+		}
+	}
+
+	render() {
+		return (
+			<canvas
+				ref={this.canvasRef}
+				width={this.params.size}
+				height={this.params.size}
+			></canvas>
+		);
+	}
 }
 
 export default LedGauge;

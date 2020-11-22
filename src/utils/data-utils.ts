@@ -1,27 +1,26 @@
 class DataUtils {
   /**
-   * //TODO
-   * @param lastRainISO 
-   * @param dateFormat 
+   * 
+   * @param data 
    * @param lang 
    */
   //FIXME destructure data object instead of use single attributes
-  static parseLastRain = (lastRainISO: any, dateFormat: string, lang: any) => {
+  static parseLastRain = ({LastRainTipISO, dateFormat}: {LastRainTipISO: string, dateFormat: string}, lang: any) => {
     try {
-      let [date, time] = lastRainISO.split(' '); 
+      let [date, time] = LastRainTipISO.split(' '); 
       let dt = date.replace(/\//g, '-').split('-');  // WD uses dd/mm/yyyy, we use a '-'
       let tm = time.split(':');
 
       let then: Date;
       switch(dateFormat) {
         case 'y/m/d':   // ISO/Cumulus format
-          then = new Date(dt[0], dt[1] - 1, dt[2], tm[0], tm[1], 0, 0); break;
+          then = new Date(+dt[0], +dt[1] - 1, +dt[2], +tm[0], +tm[1], 0, 0); break;
 
         case 'd/m/y':
-          then = new Date(dt[2], dt[1] - 1, dt[0], tm[0], tm[1], 0, 0); break;
+          then = new Date(+dt[2], +dt[1] - 1, +dt[0], +tm[0], +tm[1], 0, 0); break;
         
         default:  // US format (mm/dd/yyyyy)
-          then = new Date(dt[2], dt[0] - 1, dt[1], tm[0], tm[1], 0, 0);
+          then = new Date(+dt[2], +dt[0] - 1, +dt[1], +tm[0], +tm[1], 0, 0);
       }
 
       let today: Date = new Date();
@@ -36,7 +35,7 @@ class DataUtils {
         return then.getDate().toString() + ' ' + lang.months[then.getMonth()] + ' ' + lang.at + ' ' + time;
       }
     }
-    catch(e) { return lastRainISO }
+    catch(e) { return LastRainTipISO }
     
   }
 
@@ -374,126 +373,6 @@ class DataUtils {
       default: return 'km';
     }
   }
-
-  /**
-   * Returns the lowest temperature today for gauge scaling
-   * @param deflt 
-   * @param data 
-   */
-  static getMinTemp = (deflt: number, { tempTL, dewpointTL, apptempTL, wchillTL }: getMinTempDataDef) => {
-    return Math.min(
-        DataUtils.extractDecimal(tempTL, deflt),
-        DataUtils.extractDecimal(dewpointTL, deflt),
-        DataUtils.extractDecimal(apptempTL, deflt),
-        DataUtils.extractDecimal(wchillTL, deflt));
-  }
-
-  /**
-   * Returns the highest temperature today for gauge scaling
-   * @param deflt 
-   * @param data 
-   */
-  static getMaxTemp = (deflt: number, { tempTH, apptempTH, heatindexTH, humidex }: getMaxTempDataDef) => {
-    return Math.max(
-      DataUtils.extractDecimal(tempTH, deflt),
-      DataUtils.extractDecimal(apptempTH, deflt),
-      DataUtils.extractDecimal(heatindexTH, deflt),
-      DataUtils.extractDecimal(humidex, deflt));
-  }
-
-  /**
-   * Converts a temperature trend value into a localised string, or +1, 0, -1 depending on the value of bTxt
-   * @param trend 
-   * @param units 
-   * @param bTxt 
-   * @param strings 
-   */
-  static tempTrend = (trend: number, units: string, bTxt: boolean, strings?: any) => {
-    // Scale is over 3 hours, in Celsius
-    var val = trend * 3 * (units[1] === 'C' ? 1 : (5 / 9)),
-        ret;
-    if (trend === -9999) {
-        ret = (bTxt ? '--' : trend);
-    } else if (val > 5) {
-        ret = (bTxt ? strings.RisingVeryRapidly : 1);
-    } else if (val > 3) {
-        ret = (bTxt ? strings.RisingQuickly : 1);
-    } else if (val > 1) {
-        ret = (bTxt ? strings.Rising : 1);
-    } else if (val > 0.5) {
-        ret = (bTxt ? strings.RisingSlowly : 1);
-    } else if (val >= -0.5) {
-        ret = (bTxt ? strings.Steady : 0);
-    } else if (val >= -1) {
-        ret = (bTxt ? strings.FallingSlowly : -1);
-    } else if (val >= -3) {
-        ret = (bTxt ? strings.Falling : -1);
-    } else if (val >= -5) {
-        ret = (bTxt ? strings.FallingQuickly : -1);
-    } else {
-        ret = (bTxt ? strings.FallingVeryRapidly : -1);
-    }
-    return ret;
-  }
-
-  /**
-   * Converts a pressure trend value into a localised string, or +1, 0, -1 depending on the value of bTxt
-   * @param trend 
-   * @param units 
-   * @param bTxt 
-   * @param strings 
-   */
-  static baroTrend = (trend: number, units: string, bTxt: boolean, strings?: any) =>  {
-    var val = trend * 3,
-        ret;
-    // The terms below are the UK Met Office terms for a 3 hour change in hPa
-    // trend is supplied as an hourly change, so multiply by 3
-    if (units === 'inHg') {
-        val *= 33.8639;
-    } else if (units === 'kPa') {
-        val *= 10;
-        // assume everything else is hPa or mb, could be dangerous!
-    }
-    if (trend === -9999) {
-        ret = (bTxt ? '--' : trend);
-    } else if (val > 6.0) {
-        ret = (bTxt ? strings.RisingVeryRapidly : 1);
-    } else if (val > 3.5) {
-        ret = (bTxt ? strings.RisingQuickly : 1);
-    } else if (val > 1.5) {
-        ret = (bTxt ? strings.Rising : 1);
-    } else if (val > 0.1) {
-        ret = (bTxt ? strings.RisingSlowly : 1);
-    } else if (val >= -0.1) {
-        ret = (bTxt ? strings.Steady : 0);
-    } else if (val >= -1.5) {
-        ret = (bTxt ? strings.FallingSlowly : -1);
-    } else if (val >= -3.5) {
-        ret = (bTxt ? strings.Falling : -1);
-    } else if (val >= -6.0) {
-        ret = (bTxt ? strings.FallingQuickly : -1);
-    } else {
-        ret = (bTxt ? strings.FallingVeryRapidly : -1);
-    }
-    return ret;
-  }
-
-  /**
-   * Returns the next highest number in the step sequence
-   * @param value 
-   * @param step 
-   */
-  static nextHighest = (value: number, step: number) => (value == 0 ? step : Math.ceil(+value / step) * step)
-
-  /**
-   * Returns the next lowest number in the step sequence
-   * @param value 
-   * @param step 
-   */
-  static nextLowest = (value: number, step: number) => (value == 0 ? -step : Math.floor(+value / step) * step)
 }
-
-type getMinTempDataDef = { tempTL: number, dewpointTL: number, apptempTL: number, wchillTL: number }
-type getMaxTempDataDef = { tempTH: number, apptempTH: number, heatindexTH: number, humidex: number }
 
 export default DataUtils;

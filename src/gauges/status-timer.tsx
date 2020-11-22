@@ -3,22 +3,14 @@ import GaugesController from '../gauges-controller';
 // @ts-ignore
 import steelseries from '../libs/steelseries';
 
-interface Props {
-  controller: GaugesController,
-  width: number,
-  height?: number
-};
-interface State {
-  count: number
-}
-
 //TODO docs
 class StatusTimerGauge extends Component<Props, State> {
   static NAME = "STATUS_TIMER";
 
-  gauge: any;
   canvasRef: React.RefObject<HTMLCanvasElement>;
-  params: { width: number, height: number };
+  params: any;
+  gauge: any;
+
   tickTockInterval: NodeJS.Timeout;
 
   constructor(props: Props) {
@@ -29,8 +21,14 @@ class StatusTimerGauge extends Component<Props, State> {
     this.state = { count: 1 }
 
     this.params = {
-      width: props.width,
-      height: props.height ? props.height : 25
+      width            : props.width,
+      height           : props.height ? props.height : 25,
+      lcdColor         : props.controller.gaugeGlobals.lcdColour,
+      lcdDecimals      : 0,
+      unitString       : props.controller.lang.timer,
+      unitStringVisible: true,
+      digitalFont      : props.controller.config.digitalFont,
+      value            : this.state.count
     }
 
     this.start = this.start.bind(this);
@@ -71,18 +69,7 @@ class StatusTimerGauge extends Component<Props, State> {
 
   componentDidMount() {
     if(this.canvasRef) {
-      this.gauge = new steelseries.DisplaySingle(
-        this.canvasRef.current,
-        {
-          width            : this.params.width,
-          height           : this.params.height,
-          lcdColor         : this.props.controller.gaugeGlobals.lcdColour,
-          lcdDecimals      : 0,
-          unitString       : this.props.controller.lang.timer,
-          unitStringVisible: true,
-          digitalFont      : this.props.controller.config.digitalFont,
-          value            : this.state.count
-        });
+      this.gauge = new steelseries.DisplaySingle(this.canvasRef.current, this.params);
     }
   }
 
@@ -94,12 +81,22 @@ class StatusTimerGauge extends Component<Props, State> {
 
   render() {
     return (
-      <canvas ref={this.canvasRef}
+      <canvas
+        ref={this.canvasRef}
         width={this.params.width}
         height={this.params.height}
       ></canvas>
     )
   }
+}
+
+interface Props {
+  controller: GaugesController,
+  width: number,
+  height?: number
+};
+interface State {
+  count: number
 }
 
 export default StatusTimerGauge;

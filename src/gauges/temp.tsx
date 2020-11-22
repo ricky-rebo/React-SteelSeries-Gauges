@@ -8,219 +8,270 @@ import styles from '../style/common.css';
 
 //TODO docs
 class TempGauge extends Component<Props, State> {
-    static NAME = "TEMP_GAUGE";
+	static NAME = "TEMP_GAUGE";
 
-    canvasRef: React.RefObject<HTMLCanvasElement>;
-    //outTempRef: React.RefObject<HTMLInputElement>;
-    //inTempRef: React.RefObject<HTMLInputElement>;
-    gauge: any;
-    params: any;
-    style: any;
+	canvasRef: React.RefObject<HTMLCanvasElement>;
+	gauge: any;
+	params: any;
+	style: any;
 
-    constructor(props: Props) {
-        super(props);
+	constructor(props: Props) {
+		super(props);
 
-        this.canvasRef = React.createRef();
-        let { temp } = this.props.controller.getDisplayUnits();
-        this.state = {
-            sections: GaugeUtils.createTempSections(true),
-            areas: [],
-            minValue: this.props.controller.gaugeGlobals.tempScaleDefMinC,
-            maxValue: this.props.controller.gaugeGlobals.tempScaleDefMaxC,
-            title: this.props.controller.lang.temp_title_out,
-            displayUnit: temp,
-            value: this.props.controller.gaugeGlobals.tempScaleDefMinC + 0.0001,
-            maxMinVisible: false,
+		this.canvasRef = React.createRef();
+		this.state = {
+			value: this.props.controller.gaugeGlobals.tempScaleDefMinC + 0.0001,
+			minValue: this.props.controller.gaugeGlobals.tempScaleDefMinC,
+			maxValue: this.props.controller.gaugeGlobals.tempScaleDefMaxC,
+			trend: null,
+			areas: [],
 
-            trend: null,
-            popUpTxt: '',
-            //popUpGraph: '',
-            
-            selected: 'out'
-        }
+			title: this.props.controller.lang.temp_title_out,
+			displayUnit: this.props.controller.getDisplayUnits().temp,
+			maxMinVisible: false,
 
-        this.params = {
-            ...this.props.controller.commonParams,
-            size: Math.ceil(this.props.size * this.props.controller.config.gaugeScaling),
-            section: this.state.sections,
-            area: [],
-            minValue: this.state.minValue,
-            maxValue: this.state.maxValue,
-            thresholdVisible: false,
-            minMeasuredValueVisible: this.state.maxMinVisible,
-            maxMeasuredValueVisible: this.state.maxMinVisible,
-            titleString: this.state.title,
-            //FIXME fix unit from data!
-            unitString: this.props.controller.data.tempunit,
-            trendVisible: this.props.controller.gaugeGlobals.tempTrendVisible
-        };
+			//popUpTxt: '',
+			//graph: '',
+			
+			selected: 'out'
+		}
 
-        this.style = this.props.controller.config.showGaugeShadow
-            ? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeGlobals.shadowColour)
-            : {};
+		this.params = {
+			...this.props.controller.commonParams,
+			size: Math.ceil(this.props.size * this.props.controller.config.gaugeScaling),
+			section: GaugeUtils.createTempSections(true),
+			area: [],
+			minValue: this.state.minValue,
+			maxValue: this.state.maxValue,
+			thresholdVisible: false,
+			minMeasuredValueVisible: this.state.maxMinVisible,
+			maxMeasuredValueVisible: this.state.maxMinVisible,
+			titleString: this.state.title,
+			unitString: this.state.displayUnit,
+			trendVisible: this.props.controller.gaugeGlobals.tempTrendVisible
+		};
 
-        this.update = this.update.bind(this);
+		this.style = this.props.controller.config.showGaugeShadow
+			? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeGlobals.shadowColour)
+			: {};
 
-        this.props.controller.subscribe(TempGauge.NAME, this.update);
-    }
+		this.update = this.update.bind(this);
 
-    _initGauge() {
-        if(this.canvasRef.current) {
-            this.gauge = new steelseries.Radial(this.canvasRef.current, this.params);
-            this.gauge.setValue(this.state.value);
-        }
-    }
+		this.props.controller.subscribe(TempGauge.NAME, this.update);
+	}
 
-    update(data: any, sel?: string) {
-        let newState = {...this.state};
+	componentDidMount() {
+		if(this.canvasRef.current) {
+			this.gauge = new steelseries.Radial(this.canvasRef.current, this.params);
+			this.gauge.setValue(this.state.value);
+		}
+	}
 
-        if(sel) newState.selected = sel;
-        //TODO set cookie sel
+	async update(data: any) {
+		if(this.state.selected === 'out')
+			this._setStateOut(mapLocalData(data), true);
+		else
+			this._setStateIn(mapLocalData(data), true);
+	}
 
-        newState.minValue = this.state.displayUnit === 'C'
-            ? this.props.controller.gaugeGlobals.tempScaleDefMinC
-            : this.props.controller.gaugeGlobals.tempScaleDefMinF;
-        newState.maxValue = this.state.displayUnit === 'C'
-            ? this.props.controller.gaugeGlobals.tempScaleDefMaxC
-            : this.props.controller.gaugeGlobals.tempScaleDefMaxF;
-        
-        let low: number, high: number,
-            lowScale: number, highScale: number,
-            trendVal: number/*, loc: string;*/
-        if(newState.selected === 'out') {
-            low = DataUtils.extractDecimal(data.tempTL);
-            high = DataUtils.extractDecimal(data.tempTH);
-            lowScale = DataUtils.getMinTemp(newState.minValue, data);
-            highScale = DataUtils.getMaxTemp(newState.maxValue, data);
-            newState.value = DataUtils.extractDecimal(data.temp);
-            newState.title = this.props.controller.lang.temp_title_out;
-            //loc = this.props.controller.lang.temp_out_info;
-            trendVal = DataUtils.extractDecimal(data.temptrend);
+	setInOutTemp(sel: string) {
+		if(this.state.data) {
+			if(sel === 'out')
+				this._setStateOut(this.state.data, false);
+			else
+				this._setStateIn(this.state.data, false);
+		}
+	}
 
-            if(this.params.trendVisible) {
-                let t1 = DataUtils.tempTrend(+trendVal, data.tempunit, false);
-                if (t1 === -9999) newState.trend = steelseries.TrendState.OFF;
-                else if (t1 > 0)  newState.trend = steelseries.TrendState.UP;
-                else if (t1 < 0)  newState.trend = steelseries.TrendState.DOWN;
-                else              newState.trend = steelseries.TrendState.STEADY;
-            }
-        }
-        else {
-            //Indoor selected
-            newState.title = this.props.controller.lang.temp_title_in;
-            //loc = this.props.controller.lang.temp_in_info;
-            newState.value = DataUtils.extractDecimal(data.intemp);
-            //cache.popupImg = 1;
-            if (data.intempTL && data.intempTH) {
-                // Indoor - and Max/Min values supplied
-                low = DataUtils.extractDecimal(data.intempTL);
-                high = DataUtils.extractDecimal(data.intempTH);
-                lowScale = DataUtils.getMinTemp(newState.minValue, data);
-                highScale = DataUtils.getMaxTemp(newState.maxValue, data);
-            } else {
-                // Indoor - no Max/Min values supplied
-                low = lowScale = high = highScale = newState.value;
-            }
-            if (this.params.trendVisible) {
-                newState.trend = steelseries.TrendState.OFF;
-            }
-        }
+	_setStateOut(data: LocalDataDef, fromUpdate: boolean) {
+		let newState: any = {};
 
-        // has the gauge type changed?
-        if(newState.selected !== this.state.selected) {
-            //TODO change title and setMin/MaxMeasuredValueVisible of gauge
-            //Here or in componentDidUpdate? And How?
-        }
+		if(fromUpdate) newState.data = data;
+		else newState.selected = "out";
 
-        // auto scale the ranges
-        let scaleStep = data.tempunit[1] === 'C' ? 10 : 20;
-        while (lowScale < newState.minValue) {
-            newState.minValue -= scaleStep;
-            if (highScale <= newState.maxValue - scaleStep) {
-                newState.maxValue -= scaleStep;
-            }
-        }
-        while (highScale > newState.maxValue) {
-            newState.maxValue += scaleStep;
-            if (newState.minValue >= newState.minValue + scaleStep) {
-                newState.minValue += scaleStep;
-            }
-        }
+		newState.minValue = data.tempunit[1] === 'C'
+			? this.props.controller.gaugeGlobals.tempScaleDefMinC
+			: this.props.controller.gaugeGlobals.tempScaleDefMinF;
+		newState.maxValue = data.tempunit[1] === 'C'
+			? this.props.controller.gaugeGlobals.tempScaleDefMaxC
+			: this.props.controller.gaugeGlobals.tempScaleDefMaxF;
 
-        if (newState.selected === 'out') {
-            newState.areas = [steelseries.Section(low, high, this.props.controller.gaugeGlobals.minMaxArea)];
-        } else if (data.intempTL && data.intempTH) {
-            // Indoor and min/max avaiable
-            newState.areas = [steelseries.Section(low, high, this.props.controller.gaugeGlobals.minMaxArea)];
-        } else {
-            // Nndoor no min/max avaiable
-            newState.areas = [];
-        }
+		newState.value = DataUtils.extractDecimal(data.temp);
+		let low = DataUtils.extractDecimal(data.tempTL);
+		let high = DataUtils.extractDecimal(data.tempTH);
 
-        this.setState(newState);
-    }
+		if(!fromUpdate) newState.title = this.props.controller.lang.temp_title_out;
+		//loc = this.props.controller.lang.temp_out_info;
+		
+		if(this.params.trendVisible) {
+			let trendVal = DataUtils.extractDecimal(data.temptrend);
+			newState.trend = GaugeUtils.tempTrend(trendVal, data.tempunit, false);
+		}
 
-    componentDidMount() {
-        this._initGauge();
-    }
+		newState.areas = [steelseries.Section(low, high, this.props.controller.gaugeGlobals.minMaxArea)];
 
-    componentDidUpdate(_prevProps: Props, prevState: State) {
-        if(prevState.selected !== this.state.selected) {
-            this.gauge.setTitleString(this.state.title);
-            this.gauge.setMaxMeasuredValueVisible(this.state.maxMinVisible);
-            this.gauge.setMinMeasuredValueVisible(this.state.maxMinVisible);
-        }
+		// auto scale the ranges
+		let lowScale = GaugeUtils.getMinTemp(newState.minValue, data);
+		let highScale = GaugeUtils.getMaxTemp(newState.maxValue, data);
+		let scaleStep = data.tempunit[1] === 'C' ? 10 : 20;
+		while (lowScale < newState.minValue) {
+			newState.minValue -= scaleStep;
+			if (highScale <= newState.maxValue - scaleStep) {
+				newState.maxValue -= scaleStep;
+			}
+		}
+		
+		while (highScale > newState.maxValue) {
+			newState.maxValue += scaleStep;
+			if (newState.minValue >= newState.minValue + scaleStep) {
+				newState.minValue += scaleStep;
+			}
+		}
 
-        if (this.state.minValue !== this.gauge.getMinValue() || this.state.maxValue !== this.gauge.getMaxValue()) {
-            this.gauge.setMinValue(this.state.minValue);
-            this.gauge.setMaxValue(this.state.maxValue);
-            this.gauge.setValue(this.state.minValue);
-        }
+		this.setState(newState);
+	}
 
-        if (this.params.trendVisible) {
-            this.gauge.setTrend(this.state.trend);
-        }
+	_setStateIn(data: LocalDataDef, fromUpdate: boolean) {
+		let newState: any = {};
 
-        this.gauge.setArea(this.state.areas);
-        //FIXME setValueAnimated() from steelseries lib not working!
-        //this.gauge.setValueAnimated(this.state.value);
-        this.gauge.setValue(this.state.value);
-    }
+		if(fromUpdate) newState.data = data;
+		else newState.selected = "in";
 
-    render() {
-        return <div className={styles.gauge}>
-            <div id="tip_0">
-                <canvas 
-                    ref={this.canvasRef}
-                    width={this.params.size}
-                    height={this.params.size}
-                    style={this.style}
-                ></canvas>
-            </div>
-            //TODO add radiobox
-        </div>
-    }
+		newState.minValue = data.tempunit[1] === 'C'
+			? this.props.controller.gaugeGlobals.tempScaleDefMinC
+			: this.props.controller.gaugeGlobals.tempScaleDefMinF;
+		newState.maxValue = data.tempunit[1] === 'C'
+			? this.props.controller.gaugeGlobals.tempScaleDefMaxC
+			: this.props.controller.gaugeGlobals.tempScaleDefMaxF;
+		
+		//Indoor selected
+		if(!fromUpdate) newState.title = this.props.controller.lang.temp_title_in;
+		//loc = this.props.controller.lang.temp_in_info;
+		
+		newState.value = DataUtils.extractDecimal(data.intemp);
+		let lowScale: number, highScale: number;
+		if (data.intempTL && data.intempTH) { // Indoor - and Max/Min values supplied
+			let low = DataUtils.extractDecimal(data.intempTL);
+			let high = DataUtils.extractDecimal(data.intempTH);
+			lowScale = GaugeUtils.getMinTemp(newState.minValue, data);
+			highScale = GaugeUtils.getMaxTemp(newState.maxValue, data);
+
+			newState.areas = [steelseries.Section(low, high, this.props.controller.gaugeGlobals.minMaxArea)];
+		}
+		else { // Indoor - no Max/Min values supplied
+			lowScale = highScale = newState.value;
+			newState.areas = [];
+		}
+
+		if (this.params.trendVisible) {
+			newState.trend = steelseries.TrendState.OFF;
+		}
+
+		// auto scale the ranges
+		let scaleStep = data.tempunit[1] === 'C' ? 10 : 20;
+		while (lowScale < newState.minValue) {
+			newState.minValue -= scaleStep;
+			if (highScale <= newState.maxValue - scaleStep) {
+				newState.maxValue -= scaleStep;
+			}
+		}
+		while (highScale > newState.maxValue) {
+			newState.maxValue += scaleStep;
+			if (newState.minValue >= newState.minValue + scaleStep) {
+				newState.minValue += scaleStep;
+			}
+		}
+
+		this.setState(newState);
+	}
+
+	componentDidUpdate(_prevProps: Props, prevState: State) {
+		if(prevState.selected !== this.state.selected) {
+			this.gauge.setTitleString(this.state.title);
+			this.gauge.setMaxMeasuredValueVisible(this.state.maxMinVisible);
+			this.gauge.setMinMeasuredValueVisible(this.state.maxMinVisible);
+		}
+
+		if (this.state.minValue !== this.gauge.getMinValue() || this.state.maxValue !== this.gauge.getMaxValue()) {
+			this.gauge.setMinValue(this.state.minValue);
+			this.gauge.setMaxValue(this.state.maxValue);
+			this.gauge.setValue(this.state.minValue);
+		}
+
+		if (this.params.trendVisible) {
+			this.gauge.setTrend(this.state.trend);
+		}
+
+		this.gauge.setArea(this.state.areas);
+		//FIXME setValueAnimated() from steelseries lib not working!
+		//this.gauge.setValueAnimated(this.state.value);
+		this.gauge.setValue(this.state.value);
+	}
+
+	render() {
+		return <div className={styles.gauge}>
+			<div id="tip_0">
+				<canvas 
+					ref={this.canvasRef}
+					width={this.params.size}
+					height={this.params.size}
+					style={this.style}
+				></canvas>
+			</div>
+			<button onClick={() => this.setInOutTemp('out')}>Out</button>
+			<button onClick={() => this.setInOutTemp('in')}>In</button>
+		</div>
+	}
 }
 
 interface Props {
-    controller: GaugesController,
-    size: number
+	controller: GaugesController,
+	size: number
 }
 
 interface State {
-    sections: any[],
-    
-    displayUnit: string,
-    maxMinVisible: boolean,
-    selected: string,
+	data?: LocalDataDef,
 
-    value: number,
-    minValue: number,
-    maxValue: number,
-    trend: any,
-    title: string,
-    popUpTxt: string,
-    areas: any[],
+	displayUnit: string,
+	maxMinVisible: boolean,
+	selected: string,
+
+	value: number,
+	minValue: number,
+	maxValue: number,
+	trend: any,
+	title: string,
+	areas: any[]
+
+	//popUpTxt: string,
+	//graph: string
+}
+
+interface LocalDataDef {
+	temp: any, tempunit: string, temptrend: any,
+	tempTL: any, dewpointTL: any, apptempTL: any, wchillTL: any,
+	tempTH: any, apptempTH: any, heatindexTH: any, humidex: any,
+	intemp: any, intempTL: any, intempTH: any
+}
+
+function mapLocalData(data: any) {
+	let locData: LocalDataDef = {
+		temp				: data.temp,
+		tempunit		: data.tempunit,
+		temptrend		: data.temptrend,
+		tempTL			: data.tempTL,
+		dewpointTL	: data.dewpointTL,
+		apptempTL		: data.apptempTL,
+		wchillTL		: data.wchillTL,
+		tempTH			: data.tempTH,
+		apptempTH		: data.apptempTH,
+		heatindexTH	: data.heatindexTH,
+		humidex			: data.humidex,
+		intemp			: data.intemp,
+		intempTL		: data.intempTL,
+		intempTH		: data.intempTH
+	}
+	return locData;
 }
 
 export default TempGauge;
