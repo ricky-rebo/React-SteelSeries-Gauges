@@ -21,16 +21,27 @@ class DewGauge extends Component<Props, State> {
 		this.canvasRef = React.createRef();
 
 		//TODO get selected radio from cookie, if null get from config
-		let sel = props.controller.config.dewDisplayType;
-		
-		let title;
-		switch (sel) {
-			case 'dew': title = props.controller.lang.dew_title; break;
-			case 'app': title = props.controller.lang.apptemp_title; break;
-			case 'wnd': title = props.controller.lang.chill_title; break;
-			case 'hea': title = props.controller.lang.heat_title; break;
-			case 'hum': title = props.controller.lang.humdx_title;
-			// no default
+		let sel: TempType = TempType.APP, title: string = '';
+		switch(props.controller.config.dewDisplayType) {
+			case 'dew':
+				sel = TempType.DEW;
+				title = props.controller.lang.dew_title;
+				break;
+			case 'app':
+				sel = TempType.APP;
+				title = props.controller.lang.apptemp_title;
+				break;
+			case 'wnd':
+				sel = TempType.WND;
+				title = props.controller.lang.chill_title;
+				break;
+			case 'hea':
+				sel = TempType.HEA;
+				title = props.controller.lang.heat_title;
+				break;
+			case 'hum':
+				sel = TempType.HUM;
+				title = props.controller.lang.humdx_title;
 		}
 
 		let startVal = this.props.controller.gaugeGlobals.tempScaleDefMinC + 0.0001;
@@ -63,8 +74,7 @@ class DewGauge extends Component<Props, State> {
 			maxValue: this.state.maxValue,
 			thresholdVisible: false,
 			titleString: this.state.title,
-			//FIXME fix unit from data!
-			unitString: this.props.controller.data.tempunit
+			unitString: this.state.displayUnit
 		};
 
 		this.style = this.props.controller.config.showGaugeShadow
@@ -83,85 +93,110 @@ class DewGauge extends Component<Props, State> {
 		}
 	}
 
-	async update(data: any, sel?: string) {
-			let newState: any = {};
+	async update(data: any) {
+		this._setState(mapLocalData(data));
+	}
 
-			newState.selected = sel ? sel : this.state.selected;
-			//TODO save cookie of sel
+	showTemp(sel: TempType) {
+		if(this.state.data)
+			this._setState(this.state.data, sel);
+	}
 
-			newState.minValue = this.state.displayUnit === 'C'
-					? this.props.controller.gaugeGlobals.tempScaleDefMinC
-					: this.props.controller.gaugeGlobals.tempScaleDefMinF;
-			newState.maxValue = this.state.displayUnit === 'C'
-					? this.props.controller.gaugeGlobals.tempScaleDefMaxC
-					: this.props.controller.gaugeGlobals.tempScaleDefMaxF;
-			
-			let lowScale = GaugeUtils.getMinTemp(newState.minValue, data),
-					highScale = GaugeUtils.getMaxTemp(newState.maxValue, data);
-			switch (newState.selected) {
-				case 'dew': // dew point
-					newState.low = DataUtils.extractDecimal(data.dewpointTL);
-					newState.high = DataUtils.extractDecimal(data.dewpointTH);
-					newState.value = DataUtils.extractDecimal(data.dew);
-					newState.areas = [steelseries.Section(newState.low, newState.high, this.props.controller.gaugeGlobals.minMaxArea)];
+	_setState(data: LocalDataDef, sel?: TempType) {
+		let newState: any = {};
+
+		if(sel) {
+			newState.selected = sel;
+			switch (sel) {
+				case TempType.DEW:
 					newState.title = this.props.controller.lang.dew_title;
 					newState.minMeasuredVisible = false;
 					newState.maxMeasuredVisible = false;
 					break;
-				case 'app': // apparent temperature
-					newState.low = DataUtils.extractDecimal(data.apptempTL);
-					newState.high = DataUtils.extractDecimal(data.apptempTH);
-					newState.value = DataUtils.extractDecimal(data.apptemp);
-					newState.areas = [steelseries.Section(newState.low, newState.high, this.props.controller.gaugeGlobals.minMaxArea)];
+				case TempType.APP:
 					newState.title = this.props.controller.lang.apptemp_title;
 					newState.minMeasuredVisible = false;
 					newState.maxMeasuredVisible = false;
-					break;
-				case 'wnd': // wind chill
-					newState.low = DataUtils.extractDecimal(data.wchillTL);
-					newState.high = DataUtils.extractDecimal(data.wchill);
-					newState.value = DataUtils.extractDecimal(data.wchill);
-					newState.areas = [];
+				break;
+				case TempType.WND:
 					newState.title = this.props.controller.lang.chill_title;
 					newState.minMeasuredVisible = true;
-					break;
-				case 'hea': // heat index
-					newState.low = DataUtils.extractDecimal(data.heatindex);
-					newState.high = DataUtils.extractDecimal(data.heatindexTH);
-					newState.value = DataUtils.extractDecimal(data.heatindex);
-					newState.areas = [];
+					newState.maxMeasuredVisible = false;
+				break;
+				case TempType.HEA:
 					newState.title = this.props.controller.lang.heat_title;
 					newState.minMeasuredVisible = false;
 					newState.maxMeasuredVisible = true;
-					break;
-				case 'hum': // humidex
-					newState.low = DataUtils.extractDecimal(data.humidex);
-					newState.high = DataUtils.extractDecimal(data.humidex);
-					newState.value = DataUtils.extractDecimal(data.humidex);
-					newState.areas = [];
+				break;
+				case TempType.HUM:
 					newState.title = this.props.controller.lang.humdx_title;
 					newState.minMeasuredVisible = false;
 					newState.maxMeasuredVisible = false;
-					break;
-				// no default
-				}
+			}
+		}
+		else {
+			newState.selected = this.state.selected;
+			newState.data = data;
+		}
 
-				// auto scale the ranges
-				let scaleStep = data.tempunit[1] === 'C' ? 10 : 20;
-				while (lowScale < newState.minValue) {
-					newState.minValue -= scaleStep;
-					if (highScale <= newState.maxValue - scaleStep) {
-						newState.maxValue -= scaleStep;
-					}
-				}
-				while (highScale > newState.maxValue) {
-					newState.maxValue += scaleStep;
-					if (newState.minValue >= newState.minValue + scaleStep) {
-						newState.minValue += scaleStep;
-					}
-				}
+		newState.minValue = data.tempunit[1] === 'C'
+			? this.props.controller.gaugeGlobals.tempScaleDefMinC
+			: this.props.controller.gaugeGlobals.tempScaleDefMinF;
+		newState.maxValue = data.tempunit[1] === 'C'
+			? this.props.controller.gaugeGlobals.tempScaleDefMaxC
+			: this.props.controller.gaugeGlobals.tempScaleDefMaxF;
+		
+		switch (newState.selected) {
+			case TempType.DEW: // dew point
+				newState.low = DataUtils.extractDecimal(data.dewpointTL);
+				newState.high = DataUtils.extractDecimal(data.dewpointTH);
+				newState.value = DataUtils.extractDecimal(data.dew);
+				newState.areas = [steelseries.Section(newState.low, newState.high, this.props.controller.gaugeGlobals.minMaxArea)];
+				break;
+			case TempType.APP: // apparent temperature
+				newState.low = DataUtils.extractDecimal(data.apptempTL);
+				newState.high = DataUtils.extractDecimal(data.apptempTH);
+				newState.value = DataUtils.extractDecimal(data.apptemp);
+				newState.areas = [steelseries.Section(newState.low, newState.high, this.props.controller.gaugeGlobals.minMaxArea)];
+				break;
+			case TempType.WND: // wind chill
+				newState.low = DataUtils.extractDecimal(data.wchillTL);
+				newState.high = DataUtils.extractDecimal(data.wchill);
+				newState.value = DataUtils.extractDecimal(data.wchill);
+				newState.areas = [];
+				break;
+			case TempType.HEA: // heat index
+				newState.low = DataUtils.extractDecimal(data.heatindex);
+				newState.high = DataUtils.extractDecimal(data.heatindexTH);
+				newState.value = DataUtils.extractDecimal(data.heatindex);
+				newState.areas = [];
+				break;
+			case TempType.HUM: // humidex
+				newState.low = DataUtils.extractDecimal(data.humidex);
+				newState.high = DataUtils.extractDecimal(data.humidex);
+				newState.value = DataUtils.extractDecimal(data.humidex);
+				newState.areas = [];
+				break;
+		}
 
-			this.setState(newState);
+		// auto scale the ranges
+		let lowScale = GaugeUtils.getMinTemp(newState.minValue, data),
+				highScale = GaugeUtils.getMaxTemp(newState.maxValue, data),
+				scaleStep = data.tempunit[1] === 'C' ? 10 : 20;
+		while (lowScale < newState.minValue) {
+			newState.minValue -= scaleStep;
+			if (highScale <= newState.maxValue - scaleStep) {
+				newState.maxValue -= scaleStep;
+			}
+		}
+		while (highScale > newState.maxValue) {
+			newState.maxValue += scaleStep;
+			if (newState.minValue >= newState.minValue + scaleStep) {
+				newState.minValue += scaleStep;
+			}
+		}
+
+		this.setState(newState);
 	}
 
 	componentDidUpdate(_prevProps: Props, prevState: State) {
@@ -200,7 +235,11 @@ class DewGauge extends Component<Props, State> {
 						style={this.style}
 					></canvas>
 				</div>
-				//TODO add radiobox
+				<button onClick={() => this.showTemp(TempType.APP)}>App</button>
+				<button onClick={() => this.showTemp(TempType.DEW)}>Dew</button>
+				<button onClick={() => this.showTemp(TempType.WND)}>Wnd</button>
+				<button onClick={() => this.showTemp(TempType.HEA)}>Hea</button>
+				<button onClick={() => this.showTemp(TempType.HUM)}>Hum</button>
 			</div>
 		);
 	}
@@ -212,10 +251,13 @@ interface Props {
 }
 
 interface State {
+	data?: LocalDataDef,
+
 	displayUnit: string,
 	minMeasuredVisible: boolean,
 	maxMeasuredVisible: boolean,
-	selected: string,
+
+	selected: TempType,
 
 	value: number,
 	low: number,
@@ -229,6 +271,43 @@ interface State {
 
 	//popUpTxt: string,
 	//graph: string
+}
+
+enum TempType {
+	APP = 'app',
+	DEW = 'dew',
+	WND = 'wnd',
+	HEA = 'hea',
+	HUM = 'hum'
+}
+
+interface LocalDataDef {
+	tempunit: string, tempTL: any, tempTH: any
+	dew: any, dewpointTL: any, dewpointTH: any,
+	apptemp: any, apptempTL: any, apptempTH: any,
+	wchill: any, wchillTL: any,
+	heatindex: any, heatindexTH: any,
+	humidex: any
+}
+
+function mapLocalData(data: any) {
+	let localdata: LocalDataDef = {
+		tempunit: data.tempunit,
+		tempTL: data.tempTL,
+		tempTH: data.tempTH,
+		dew: data.dew,
+		dewpointTL: data.dewpointTL,
+		dewpointTH: data.dewpointTH,
+		apptemp: data.apptemp,
+		apptempTL: data.apptempTL,
+		apptempTH: data.apptempTH,
+		wchill: data.wchill,
+		wchillTL: data.wchillTL,
+		heatindex: data.heatindex,
+		heatindexTH: data.heatindexTH,
+		humidex: data.humidex
+	}
+	return localdata;
 }
 
 export default DewGauge;

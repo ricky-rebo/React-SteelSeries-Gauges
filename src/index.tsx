@@ -43,23 +43,26 @@ class ExampleComponent extends React.Component<Props, {}> {
         <div className={styles.test}>Example Component: {this.props.text}</div>
         <div style={{ marginLeft: 'auto', marginRight: 'auto', textAlign: 'center' }}>
           <div>
-            <LedGauge controller={this.controller} />
-            <StatusScrollerGauge controller={this.controller} width={550} /> &nbsp;
-            <StatusTimerGauge controller={this.controller} width={70} />
+            <LedGauge controller={this.controller} size={30} />
+            <StatusScrollerGauge controller={this.controller} width={750} height={30} /> &nbsp;
+            <StatusTimerGauge controller={this.controller} width={90} height={30} />
           </div>
           <div>
             <TempGauge controller={controller} size={dim} />
             <DewGauge controller={controller} size={dim} />
             <HumGauge controller={controller} size={dim} />
-
+          </div>
+          <div>
             <BaroGauge controller={controller} size={dim} />
             <RainGauge controller={controller} size={dim} />
             <RainRateGauge controller={controller} size={dim} />
-            
+          </div>
+          <div>
             <UVGauge controller={controller} size={dim} />
             <SolarGauge controller={controller} size={dim} />
             <CloudBaseGauge controller={controller} size={dim} />
-            
+          </div>
+          <div>
             <WindSpeedGauge controller={controller} size={dim}/>
             <WindDirGauge controller={controller} size={dim}/>
             <WindRoseGauge controller={controller} size={dim}/>

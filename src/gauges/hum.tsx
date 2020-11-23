@@ -64,70 +64,56 @@ class HumGauge extends Component<Props, State> {
 	}
 
 	async update(data: any) {
-		if(this.state.selected === 'out')
-			this._setStateOut(mapLocalData(data), true);
-		else
-			this._setStateIn(mapLocalData(data), true);
+		this._setState(mapLocalData(data));
 	}
 
 	setInOutHum(sel: string) {
-		if(this.state.data) {
-			if(sel === 'out')
-				this._setStateOut(this.state.data, false);
-			else
-				this._setStateIn(this.state.data, false);
-		}
-		
+		if(this.state.data)
+			this._setState(this.state.data, sel);
 	}
 
-	_setStateOut(data: LocalDataDef, fromUpdate: boolean) {
+	_setState(data: LocalDataDef, sel?: string) {
 		let newState: any = {};
 
-		if(fromUpdate) newState.data = data;
+		if(sel) {
+			newState.selected = sel
+			if(sel === 'out') newState.title = this.props.controller.lang.hum_title_out;
+			else 							newState.title = this.props.controller.lang.hum_title_in;
+		}
 		else {
-			newState.selected = 'out';
-			newState.title = this.props.controller.lang.hum_title_out;
-		}
-
-		newState.value = DataUtils.extractDecimal(data.hum);
-		
-		newState.areas = [
-			steelseries.Section(
-				DataUtils.extractDecimal(data.humTL), 
-				DataUtils.extractDecimal(data.humTH), 
-				this.props.controller.gaugeGlobals.minMaxArea
-			)
-		];
-		
-		this.setState(newState);
-	}
-
-	_setStateIn(data: LocalDataDef, fromUpdate: boolean) {
-		let newState: any = {};
-
-		if(fromUpdate)
+			newState.selected = this.state.selected;
 			newState.data = data;
-		else {
-			newState.selected = 'in';
-			newState.title = this.props.controller.lang.hum_title_in;
 		}
-			
-		newState.value = DataUtils.extractDecimal(data.inhum);
-		if (data.inhumTL && data.inhumTH) {
-			// Indoor - and Max/Min values supplied
-			newState.areas=[
+
+		if(newState.selected == 'out') {
+			newState.value = DataUtils.extractDecimal(data.hum);
+		
+			newState.areas = [
 				steelseries.Section(
-					DataUtils.extractDecimal(data.inhumTL), 
-					DataUtils.extractDecimal(data.inhumTH), 
+					DataUtils.extractDecimal(data.humTL), 
+					DataUtils.extractDecimal(data.humTH), 
 					this.props.controller.gaugeGlobals.minMaxArea
 				)
 			];
 		}
 		else {
-			// Indoor - no Max/Min values supplied
-			newState.areas=[];
+			newState.value = DataUtils.extractDecimal(data.inhum);
+			if (data.inhumTL && data.inhumTH) {
+				// Indoor - and Max/Min values supplied
+				newState.areas=[
+					steelseries.Section(
+						DataUtils.extractDecimal(data.inhumTL), 
+						DataUtils.extractDecimal(data.inhumTH), 
+						this.props.controller.gaugeGlobals.minMaxArea
+					)
+				];
+			}
+			else {
+				// Indoor - no Max/Min values supplied
+				newState.areas=[];
+			}
 		}
-		
+
 		this.setState(newState);
 	}
 

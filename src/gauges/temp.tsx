@@ -68,26 +68,26 @@ class TempGauge extends Component<Props, State> {
 	}
 
 	async update(data: any) {
-		if(this.state.selected === 'out')
-			this._setStateOut(mapLocalData(data), true);
-		else
-			this._setStateIn(mapLocalData(data), true);
+		this._setState(mapLocalData(data));
 	}
 
 	setInOutTemp(sel: string) {
 		if(this.state.data) {
-			if(sel === 'out')
-				this._setStateOut(this.state.data, false);
-			else
-				this._setStateIn(this.state.data, false);
+			this._setState(this.state.data, sel);
 		}
 	}
 
-	_setStateOut(data: LocalDataDef, fromUpdate: boolean) {
+	_setState(data: LocalDataDef, sel?: string) {
 		let newState: any = {};
 
-		if(fromUpdate) newState.data = data;
-		else newState.selected = "out";
+		if(sel) {
+			newState.title = this.props.controller.lang.temp_title_out;
+			newState.selected = sel;
+		} 
+		else {
+			newState.data = data;
+			newState.selected = this.state.selected;
+		}
 
 		newState.minValue = data.tempunit[1] === 'C'
 			? this.props.controller.gaugeGlobals.tempScaleDefMinC
@@ -96,77 +96,46 @@ class TempGauge extends Component<Props, State> {
 			? this.props.controller.gaugeGlobals.tempScaleDefMaxC
 			: this.props.controller.gaugeGlobals.tempScaleDefMaxF;
 
-		newState.value = DataUtils.extractDecimal(data.temp);
-		let low = DataUtils.extractDecimal(data.tempTL);
-		let high = DataUtils.extractDecimal(data.tempTH);
-
-		if(!fromUpdate) newState.title = this.props.controller.lang.temp_title_out;
-		//loc = this.props.controller.lang.temp_out_info;
-		
-		if(this.params.trendVisible) {
-			let trendVal = DataUtils.extractDecimal(data.temptrend);
-			newState.trend = GaugeUtils.tempTrend(trendVal, data.tempunit, false);
-		}
-
-		newState.areas = [steelseries.Section(low, high, this.props.controller.gaugeGlobals.minMaxArea)];
-
-		// auto scale the ranges
-		let lowScale = GaugeUtils.getMinTemp(newState.minValue, data);
-		let highScale = GaugeUtils.getMaxTemp(newState.maxValue, data);
-		let scaleStep = data.tempunit[1] === 'C' ? 10 : 20;
-		while (lowScale < newState.minValue) {
-			newState.minValue -= scaleStep;
-			if (highScale <= newState.maxValue - scaleStep) {
-				newState.maxValue -= scaleStep;
-			}
-		}
-		
-		while (highScale > newState.maxValue) {
-			newState.maxValue += scaleStep;
-			if (newState.minValue >= newState.minValue + scaleStep) {
-				newState.minValue += scaleStep;
-			}
-		}
-
-		this.setState(newState);
-	}
-
-	_setStateIn(data: LocalDataDef, fromUpdate: boolean) {
-		let newState: any = {};
-
-		if(fromUpdate) newState.data = data;
-		else newState.selected = "in";
-
-		newState.minValue = data.tempunit[1] === 'C'
-			? this.props.controller.gaugeGlobals.tempScaleDefMinC
-			: this.props.controller.gaugeGlobals.tempScaleDefMinF;
-		newState.maxValue = data.tempunit[1] === 'C'
-			? this.props.controller.gaugeGlobals.tempScaleDefMaxC
-			: this.props.controller.gaugeGlobals.tempScaleDefMaxF;
-		
-		//Indoor selected
-		if(!fromUpdate) newState.title = this.props.controller.lang.temp_title_in;
-		//loc = this.props.controller.lang.temp_in_info;
-		
-		newState.value = DataUtils.extractDecimal(data.intemp);
 		let lowScale: number, highScale: number;
-		if (data.intempTL && data.intempTH) { // Indoor - and Max/Min values supplied
-			let low = DataUtils.extractDecimal(data.intempTL);
-			let high = DataUtils.extractDecimal(data.intempTH);
+		if(newState.selected === 'out') {
+			newState.value = DataUtils.extractDecimal(data.temp);
+			
 			lowScale = GaugeUtils.getMinTemp(newState.minValue, data);
 			highScale = GaugeUtils.getMaxTemp(newState.maxValue, data);
 
+			//loc = this.props.controller.lang.temp_out_info;
+			
+			if(this.params.trendVisible) {
+				let trendVal = DataUtils.extractDecimal(data.temptrend);
+				newState.trend = GaugeUtils.tempTrend(trendVal, data.tempunit, false);
+			}
+
+			let low = DataUtils.extractDecimal(data.tempTL);
+			let high = DataUtils.extractDecimal(data.tempTH);
 			newState.areas = [steelseries.Section(low, high, this.props.controller.gaugeGlobals.minMaxArea)];
 		}
-		else { // Indoor - no Max/Min values supplied
-			lowScale = highScale = newState.value;
-			newState.areas = [];
-		}
+		else {
+			//Indoor selected 
+			newState.value = DataUtils.extractDecimal(data.intemp);
 
-		if (this.params.trendVisible) {
-			newState.trend = steelseries.TrendState.OFF;
-		}
+			if (data.intempTL && data.intempTH) { // Indoor - and Max/Min values supplied
+				lowScale = GaugeUtils.getMinTemp(newState.minValue, data);
+				highScale = GaugeUtils.getMaxTemp(newState.maxValue, data);
 
+				let low = DataUtils.extractDecimal(data.intempTL);
+				let high = DataUtils.extractDecimal(data.intempTH);
+				newState.areas = [steelseries.Section(low, high, this.props.controller.gaugeGlobals.minMaxArea)];
+			}
+			else { // Indoor - no Max/Min values supplied
+				lowScale = highScale = newState.value;
+				newState.areas = [];
+			}
+
+			if (this.params.trendVisible) {
+				newState.trend = steelseries.TrendState.OFF;
+			}
+		}
+		
 		// auto scale the ranges
 		let scaleStep = data.tempunit[1] === 'C' ? 10 : 20;
 		while (lowScale < newState.minValue) {
@@ -175,6 +144,7 @@ class TempGauge extends Component<Props, State> {
 				newState.maxValue -= scaleStep;
 			}
 		}
+		
 		while (highScale > newState.maxValue) {
 			newState.maxValue += scaleStep;
 			if (newState.minValue >= newState.minValue + scaleStep) {
