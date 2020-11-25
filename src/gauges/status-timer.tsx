@@ -31,46 +31,33 @@ class StatusTimerGauge extends Component<Props, State> {
       value            : this.state.count
     }
 
-    this.start = this.start.bind(this);
-    this.tick = this.tick.bind(this);
-    this.reset = this.reset.bind(this);
-    this.stop = this.stop.bind(this);
-
-    props.controller.subStatusTimer(
-      StatusTimerGauge.NAME,
-      {
-        start: this.start,
-        tick: this.tick,
-        reset: this.reset,
-        stop: this.stop
-      }
-    )
-  }
-
-  //TODO docs
-  start() {
-    this.tickTockInterval = setInterval(this.tick, 1000);
-  }
-
-  //TODO docs
-  tick() {
-    this.setState({ count: (this.state.count - 1) });
-  }
-
-  //TODO docs
-  reset(val: number) {
-    this.setState({ count: val });
-  }
-
-  //TODO docs
-  stop() {
-    clearInterval(this.tickTockInterval);
+    this.update = this.update.bind(this);
+    this._tick = this._tick.bind(this);
+    props.controller.subscribe(StatusTimerGauge.NAME, this.update);
   }
 
   componentDidMount() {
     if(this.canvasRef) {
       this.gauge = new steelseries.DisplaySingle(this.canvasRef.current, this.params);
     }
+  }
+
+  async update({ statusTimerAction, statusTimerVal }: any) {
+    if(statusTimerAction !== undefined) {
+      if(statusTimerAction === 'START') {
+        this.tickTockInterval = setInterval(this._tick, 1000);
+      }
+      else if(statusTimerAction === 'RESET' && statusTimerVal !== undefined) {
+        this.setState({ count: statusTimerVal });
+      }
+      else if(statusTimerAction === 'STOP') {
+        clearInterval(this.tickTockInterval);
+      }
+    }
+  }
+
+  _tick() {
+    this.setState({ count: (this.state.count - 1) });
   }
 
   componentDidUpdate() {

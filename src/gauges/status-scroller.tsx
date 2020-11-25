@@ -16,36 +16,40 @@ class StatusScrollerGauge extends Component<Props, State> {
 
     this.canvasRef = React.createRef();
 
+    this.state = {
+      value: props.controller.lang.statusStr
+    }
+
     this.params = {
       width            : props.width,
       height           : props.height ? props.height : 25,
       lcdColor         : props.controller.gaugeGlobals.lcdColour,
       unitStringVisible: false,
-      value            : props.controller.lang.statusStr,
+      value            : this.state.value,
       digitalFont      : props.controller.config.digitalForecast,
       valuesNumeric    : false,
       autoScroll       : true,
       alwaysScroll     : false
     }
 
-    this.setText = this.setText.bind(this);
-
-    props.controller.subStatusScroller(
-      StatusScrollerGauge.NAME,
-      { setText: this.setText }
-    );
-  }
-
-  //TODO docs
-  setText(txt: string) {
-    if(this.gauge)
-      this.gauge.setValue(txt);
+    this.update = this.update.bind(this);
+    props.controller.subscribe(StatusScrollerGauge.NAME, this.update);
   }
 
   componentDidMount() {
     if(this.canvasRef.current) {
       this.gauge = new steelseries.DisplaySingle(this.canvasRef.current, this.params);
     }
+  }
+
+  async update({ forecast }: { forecast: string }) {
+    if(forecast !== undefined)
+      this.setState({ value: forecast });
+  }
+
+  componentDidUpdate() {
+    if(this.gauge)
+      this.gauge.setValue(this.state.value);
   }
 
   render() {
@@ -65,6 +69,8 @@ interface Props {
   height?: number
 };
 
-interface State {}
+interface State {
+  value: string
+}
 
 export default StatusScrollerGauge;

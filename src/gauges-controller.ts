@@ -52,7 +52,7 @@ const DEF_CONFIG = {
 }
 
 const DEF_UNITS = {
-  temp   : 'C',
+  temp   : '°C',
   rain   : 'mm',
   press  : 'hPa',
   wind   : 'km/h',
@@ -172,34 +172,12 @@ export default class GaugesController {
 
   }
 
-  subLed(gaugeName: string, gaugeRef: any) {
-    this.gauges = this.gauges.concat(gaugeName);
-    this.led = gaugeRef;
-  }
-
-  subStatusScroller(gaugeName: string, gaugeRef: any) {
-    this.gauges = this.gauges.concat(gaugeName);
-    this.statusScroller = gaugeRef;
-  }
-
-  subStatusTimer(gaugeName: string, gaugeRef: any) {
-    this.gauges = this.gauges.concat(gaugeName);
-    this.statusTimer = gaugeRef;
-  }
-
   init = () => {
     //TODO
     this.displayUnits = {...DEF_UNITS};
     
-    //FIXME set default units in a proper way
-    this.data.tempunit = '°' + this.displayUnits.temp;
-    this.data.rainunit = this.displayUnits.rain;
-    this.data.pressunit = this.displayUnits.press;
-    this.data.windunit = this.displayUnits.wind;
-    this.data.cloudunit = this.displayUnits.cloud;
-    
     this.userUnitsSet = false;
-    this.firstRun = true;
+    this.firstRun = false;
   }
 
   getDisplayUnits = () => (this.displayUnits);
@@ -233,9 +211,12 @@ export default class GaugesController {
       // *** CHECK IF STATION IS OFFLINE ***
       let stationOffMsg = DataUtils.isStationOffline(data, this.config.stationTimeout, this.lang);
       if(stationOffMsg !== null) {
-        this.led.setLedColor(steelseries.LedColor.RED_LED);
-        this.led.setTitle(this.lang.led_title_offline);
-        this.led.blink(true);
+        data.ledColor = steelseries.LedColor.RED_LED;
+        //this.led.setLedColor(steelseries.LedColor.RED_LED);
+        data.ledTitle = this.lang.led_title_offline;
+        //this.led.setTitle(this.lang.led_title_offline);
+        data.ledBlink = true;
+        //this.led.blink(true);
         data.forecast = stationOffMsg;
       }
 
@@ -284,7 +265,7 @@ export default class GaugesController {
         DataUtils.convTempData(data); // temp needs converting
       }
       else if (this.firstRun) {
-          this.displayUnits.temp = data.tempunit[1];
+          this.displayUnits.temp = data.tempunit;
           
           //TODO handle radiobox changes
           //setRadioCheck('rad_unitsTemp', displayUnits.temp);
@@ -334,18 +315,12 @@ export default class GaugesController {
         //setRadioCheck('rad_unitsCloud', displayUnits.cloud);
       }
 
-      
-      this.statusScroller.setText(data.forecast);
-
 
       // TODO eventually, run doFirst if firstrun = true (?)
 
-      
-      // TODO pubblish data update (eventually using redux?)
-
-
-      //Just for testing
-      if(this.statusTimer) this.statusTimer.start();
+      data.statusTimerAction = 'START';
+      //data.statusTimerAction = 'RESET';
+      //data.statusTimerVal = 5;
 
 
 
