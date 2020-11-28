@@ -3,7 +3,7 @@ import GaugeUtils from '../utils/gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
 import DataUtils from '../utils/data-utils';
-import GaugesController from '../gauges-controller';
+import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
 
 //TODO docs
@@ -20,9 +20,9 @@ class TempGauge extends Component<Props, State> {
 
 		this.canvasRef = React.createRef();
 		this.state = {
-			value: this.props.controller.gaugeGlobals.tempScaleDefMinC + 0.0001,
-			minValue: this.props.controller.gaugeGlobals.tempScaleDefMinC,
-			maxValue: this.props.controller.gaugeGlobals.tempScaleDefMaxC,
+			value: this.props.controller.gaugeConfig.tempScaleDefMinC + 0.0001,
+			minValue: this.props.controller.gaugeConfig.tempScaleDefMinC,
+			maxValue: this.props.controller.gaugeConfig.tempScaleDefMaxC,
 			trend: null,
 			areas: [],
 
@@ -38,7 +38,7 @@ class TempGauge extends Component<Props, State> {
 
 		this.params = {
 			...this.props.controller.commonParams,
-			size: Math.ceil(this.props.size * this.props.controller.config.gaugeScaling),
+			size: Math.ceil(this.props.size * this.props.controller.gaugeConfig.gaugeScaling),
 			section: GaugeUtils.createTempSections(true),
 			area: [],
 			minValue: this.state.minValue,
@@ -48,11 +48,11 @@ class TempGauge extends Component<Props, State> {
 			maxMeasuredValueVisible: this.state.maxMinVisible,
 			titleString: this.state.title,
 			unitString: this.state.displayUnit,
-			trendVisible: this.props.controller.gaugeGlobals.tempTrendVisible
+			trendVisible: this.props.controller.gaugeConfig.tempTrendVisible
 		};
 
-		this.style = this.props.controller.config.showGaugeShadow
-			? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeGlobals.shadowColour)
+		this.style = this.props.controller.gaugeConfig.showGaugeShadow
+			? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
 			: {};
 
 		this.update = this.update.bind(this);
@@ -90,11 +90,11 @@ class TempGauge extends Component<Props, State> {
 		}
 
 		newState.minValue = data.tempunit[1] === 'C'
-			? this.props.controller.gaugeGlobals.tempScaleDefMinC
-			: this.props.controller.gaugeGlobals.tempScaleDefMinF;
+			? this.props.controller.gaugeConfig.tempScaleDefMinC
+			: this.props.controller.gaugeConfig.tempScaleDefMinF;
 		newState.maxValue = data.tempunit[1] === 'C'
-			? this.props.controller.gaugeGlobals.tempScaleDefMaxC
-			: this.props.controller.gaugeGlobals.tempScaleDefMaxF;
+			? this.props.controller.gaugeConfig.tempScaleDefMaxC
+			: this.props.controller.gaugeConfig.tempScaleDefMaxF;
 
 		let lowScale: number, highScale: number;
 		if(newState.selected === 'out') {
@@ -112,7 +112,7 @@ class TempGauge extends Component<Props, State> {
 
 			let low = DataUtils.extractDecimal(data.tempTL);
 			let high = DataUtils.extractDecimal(data.tempTH);
-			newState.areas = [steelseries.Section(low, high, this.props.controller.gaugeGlobals.minMaxArea)];
+			newState.areas = [steelseries.Section(low, high, this.props.controller.gaugeConfig.minMaxArea)];
 		}
 		else {
 			//Indoor selected 
@@ -124,7 +124,7 @@ class TempGauge extends Component<Props, State> {
 
 				let low = DataUtils.extractDecimal(data.intempTL);
 				let high = DataUtils.extractDecimal(data.intempTH);
-				newState.areas = [steelseries.Section(low, high, this.props.controller.gaugeGlobals.minMaxArea)];
+				newState.areas = [steelseries.Section(low, high, this.props.controller.gaugeConfig.minMaxArea)];
 			}
 			else { // Indoor - no Max/Min values supplied
 				lowScale = highScale = newState.value;

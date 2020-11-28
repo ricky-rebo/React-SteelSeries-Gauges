@@ -3,8 +3,9 @@ import GaugeUtils from '../utils/gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
 import DataUtils from '../utils/data-utils';
-import GaugesController from '../gauges-controller';
+import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
+import { UNITS } from '../controller/defaults';
 
 //TODO docs
 class CloudBaseGauge extends Component<Props, State> {
@@ -23,7 +24,10 @@ class CloudBaseGauge extends Component<Props, State> {
 		this.state = {
 			value:  0.0001,
 			sections: GaugeUtils.createCloudBaseSections(true),
-			maxValue:  this.props.controller.gaugeGlobals.cloudScaleDefMaxm,
+			maxValue:  props.controller.gaugeConfig.cloudScaleDefMaxm,
+			displayUnit: props.controller.getDisplayUnits().cloud === UNITS.Cloud.M
+				? this.props.controller.lang.metres
+				: this.props.controller.lang.feet
 
 			//popUpTxt: '',
 			//popUpGraph: '',
@@ -32,7 +36,7 @@ class CloudBaseGauge extends Component<Props, State> {
 
 		this.params = {
 			...this.props.controller.commonParams,
-			size: Math.ceil(this.props.size * this.props.controller.config.gaugeScaling),
+			size: Math.ceil(this.props.size * this.props.controller.gaugeConfig.gaugeScaling),
 			maxValue: this.state.maxValue,
 			titleString: this.props.controller.lang.cloudbase_title,
 			section: this.state.sections,
@@ -41,8 +45,8 @@ class CloudBaseGauge extends Component<Props, State> {
 			lcdDecimals: 0,
 		};
 
-		this.style = this.props.controller.config.showGaugeShadow
-			? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeGlobals.shadowColour)
+		this.style = this.props.controller.gaugeConfig.showGaugeShadow
+			? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
 			: {};
 
 		this.update = this.update.bind(this);
@@ -62,27 +66,27 @@ class CloudBaseGauge extends Component<Props, State> {
 
 		newState.value=DataUtils.extractInteger(cloudbasevalue);
 		
-		newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value, 2), this.props.controller.gaugeGlobals.uvScaleDefMax);
+		newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value, 2), this.props.controller.gaugeConfig.uvScaleDefMax);
 
-		if(cloudbaseunit==='m') {
+		if(cloudbaseunit === UNITS.Cloud.M) {
 			// adjust metre gauge in jumps of 1000 metres, don't downscale during the session
-			newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value,1000), this.props.controller.gaugeGlobals.cloudScaleDefMaxm, newState.maxValue);
-			if(newState.value <= 1000 && this.props.controller.config.roundCloudbaseVal) {
+			newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value,1000), this.props.controller.gaugeConfig.cloudScaleDefMaxm, newState.maxValue);
+			if(newState.value <= 1000 && this.props.controller.controllerConfig.roundCloudbaseVal) {
 				// and round the value to the nearest  10 m
 				newState.value = Math.round(newState.value / 10) * 10;
 			}
-			else if(this.props.controller.config.roundCloudbaseVal) {
+			else if(this.props.controller.controllerConfig.roundCloudbaseVal) {
 				// and round the value to the nearest 50 m
 				newState.value = Math.round(newState.value / 50) * 50;
 			}
 		}
 		else {
-			newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value,2000), this.props.controller.gaugeGlobals.cloudScaleDefMaxft, newState.maxValue);
-			if(newState.value <= 2000 && this.props.controller.config.roundCloudbaseVal){
+			newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value,2000), this.props.controller.gaugeConfig.cloudScaleDefMaxft, newState.maxValue);
+			if(newState.value <= 2000 && this.props.controller.controllerConfig.roundCloudbaseVal){
 				// and round the value to the nearest  50 ft
 				newState.value = Math.round(newState.value / 50) * 50;
 			}
-			else if(this.props.controller.config.roundCloudbaseVal) {
+			else if(this.props.controller.controllerConfig.roundCloudbaseVal) {
 				// and round the value to the nearest 10 ft
 				newState.value = Math.round(newState.value / 100) * 100;
 			}
@@ -93,6 +97,11 @@ class CloudBaseGauge extends Component<Props, State> {
 		}
 
 		this.setState(newState);
+	}
+
+	async unitUpdate({ cloud }: { cloud: string }) {
+		if(cloud !== this.state.displayUnit)
+			this.setState({ displayUnit: cloud });
 	}
 
 	componentDidUpdate() {
@@ -114,6 +123,11 @@ class CloudBaseGauge extends Component<Props, State> {
 					height={this.params.size}
 					style={this.style}
 				></canvas>
+				<div>
+					<button onClick={() => this.props.controller.changeUnits({ cloudUnit: UNITS.Cloud.M })}>{UNITS.Cloud.M}</button>
+					<button onClick={() => this.props.controller.changeUnits({ cloudUnit: UNITS.Cloud.FT })}>{UNITS.Cloud.FT}</button>
+				</div>
+					
 			</div>
 		);
 	}
@@ -128,6 +142,7 @@ interface State {
 	value: number,
 	sections: any[],
 	maxValue: number,
+	displayUnit: string
 	//popUpTxt: string,
 }
 

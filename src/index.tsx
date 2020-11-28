@@ -1,7 +1,7 @@
 import * as React from 'react'
 import styles from './styles.module.css'
 
-import GaugesController from './gauges-controller';
+import GaugesController from './controller/gauges_controller';
 import TempGauge from './gauges/temp';
 import GaugeSize from './style/gaugeSize';
 import StatusScrollerGauge from './gauges/status-scroller';
@@ -19,60 +19,46 @@ import WindDirGauge from './gauges/wind-dir';
 import WindSpeedGauge from './gauges/wind-speed';
 import WindRoseGauge from './gauges/wind-rose';
 
-interface Props {
-  text: string
-}
+import { WProgram } from './controller/data_types';
+import { UNITS } from './controller/defaults';
 
-class ExampleComponent extends React.Component<Props, {}> {
-  controller: any;
+// @ts-ignore
+import LANG from './controller/language.js';
 
-  constructor(props: Props) {
-    super(props);
-    this.controller = new GaugesController();
-	}
-	
-	componentDidMount() {
-		this.controller.getRealTime();
-	}
+class ExampleComponent extends React.Component<{ text: string }, {}> {
+  constructor(props: { text: string }) { super(props); }
 
   render() {
-    let dim = GaugeSize.Lrg;
-    let controller = this.controller
-    return (
-      <div>
-        <div className={styles.test}>Example Component: {this.props.text}</div>
-        <div style={{ marginLeft: 'auto', marginRight: 'auto', textAlign: 'center' }}>
-          <div>
-            <LedGauge controller={this.controller} size={30} />
-            <StatusScrollerGauge controller={this.controller} width={750} height={30} /> &nbsp;
-            <StatusTimerGauge controller={this.controller} width={90} height={30} />
-          </div>
-          <div>
-            <TempGauge controller={controller} size={dim} />
-            <DewGauge controller={controller} size={dim} />
-            <HumGauge controller={controller} size={dim} />
-          </div>
-          <div>
-            <BaroGauge controller={controller} size={dim} />
-            <RainGauge controller={controller} size={dim} />
-            <RainRateGauge controller={controller} size={dim} />
-          </div>
-          <div>
-            <UVGauge controller={controller} size={dim} />
-            <SolarGauge controller={controller} size={dim} />
-            <CloudBaseGauge controller={controller} size={dim} />
-          </div>
-          <div>
-            <WindSpeedGauge controller={controller} size={dim}/>
-            <WindDirGauge controller={controller} size={dim}/>
-            <WindRoseGauge controller={controller} size={dim}/>
-          </div>
-        </div>
-        
-      </div>
-    )
+    return <div className={styles.test}>Example Component: {this.props.text}</div>
   }
 
 }
 
-export { ExampleComponent };
+const Gauge = {
+  Led: LedGauge,
+  StatusScroller: StatusScrollerGauge,
+  Timer: StatusTimerGauge,
+
+  Temp: TempGauge,
+  Dew: DewGauge,
+  Hum: HumGauge,
+
+  Baro: BaroGauge,
+  Rain: RainGauge,
+  RainRate: RainRateGauge,
+
+  UV: UVGauge,
+  Solar: SolarGauge,
+  CloudBase: CloudBaseGauge,
+
+  WindSpeed: WindSpeedGauge,
+  WindDir: WindDirGauge,
+  WindRose: WindRoseGauge
+}
+
+const Type = {
+  Program: {...WProgram},
+  DewDisplay: {}
+}
+
+export { ExampleComponent, Gauge, GaugeSize, GaugesController, Type, LANG as Lang, UNITS as Units};

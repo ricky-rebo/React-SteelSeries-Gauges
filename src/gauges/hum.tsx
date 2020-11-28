@@ -3,7 +3,7 @@ import GaugeUtils from '../utils/gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
 import DataUtils from '../utils/data-utils';
-import GaugesController from '../gauges-controller';
+import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
 
 
@@ -34,7 +34,7 @@ class HumGauge extends Component<Props, State> {
 
 		this.params = {
 			...this.props.controller.commonParams,
-			size: Math.ceil(this.props.size * this.props.controller.config.gaugeScaling),
+			size: Math.ceil(this.props.size * this.props.controller.gaugeConfig.gaugeScaling),
 			section: [
 				steelseries.Section(0, 20, 'rgba(255,255,0,0.3)'),
 				steelseries.Section(20, 80, 'rgba(0,255,0,0.3)'),
@@ -47,8 +47,8 @@ class HumGauge extends Component<Props, State> {
 			unitString: 'RH%',
 		};
 
-		this.style = this.props.controller.config.showGaugeShadow
-			? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeGlobals.shadowColour)
+		this.style = this.props.controller.gaugeConfig.showGaugeShadow
+			? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
 			: {};
 
 		this.update = this.update.bind(this);
@@ -92,7 +92,7 @@ class HumGauge extends Component<Props, State> {
 				steelseries.Section(
 					DataUtils.extractDecimal(data.humTL), 
 					DataUtils.extractDecimal(data.humTH), 
-					this.props.controller.gaugeGlobals.minMaxArea
+					this.props.controller.gaugeConfig.minMaxArea
 				)
 			];
 		}
@@ -104,7 +104,7 @@ class HumGauge extends Component<Props, State> {
 					steelseries.Section(
 						DataUtils.extractDecimal(data.inhumTL), 
 						DataUtils.extractDecimal(data.inhumTH), 
-						this.props.controller.gaugeGlobals.minMaxArea
+						this.props.controller.gaugeConfig.minMaxArea
 					)
 				];
 			}

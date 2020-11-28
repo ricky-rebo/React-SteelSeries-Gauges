@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import GaugesController from '../gauges-controller';
+import GaugesController from '../controller/gauges_controller';
 // @ts-ignore
 import steelseries from '../libs/steelseries';
 
@@ -23,17 +23,18 @@ class StatusScrollerGauge extends Component<Props, State> {
     this.params = {
       width            : props.width,
       height           : props.height ? props.height : 25,
-      lcdColor         : props.controller.gaugeGlobals.lcdColour,
+      lcdColor         : props.controller.gaugeConfig.lcdColour,
       unitStringVisible: false,
       value            : this.state.value,
-      digitalFont      : props.controller.config.digitalForecast,
+      digitalFont      : props.controller.gaugeConfig.digitalForecast,
       valuesNumeric    : false,
       autoScroll       : true,
       alwaysScroll     : false
     }
 
-    this.update = this.update.bind(this);
-    props.controller.subscribe(StatusScrollerGauge.NAME, this.update);
+    this.dataUpdate = this.dataUpdate.bind(this);
+    this.statusUpdate = this.statusUpdate.bind(this);
+    props.controller.subscribe(StatusScrollerGauge.NAME, this.dataUpdate, null, this.statusUpdate);
   }
 
   componentDidMount() {
@@ -42,9 +43,14 @@ class StatusScrollerGauge extends Component<Props, State> {
     }
   }
 
-  async update({ forecast }: { forecast: string }) {
+  async dataUpdate({ forecast }: { forecast: string }) {
     if(forecast !== undefined)
       this.setState({ value: forecast });
+  }
+
+  async statusUpdate({ statusString }: { statusString: string }) {
+    if(statusString !== undefined)
+      this.setState({ value: statusString });
   }
 
   componentDidUpdate() {

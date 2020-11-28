@@ -45,7 +45,7 @@ class DataUtils {
    * @param stationTimeout 
    * @param lang 
    */
-  static isStationOffline = ({ timeUTC, SensorContactLost }: { timeUTC: string, SensorContactLost: string }, stationTimeout: number, lang: any) => {
+  static isStationOffline = ({ timeUTC }: { timeUTC: string }, stationTimeout: number, lang: any) => {
     let now = Date.now();
     let tmp = timeUTC.split(',');
     //console.log("tmp: " + tmp);
@@ -65,8 +65,6 @@ class DataUtils {
         timeAgo = `${Math.floor(elapsedMins / (60 * 24))} ${lang.StatusDaysAgo}`;
       return `${lang.led_title_offline} ${lang.StatusLastUpdate} ${timeAgo}`;
     }
-    else if(+SensorContactLost === 1)
-      return lang.led_title_lost;
     
     return null;
   }

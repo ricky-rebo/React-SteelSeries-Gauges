@@ -4,7 +4,7 @@ import GaugeUtils from '../utils/gauge-utils';
 import steelseries from '../libs/steelseries.js';
 // @ts-ignore
 import RGraph from '../libs/RGraph.rose.js';
-import GaugesController from '../gauges-controller';
+import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
 import DataUtils from '../utils/data-utils';
 
@@ -47,48 +47,48 @@ class WindRoseGauge extends Component<Props, State> {
 	odoGauge: any;
 		
 	constructor(props: Props) {
-			super(props);
+		super(props);
 
-			this.canvasRef = React.createRef();
-			this.plotRef = React.createRef();
+		this.canvasRef = React.createRef();
+		this.plotRef = React.createRef();
 
-			this.state = {
-				WindRoseData: [],
-				windrun: null
-			}
+		this.state = {
+			WindRoseData: [],
+			windrun: null
+		}
 
-			let tmpSize = Math.ceil(props.size * props.controller.config.gaugeScaling)
-			this.gaugeParams = {
-				size: tmpSize,
-				size2: tmpSize / 2,
-				plotSize: Math.floor(tmpSize * 0.68),
-				plotSize2: Math.floor(tmpSize * 0.68) / 2,
+		let tmpSize = Math.ceil(props.size * props.controller.gaugeConfig.gaugeScaling)
+		this.gaugeParams = {
+			size: tmpSize,
+			size2: tmpSize / 2,
+			plotSize: Math.floor(tmpSize * 0.68),
+			plotSize2: Math.floor(tmpSize * 0.68) / 2,
 
-				compassStrings: props.controller.lang.compass,
-				titleString: props.controller.lang.windrose
-			}
-			this.gaugeParams.style = props.controller.config.showGaugeShadow
-				? GaugeUtils.gaugeShadow(this.gaugeParams.size, props.controller.gaugeGlobals.shadowColour)
-				: {}
+			compassStrings: props.controller.lang.compass,
+			titleString: props.controller.lang.windrose
+		}
+		this.gaugeParams.style = props.controller.gaugeConfig.showGaugeShadow
+			? GaugeUtils.gaugeShadow(this.gaugeParams.size, props.controller.gaugeConfig.shadowColour)
+			: {}
 
-			
-			this.showOdo = props.controller.config.showRoseGaugeOdo;
-			let digits = 5,
-					h = Math.ceil(this.gaugeParams.size * 0.08); // Sets the size of the odometer
-			this.odoParams = {
-				odoDigits:  digits,
-				title:  props.controller.lang.km,
-				height: h,
-				width: Math.ceil(Math.floor(h * 0.68) * digits)  // 'Magic' number, do not alter
-			}
-			if(this.showOdo) {
-				this.odoRef = React.createRef();
-			}
+		
+		this.showOdo = props.controller.gaugeConfig.showRoseGaugeOdo;
+		let digits = 5,
+				h = Math.ceil(this.gaugeParams.size * 0.08); // Sets the size of the odometer
+		this.odoParams = {
+			odoDigits:  digits,
+			title:  props.controller.lang.km,
+			height: h,
+			width: Math.ceil(Math.floor(h * 0.68) * digits)  // 'Magic' number, do not alter
+		}
+		if(this.showOdo) {
+			this.odoRef = React.createRef();
+		}
 
-			this.buffers = {};
+		this.buffers = {};
 
-			this.update = this.update.bind(this);
-			this.props.controller.subscribe(WindRoseGauge.NAME, this.update);
+		this.update = this.update.bind(this);
+		this.props.controller.subscribe(WindRoseGauge.NAME, this.update);
 	}
 
 	componentDidMount() {
@@ -104,7 +104,7 @@ class WindRoseGauge extends Component<Props, State> {
 			this.buffers.ctxFrame = this.buffers.frame.getContext('2d');
 			steelseries.drawFrame(
 				this.buffers.ctxFrame,
-				this.props.controller.gaugeGlobals.frameDesign,
+				this.props.controller.gaugeConfig.frameDesign,
 				this.gaugeParams.size2,
 				this.gaugeParams.size2,
 				this.gaugeParams.size,
@@ -116,7 +116,7 @@ class WindRoseGauge extends Component<Props, State> {
 			this.buffers.ctxBackground = this.buffers.background.getContext('2d');
 			steelseries.drawBackground(
 				this.buffers.ctxBackground,
-				this.props.controller.gaugeGlobals.background,
+				this.props.controller.gaugeConfig.background,
 				this.gaugeParams.size2,
 				this.gaugeParams.size2,
 				this.gaugeParams.size,
@@ -131,7 +131,7 @@ class WindRoseGauge extends Component<Props, State> {
 			this.buffers.ctxForeground = this.buffers.foreground.getContext('2d');
 			steelseries.drawForeground(
 				this.buffers.ctxForeground,
-				this.props.controller.gaugeGlobals.foreground,
+				this.props.controller.gaugeConfig.foreground,
 				this.gaugeParams.size,
 				this.gaugeParams.size,
 				false
@@ -168,6 +168,10 @@ class WindRoseGauge extends Component<Props, State> {
 		if(this.canvasRef.current && this.plotRef.current) {
 			// Clear the gauge
 			this.buffers.ctxRoseCanvas.clearRect(0, 0, this.gaugeParams.size, this.gaugeParams.size);
+			this.buffers.ctxPlot.clearRect(0, 0, this.gaugeParams.plotSize, this.gaugeParams.plotSize);
+
+			//Redraw the empty gauge
+			this._drawEmptyGauge(this.buffers.ctxRoseCanvas);
 
 			// Create a new rose plot
 			let rose = new RGraph.Rose(this.plotRef.current, this.state.WindRoseData);
@@ -180,7 +184,7 @@ class WindRoseGauge extends Component<Props, State> {
 			rose.Set('chart.title', this.gaugeParams.titleString);
 			rose.Set('chart.title.size', Math.ceil(0.05 * this.gaugeParams.plotSize));
 			rose.Set('chart.title.bold', false);
-			rose.Set('chart.title.color', this.props.controller.gaugeGlobals.background.labelColor.getRgbColor());
+			rose.Set('chart.title.color', this.props.controller.gaugeConfig.background.labelColor.getRgbColor());
 			rose.Set('chart.gutter.top', 0.2 * this.gaugeParams.plotSize);
 			rose.Set('chart.gutter.bottom', 0.2 * this.gaugeParams.plotSize);
 
@@ -195,9 +199,6 @@ class WindRoseGauge extends Component<Props, State> {
 			if (this.showOdo) {
 				this._drawOdoTitle(this.buffers.ctxPlot);
 			}
-
-			//Redraw the empty gauge
-			this._drawEmptyGauge(this.buffers.ctxRoseCanvas);
 
 			// Paint the rose plot
 			let offset = Math.floor(this.gaugeParams.size2 - this.gaugeParams.plotSize2);
@@ -259,8 +260,8 @@ class WindRoseGauge extends Component<Props, State> {
 			ctx.save();
 			// set the font
 			ctx.font = 0.08 * size + 'px serif';
-			ctx.strokeStyle = this.props.controller.gaugeGlobals.background.labelColor.getRgbaColor();
-			ctx.fillStyle = this.props.controller.gaugeGlobals.background.labelColor.getRgbColor();
+			ctx.strokeStyle = this.props.controller.gaugeConfig.background.labelColor.getRgbaColor();
+			ctx.fillStyle = this.props.controller.gaugeConfig.background.labelColor.getRgbColor();
 			ctx.textAlign = 'center';
 			ctx.textBaseline = 'middle';
 
@@ -282,8 +283,8 @@ class WindRoseGauge extends Component<Props, State> {
 			ctx.textAlign = 'center';
 			ctx.textBaseline = 'middle';
 			ctx.font = 0.05 * this.gaugeParams.size + 'px Arial,Verdana,sans-serif';
-			ctx.strokeStyle = this.props.controller.gaugeGlobals.background.labelColor.getRgbaColor();
-			ctx.fillStyle = this.props.controller.gaugeGlobals.background.labelColor.getRgbaColor();
+			ctx.strokeStyle = this.props.controller.gaugeConfig.background.labelColor.getRgbaColor();
+			ctx.fillStyle = this.props.controller.gaugeConfig.background.labelColor.getRgbaColor();
 			ctx.fillText(
 				this.odoParams.title,
 				this.gaugeParams.plotSize2,
@@ -308,7 +309,7 @@ class WindRoseGauge extends Component<Props, State> {
 			// Redraw the background
 			steelseries.drawBackground(
 				this.buffers.ctxBackground,
-				this.props.controller.gaugeGlobals.background,
+				this.props.controller.gaugeConfig.background,
 				this.gaugeParams.size2,
 				this.gaugeParams.size2,
 				this.gaugeParams.size,

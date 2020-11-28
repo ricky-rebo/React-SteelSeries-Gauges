@@ -3,7 +3,7 @@ import GaugeUtils from '../utils/gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
 import DataUtils from '../utils/data-utils';
-import GaugesController from '../gauges-controller';
+import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
 
 //TODO docs
@@ -22,7 +22,7 @@ class UVGauge extends Component<Props, State> {
 	
 		this.state = {
 			value:  0.0001,
-			maxValue:  this.props.controller.gaugeGlobals.uvScaleDefMax,
+			maxValue:  this.props.controller.gaugeConfig.uvScaleDefMax,
 			risk: '',
 
 			//popUpTxt: '',
@@ -31,7 +31,7 @@ class UVGauge extends Component<Props, State> {
 
 		this.params = {
 			...this.props.controller.commonParams,
-			size: Math.ceil(this.props.size * this.props.controller.config.gaugeScaling),
+			size: Math.ceil(this.props.size * this.props.controller.gaugeConfig.gaugeScaling),
 			gaugeType: steelseries.GaugeType.TYPE3,
 			maxValue: this.state.maxValue,
 			titleString: this.props.controller.lang.uv_title,
@@ -57,11 +57,11 @@ class UVGauge extends Component<Props, State> {
 				]
 			),
 			useValueGradient: true,
-			lcdDecimals:this.props.controller.gaugeGlobals.uvLcdDecimals,
+			lcdDecimals:this.props.controller.gaugeConfig.uvLcdDecimals,
 		};
 
-		this.style = this.props.controller.config.showGaugeShadow
-			? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeGlobals.shadowColour)
+		this.style = this.props.controller.gaugeConfig.showGaugeShadow
+			? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
 			: {};
 
 		this.update = this.update.bind(this);
@@ -91,7 +91,7 @@ class UVGauge extends Component<Props, State> {
 
 		newState.maxValue = Math.max(
 			GaugeUtils.nextHighest(newState.value, 2),
-			this.props.controller.gaugeGlobals.uvScaleDefMax
+			this.props.controller.gaugeConfig.uvScaleDefMax
 		);
 
 		newState.risk = this.props.controller.lang.uv_levels[indx];

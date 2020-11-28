@@ -3,7 +3,7 @@ import GaugeUtils from '../utils/gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
 import DataUtils from '../utils/data-utils';
-import GaugesController from '../gauges-controller';
+import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
 
 //TODO docs
@@ -22,7 +22,7 @@ class SolarGauge extends Component<Props, State> {
 	
 		this.state = {
 			value:  0.0001,
-			maxValue: this.props.controller.gaugeGlobals.solarGaugeScaleMax,
+			maxValue: this.props.controller.gaugeConfig.solarGaugeScaleMax,
 			maxToday: 0,
 			sections: [
 				steelseries.Section(0, 600, 'rgba(40,149,0,0.3)'),
@@ -39,7 +39,7 @@ class SolarGauge extends Component<Props, State> {
 
 		this.params = {
 			...this.props.controller.commonParams,
-			size: Math.ceil(this.props.size * this.props.controller.config.gaugeScaling),
+			size: Math.ceil(this.props.size * this.props.controller.gaugeConfig.gaugeScaling),
 			section: this.state.sections,
 			maxValue: this.state.maxValue,
 			titleString: this.props.controller.lang.solar_title,
@@ -47,13 +47,13 @@ class SolarGauge extends Component<Props, State> {
 			unitString: 'W/m\u00B2',
 			thresholdVisible: false,
 			lcdDecimals: 0,
-			userLedVisible : this.props.controller.config.showSunshineLed,
+			userLedVisible : this.props.controller.gaugeConfig.showSunshineLed,
 			userLedColor : steelseries.LedColor.YELLOW_LED,
 			maxMeasuredValueVisible: true,
 		};
 
-		this.style = this.props.controller.config.showGaugeShadow
-			? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeGlobals.shadowColour)
+		this.style = this.props.controller.gaugeConfig.showGaugeShadow
+			? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
 			: {};
 
 		this.update = this.update.bind(this);
@@ -75,14 +75,12 @@ class SolarGauge extends Component<Props, State> {
 		newState.maxToday = DataUtils.extractInteger(SolarTM);
 		newState.currMaxValue = DataUtils.extractInteger(CurrentSolarMax);
 
-		newState.maxValue = Math.max(newState.value, newState.currMaxValue, newState.maxToday, this.props.controller.gaugeGlobals.solarGaugeScaleMax);
+		newState.maxValue = Math.max(newState.value, newState.currMaxValue, newState.maxToday, this.props.controller.gaugeConfig.solarGaugeScaleMax);
 		newState.maxValue = GaugeUtils.nextHighest(newState.maxValue, 100);
 
 
-		let sunshineThresholdPct = this.props.controller.gaugeGlobals.sunshineThresholdPct;
-		let sunshineThreshold = this.props.controller.gaugeGlobals.sunshineThreshold;
-
-		if(CurrentSolarMax!== 'N/A'){
+		let { sunshineThresholdPct, sunshineThreshold } = this.props.controller.gaugeConfig;
+		if(CurrentSolarMax !== 'N/A'){
 			newState.area=[
 				// Sunshine threshold
 				steelseries.Section(

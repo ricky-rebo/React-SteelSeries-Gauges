@@ -3,7 +3,7 @@ import GaugeUtils from '../utils/gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
 import DataUtils from '../utils/data-utils';
-import GaugesController from '../gauges-controller';
+import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
 
 //TODO docs
@@ -22,14 +22,14 @@ class WindSpeedGauge extends Component<Props, State> {
 	
 		this.state = {
 			value:  0.0001,
-			maxValue:  this.props.controller.gaugeGlobals.windScaleDefMaxKph,
+			maxValue:  this.props.controller.gaugeConfig.windScaleDefMaxKph,
 			area: [],
 			maxGustToday:0
 		}
 
 		this.params = {
 			...this.props.controller.commonParams,
-			size: Math.ceil(this.props.size * this.props.controller.config.gaugeScaling),
+			size: Math.ceil(this.props.size * this.props.controller.gaugeConfig.gaugeScaling),
 			maxValue: this.state.maxValue,
 			niceScale: false,
 			area: this.state.area,
@@ -39,8 +39,8 @@ class WindSpeedGauge extends Component<Props, State> {
 			thresholdVisible: false,
 		};
 
-		this.style = this.props.controller.config.showGaugeShadow
-			? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeGlobals.shadowColour)
+		this.style = this.props.controller.gaugeConfig.showGaugeShadow
+			? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
 			: {};
 
 		this.update = this.update.bind(this);
@@ -71,25 +71,25 @@ class WindSpeedGauge extends Component<Props, State> {
 			case 'kts':
 				newState.maxValue = Math.max(
 					GaugeUtils.nextHighest(newState.maxGustToday, 10),
-					this.props.controller.gaugeGlobals.windScaleDefMaxMph
+					this.props.controller.gaugeConfig.windScaleDefMaxMph
 				);
 				break;
 			case 'm/s':
 				newState.maxValue = Math.max(
 					GaugeUtils.nextHighest(newState.maxGustToday, 5),
-					this.props.controller.gaugeGlobals.windScaleDefMaxMs
+					this.props.controller.gaugeConfig.windScaleDefMaxMs
 				);
 				break;
 			default:
 				newState.maxValue = Math.max(
 					GaugeUtils.nextHighest(newState.maxGustToday, 20),
-					this.props.controller.gaugeGlobals.windScaleDefMaxKmh
+					this.props.controller.gaugeConfig.windScaleDefMaxKmh
 				);
 		}
 
 		newState.area=[
-			steelseries.Section(0, average, this.props.controller.gaugeGlobals.windAvgArea),
-			steelseries.Section(average, gust, this.props.controller.gaugeGlobals.minMaxArea)
+			steelseries.Section(0, average, this.props.controller.gaugeConfig.windAvgArea),
+			steelseries.Section(average, gust, this.props.controller.gaugeConfig.minMaxArea)
 		];
 
 		this.setState(newState);

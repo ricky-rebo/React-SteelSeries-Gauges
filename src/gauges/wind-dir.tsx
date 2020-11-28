@@ -3,7 +3,7 @@ import GaugeUtils from '../utils/gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
 import DataUtils from '../utils/data-utils';
-import GaugesController from '../gauges-controller';
+import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
 
 //TODO docs
@@ -30,19 +30,19 @@ class WindDirGauge extends Component<Props, State> {
 
 			this.params = {
 				...this.props.controller.commonParams,
-				size: Math.ceil(this.props.size * this.props.controller.config.gaugeScaling),
+				size: Math.ceil(this.props.size * this.props.controller.gaugeConfig.gaugeScaling),
 				lcdtitleStrings: [this.props.controller.lang.latest_web, this.props.controller.lang.tenminavg_web],
-				pointerTypeLatest: this.props.controller.gaugeGlobals.pointer, 
-				pointerTypeAverage:this.props.controller.gaugeGlobals.dirAvgPointer,
-				pointerColorAverage:this.props.controller.gaugeGlobals.dirAvgPointerColor,
+				pointerTypeLatest: this.props.controller.gaugeConfig.pointer, 
+				pointerTypeAverage:this.props.controller.gaugeConfig.dirAvgPointer,
+				pointerColorAverage:this.props.controller.gaugeConfig.dirAvgPointerColor,
 				degreeScale: true,
 				pointSymbols: this.props.controller.lang.compass,
 				roseVisible: false,
 				useColorLabels: false, 
 			};
 
-			this.style = this.props.controller.config.showGaugeShadow
-				? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeGlobals.shadowColour)
+			this.style = this.props.controller.gaugeConfig.showGaugeShadow
+				? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
 				: {};
 
 			this.update = this.update.bind(this);
@@ -70,7 +70,7 @@ class WindDirGauge extends Component<Props, State> {
 			newState.valueLatest = 0;
 		}
 
-		if(this.props.controller.config.showWindVariation) {
+		if(this.props.controller.gaugeConfig.showWindVariation) {
 			let windSpd = DataUtils.extractDecimal(wspeed);
 			let windGst = DataUtils.extractDecimal(wgust);
 			let avgKnots: number, gstKnots: number;
@@ -99,7 +99,7 @@ class WindDirGauge extends Component<Props, State> {
 			avgKnots = Math.round(avgKnots);
 			gstKnots = Math.round(gstKnots);
 
-			if(this.props.controller.config.showWindMetar) {
+			if(this.props.controller.gaugeConfig.showWindMetar) {
 				newState.VRB = ` - METAR: ${('0'+avgbearing).slice(-3)}${('0' + avgKnots).slice(-2)}G${('0' + gstKnots).slice(-2)}KT`;
 			}
 			else{
@@ -109,22 +109,22 @@ class WindDirGauge extends Component<Props, State> {
 			if(windSpd > 0) {
 				//FIXME code redundancy?
 				if(avgKnots < 3) { // Europe uses 3kts, USA 6kts as the threshold
-					if(this.props.controller.config.showRoseOnDirGauge) {
-						newState.section = [steelseries.Section(bearingFrom, bearingTo, this.props.controller.gaugeGlobals.windVariationSector)];
+					if(this.props.controller.gaugeConfig.showRoseOnDirGauge) {
+						newState.section = [steelseries.Section(bearingFrom, bearingTo, this.props.controller.gaugeConfig.windVariationSector)];
 					}
 					else {
-						newState.area = [steelseries.Section(bearingFrom, bearingTo, this.props.controller.gaugeGlobals.minMaxArea)];
+						newState.area = [steelseries.Section(bearingFrom, bearingTo, this.props.controller.gaugeConfig.minMaxArea)];
 					}
 				}
-				else if (this.props.controller.config.showRoseOnDirGauge) {
-					newState.section = [steelseries.Section(bearingFrom, bearingTo, this.props.controller.gaugeGlobals.windVariationSector)];
+				else if (this.props.controller.gaugeConfig.showRoseOnDirGauge) {
+					newState.section = [steelseries.Section(bearingFrom, bearingTo, this.props.controller.gaugeConfig.windVariationSector)];
 				}
 				else {
-					newState.area = [steelseries.Section(bearingFrom, bearingTo, this.props.controller.gaugeGlobals.minMaxArea)];
+					newState.area = [steelseries.Section(bearingFrom, bearingTo, this.props.controller.gaugeConfig.minMaxArea)];
 				}
 
 				let range = (bearingTo < bearingFrom ? (360 + bearingTo) : bearingTo) - (bearingFrom);
-				if(this.props.controller.config.showWindMetar) {
+				if(this.props.controller.gaugeConfig.showWindMetar) {
 					if((range>0 && range<60) || range === 0 && bearingFrom === newState.valueAverage)
 						newState.VRB += ' STDY';
 					else if(newState.avgKnots < 3) {
@@ -137,12 +137,12 @@ class WindDirGauge extends Component<Props, State> {
 			}
 			else {
 				// Zero wind speed, calm
-				if(this.props.controller.config.showWindMetar){
-					newState.VRB=' - METAR: 00000KT';
+				if(this.props.controller.gaugeConfig.showWindMetar){
+					newState.VRB = ' - METAR: 00000KT';
 				}
 				
 				newState.section = [];
-				if(!this.props.controller.config.showRoseOnDirGauge) {
+				if(!this.props.controller.gaugeConfig.showRoseOnDirGauge) {
 					newState.area = [];
 				}
 			}
@@ -151,9 +151,9 @@ class WindDirGauge extends Component<Props, State> {
 			newState.VRB = '';
 		}
 
-		if(this.props.controller.config.showRoseOnDirGauge && WindRoseData){
+		if(this.props.controller.gaugeConfig.showRoseOnDirGauge && WindRoseData){
 			let rosepoints = WindRoseData.length;
-			let roseSectionAngle=360/rosepoints;
+			let roseSectionAngle = 360/rosepoints;
 			let roseAreas = [];
 
 			//find total for all directions

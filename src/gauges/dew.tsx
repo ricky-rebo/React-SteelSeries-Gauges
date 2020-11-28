@@ -3,7 +3,7 @@ import GaugeUtils from '../utils/gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
 import DataUtils from '../utils/data-utils';
-import GaugesController from '../gauges-controller';
+import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
 
 //TODO docs
@@ -22,7 +22,7 @@ class DewGauge extends Component<Props, State> {
 
 		//TODO get selected radio from cookie, if null get from config
 		let sel: TempType = TempType.APP, title: string = '';
-		switch(props.controller.config.dewDisplayType) {
+		switch(props.controller.gaugeConfig.dewDisplayType) {
 			case 'dew':
 				sel = TempType.DEW;
 				title = props.controller.lang.dew_title;
@@ -44,12 +44,12 @@ class DewGauge extends Component<Props, State> {
 				title = props.controller.lang.humdx_title;
 		}
 
-		let startVal = this.props.controller.gaugeGlobals.tempScaleDefMinC + 0.0001;
+		let startVal = this.props.controller.gaugeConfig.tempScaleDefMinC + 0.0001;
 		this.state = {
 			sections: GaugeUtils.createTempSections(true),
 			areas: [],
-			minValue: this.props.controller.gaugeGlobals.tempScaleDefMinC,
-			maxValue: this.props.controller.gaugeGlobals.tempScaleDefMaxC,
+			minValue: this.props.controller.gaugeConfig.tempScaleDefMinC,
+			maxValue: this.props.controller.gaugeConfig.tempScaleDefMaxC,
 			displayUnit: this.props.controller.getDisplayUnits().temp,
 			value: startVal,
 			low: startVal,
@@ -67,7 +67,7 @@ class DewGauge extends Component<Props, State> {
 
 		this.params = {
 			...this.props.controller.commonParams,
-			size: Math.ceil(this.props.size * this.props.controller.config.gaugeScaling),
+			size: Math.ceil(this.props.size * this.props.controller.gaugeConfig.gaugeScaling),
 			section: this.state.sections,
 			area: this.state.areas,
 			minValue: this.state.minValue,
@@ -77,8 +77,8 @@ class DewGauge extends Component<Props, State> {
 			unitString: this.state.displayUnit
 		};
 
-		this.style = this.props.controller.config.showGaugeShadow
-			? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeGlobals.shadowColour)
+		this.style = this.props.controller.gaugeConfig.showGaugeShadow
+			? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
 			: {};
 
 		this.update = this.update.bind(this);
@@ -140,24 +140,24 @@ class DewGauge extends Component<Props, State> {
 		}
 
 		newState.minValue = data.tempunit[1] === 'C'
-			? this.props.controller.gaugeGlobals.tempScaleDefMinC
-			: this.props.controller.gaugeGlobals.tempScaleDefMinF;
+			? this.props.controller.gaugeConfig.tempScaleDefMinC
+			: this.props.controller.gaugeConfig.tempScaleDefMinF;
 		newState.maxValue = data.tempunit[1] === 'C'
-			? this.props.controller.gaugeGlobals.tempScaleDefMaxC
-			: this.props.controller.gaugeGlobals.tempScaleDefMaxF;
+			? this.props.controller.gaugeConfig.tempScaleDefMaxC
+			: this.props.controller.gaugeConfig.tempScaleDefMaxF;
 		
 		switch (newState.selected) {
 			case TempType.DEW: // dew point
 				newState.low = DataUtils.extractDecimal(data.dewpointTL);
 				newState.high = DataUtils.extractDecimal(data.dewpointTH);
 				newState.value = DataUtils.extractDecimal(data.dew);
-				newState.areas = [steelseries.Section(newState.low, newState.high, this.props.controller.gaugeGlobals.minMaxArea)];
+				newState.areas = [steelseries.Section(newState.low, newState.high, this.props.controller.gaugeConfig.minMaxArea)];
 				break;
 			case TempType.APP: // apparent temperature
 				newState.low = DataUtils.extractDecimal(data.apptempTL);
 				newState.high = DataUtils.extractDecimal(data.apptempTH);
 				newState.value = DataUtils.extractDecimal(data.apptemp);
-				newState.areas = [steelseries.Section(newState.low, newState.high, this.props.controller.gaugeGlobals.minMaxArea)];
+				newState.areas = [steelseries.Section(newState.low, newState.high, this.props.controller.gaugeConfig.minMaxArea)];
 				break;
 			case TempType.WND: // wind chill
 				newState.low = DataUtils.extractDecimal(data.wchillTL);

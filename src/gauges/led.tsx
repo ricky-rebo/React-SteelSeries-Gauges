@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import GaugesController from '../gauges-controller';
+import GaugesController from '../controller/gauges_controller';
 // @ts-ignore
 import steelseries from '../libs/steelseries';
 
@@ -29,8 +29,9 @@ class LedGauge extends Component<Props, State> {
 			size    : props.size ? props.size : 25
 		};
 
-		this.update = this.update.bind(this);
-		props.controller.subscribe(LedGauge.NAME, this.update);
+		this.dataUpdate = this.dataUpdate.bind(this);
+		this.statusUpdate = this.statusUpdate.bind(this);
+		props.controller.subscribe(LedGauge.NAME, this.dataUpdate, null, this.statusUpdate);
 	}
 
 	componentDidMount() {
@@ -39,7 +40,12 @@ class LedGauge extends Component<Props, State> {
 		}
 	}
 
-	async update({ ledTitle, ledColor, ledBlink, ledState }: any) {
+	async dataUpdate({ ledTitle }: any) {
+		if(ledTitle !== undefined)
+			this.setState({ title: ledTitle });
+	}
+
+	async statusUpdate({ ledTitle, ledColor, ledBlink, ledState }: any) {
 		let newState: any = {};
 
 		if(ledTitle !== undefined)
@@ -54,7 +60,8 @@ class LedGauge extends Component<Props, State> {
 		if(ledState !== undefined)
 			newState.isOn = ledState;
 		
-		this.setState(newState);
+		if(newState !== {})
+			this.setState(newState);
 	}
 
 	componentDidUpdate(_prevProps: Props, prevState: State) {

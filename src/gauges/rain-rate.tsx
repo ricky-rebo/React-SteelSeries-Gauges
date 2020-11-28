@@ -5,7 +5,7 @@ import steelseries from '../libs/steelseries.js';
 
 import GaugeUtils from '../utils/gauge-utils';
 import DataUtils from '../utils/data-utils';
-import GaugesController from '../gauges-controller';
+import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
 
 //TODO docs
@@ -24,7 +24,7 @@ class RainRateGauge extends Component<Props, State> {
 
 				this.state = {
 					maxMeasured: 0,
-					maxValue: props.controller.gaugeGlobals.rainRateScaleDefMaxmm,
+					maxValue: props.controller.gaugeConfig.rainRateScaleDefMaxmm,
 					value: 0.0001,
 					scaleDecimals: 1
 					
@@ -34,7 +34,7 @@ class RainRateGauge extends Component<Props, State> {
 
 				this.params = {
 					...this.props.controller.commonParams,
-					size: Math.ceil(this.props.size * this.props.controller.config.gaugeScaling),
+					size: Math.ceil(this.props.size * this.props.controller.gaugeConfig.gaugeScaling),
 					section: GaugeUtils.createRainRateSections(true),
 					maxValue: this.state.maxValue,
 					thresholdVisible: false,
@@ -42,13 +42,13 @@ class RainRateGauge extends Component<Props, State> {
 					titleString: props.controller.lang.rrate_title,
 					unitString: props.controller.getDisplayUnits().rain+'/h',
 					lcdDecimals: 1,
-					labelNumberFormat: props.controller.gaugeGlobals.labelFormat,
+					labelNumberFormat: props.controller.gaugeConfig.labelFormat,
 					fractionalScaleDecimals: this.state.scaleDecimals,
 					niceScale: false,
 				};
 
-				this.style = this.props.controller.config.showGaugeShadow
-					? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeGlobals.shadowColour)
+				this.style = this.props.controller.gaugeConfig.showGaugeShadow
+					? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
 					: {};
 
 				this.update = this.update.bind(this);

@@ -5,7 +5,7 @@ import steelseries from '../libs/steelseries.js';
 
 import GaugeUtils from '../utils/gauge-utils';
 import DataUtils from '../utils/data-utils';
-import GaugesController from '../gauges-controller';
+import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
 
 //TODO docs
@@ -23,7 +23,7 @@ class RainGauge extends Component<Props, State> {
 			this.canvasRef = React.createRef();
 
 			this.state = {
-					maxValue: this.props.controller.gaugeGlobals.rainScaleDefMaxmm,
+					maxValue: this.props.controller.gaugeConfig.rainScaleDefMaxmm,
 					value: 0.0001,
 					title: props.controller.lang.rain_title,
 					scaleDecimals: 1,
@@ -31,11 +31,11 @@ class RainGauge extends Component<Props, State> {
 					//popUpTxt: '',
 					//graph: '',
 			}
-			let { rainUseGradientColours, rainUseSectionColour } = props.controller.gaugeGlobals;
+			let { rainUseGradientColours, rainUseSectionColour } = props.controller.gaugeConfig;
 
 			this.params = {
 				...this.props.controller.commonParams,
-				size: Math.ceil(this.props.size * this.props.controller.config.gaugeScaling),
+				size: Math.ceil(this.props.size * this.props.controller.gaugeConfig.gaugeScaling),
 				maxValue: this.state.maxValue,
 				thresholdVisible: false,
 				titleString: this.state.title,
@@ -45,13 +45,13 @@ class RainGauge extends Component<Props, State> {
 				valueGradient: rainUseGradientColours ? GaugeUtils.createRainfallGradient(true) : null,
 				useSectionColors: rainUseSectionColour,
 				section: rainUseSectionColour ? GaugeUtils.createRainfallSections(true) : [],
-				labelNumberFormat: props.controller.gaugeGlobals.labelFormat,
+				labelNumberFormat: props.controller.gaugeConfig.labelFormat,
 				fractionalScaleDecimals: this.state.scaleDecimals,
 				niceScale: false
 			};
 
-			this.style = this.props.controller.config.showGaugeShadow
-				? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeGlobals.shadowColour)
+			this.style = this.props.controller.gaugeConfig.showGaugeShadow
+				? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
 				: {};
 
 			this.update = this.update.bind(this);
@@ -67,25 +67,25 @@ class RainGauge extends Component<Props, State> {
 	}
 
 	async update({ rfall, rainunit }: DataParamDef) {
-			let newState: any = {};
+		let newState: any = {};
 
-			newState.value = DataUtils.extractDecimal(rfall);
-			if (rainunit === 'mm') { // 10, 20, 30...
-				newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value, 10), this.props.controller.gaugeGlobals.rainScaleDefMaxmm);
+		newState.value = DataUtils.extractDecimal(rfall);
+		if (rainunit === 'mm') { // 10, 20, 30...
+			newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value, 10), this.props.controller.gaugeConfig.rainScaleDefMaxmm);
+		}
+		else {
+			// inches 0.5, 1.0, 2.0, 3.0 ... 10.0, 12.0, 14.0
+			if (newState.value <= 1) {
+				newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value, 0.5), this.props.controller.gaugeConfig.rainScaleDefMaxIn);
+			} else if (newState.value <= 6) {
+				newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value, 1), this.props.controller.gaugeConfig.rainScaleDefMaxIn);
+			} else {
+				newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value, 2), this.props.controller.gaugeConfig.rainScaleDefMaxIn);
 			}
-			else {
-				// inches 0.5, 1.0, 2.0, 3.0 ... 10.0, 12.0, 14.0
-				if (newState.value <= 1) {
-					newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value, 0.5), this.props.controller.gaugeGlobals.rainScaleDefMaxIn);
-				} else if (newState.value <= 6) {
-					newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value, 1), this.props.controller.gaugeGlobals.rainScaleDefMaxIn);
-				} else {
-					newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value, 2), this.props.controller.gaugeGlobals.rainScaleDefMaxIn);
-				}
-				newState.scaleDecimals = newState.maxValue < 1 ? 2 : 1;
+			newState.scaleDecimals = newState.maxValue < 1 ? 2 : 1;
 		}
 
-			this.setState(newState);
+		this.setState(newState);
 	}
 
 	componentDidUpdate() {
