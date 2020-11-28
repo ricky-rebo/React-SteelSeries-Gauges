@@ -174,33 +174,43 @@ export default class GaugesController {
 		let somethingChanged = false;
 
 		if(tempUnit && (tempUnit === UNITS.Temp.C || tempUnit === UNITS.Temp.F)) {
-			units.temp = tempUnit;
-			DataUtils.convTempData(this.data);
-			somethingChanged = true;
+			if(tempUnit !== units.temp) {
+				units.temp = tempUnit;
+				DataUtils.convTempData(this.data);
+				somethingChanged = true;
+			}
 		}
 	
 		if(rainUnit && (rainUnit === UNITS.Rain.MM || rainUnit === UNITS.Rain.IN)) {
-			units.rain = rainUnit;
-			DataUtils.convRainData(this.data);
-			somethingChanged = true;
+			if(rainUnit !== units.rain) {
+				units.rain = rainUnit;
+				DataUtils.convRainData(this.data);
+				somethingChanged = true;
+			}
 		}
 
 		if(pressUnit && (pressUnit === UNITS.Press.HPA || pressUnit === UNITS.Press.INHG || pressUnit === UNITS.Press.MB || pressUnit === UNITS.Press.KPA)) {
-			units.press = pressUnit;
-			DataUtils.convBaroData(this.data, pressUnit);
-			somethingChanged = true;
+			if(pressUnit !== units.press) {
+				units.press = pressUnit;
+				DataUtils.convBaroData(this.data, pressUnit);
+				somethingChanged = true;
+			}
 		}
 
 		if(windUnit && (windUnit === UNITS.Wind.KM_H || windUnit === UNITS.Wind.M_S || windUnit === UNITS.Wind.MPH || windUnit === UNITS.Wind.Knots)) {
-			units.wind = windUnit;
-			units.windrun = DataUtils.getWindrunUnits(windUnit);
-			DataUtils.convWindData(this.data, windUnit);
+			if(windUnit !== units.wind) {
+				units.wind = windUnit;
+				units.windrun = DataUtils.getWindrunUnits(windUnit);
+				DataUtils.convWindData(this.data, windUnit);
+			}
 		}
 
 		if(cloudUnit && (cloudUnit === UNITS.Cloud.M || cloudUnit === UNITS.Cloud.FT)) {
-			units.cloud = cloudUnit;
-			DataUtils.convCloudBaseData(this.data);
-			somethingChanged = true;
+			if(cloudUnit !== units.cloud) {
+				units.cloud = cloudUnit;
+				DataUtils.convCloudBaseData(this.data);
+				somethingChanged = true;
+			}
 		}
 		
 		if(somethingChanged) {
@@ -344,31 +354,31 @@ export default class GaugesController {
 				rawdata.statusTimerStart = true;
 				this.firstRun = false;
 			}
-			else {
-				// Temperature data conversion for display required?
-				if (rawdata.tempunit !== this.displayUnits.temp) {
-					DataUtils.convTempData(rawdata); // temp needs converting
-				}
+			
+			// Temperature data conversion for display required?
+			if (rawdata.tempunit !== this.displayUnits.temp) {
+				DataUtils.convTempData(rawdata); // temp needs converting
+			}
 
-				// Rain data conversion for display required?
-				if (rawdata.rainunit !== this.displayUnits.rain) {
-					DataUtils.convRainData(rawdata); // rain needs converting
-				}
+			// Rain data conversion for display required?
+			if (rawdata.rainunit !== this.displayUnits.rain) {
+				DataUtils.convRainData(rawdata); // rain needs converting
+			}
 
-				// Wind data conversion for display required?
-				if (rawdata.windunit !== this.displayUnits.wind) {
-					DataUtils.convWindData(rawdata, this.displayUnits.wind); // wind needs converting
-				}
+			// Wind data conversion for display required?
+			if (rawdata.windunit !== this.displayUnits.wind) {
+				DataUtils.convWindData(rawdata, this.displayUnits.wind); // wind needs converting
+			}
 
-				// Pressure data conversion for display required?
-				if (rawdata.pressunit !== this.displayUnits.press) {
-					DataUtils.convBaroData(rawdata, this.displayUnits.press);
-				}
+			// Pressure data conversion for display required?
+			if (rawdata.pressunit !== this.displayUnits.press) {
+				DataUtils.convBaroData(rawdata, this.displayUnits.press);
+			}
 
-				if (rawdata.cloudbaseunit !== this.displayUnits.cloud) {
-					// Cloud height needs converting
-					DataUtils.convCloudBaseData(rawdata);
-				}
+			if (rawdata.cloudbaseunit !== this.displayUnits.cloud) {
+				// Cloud height needs converting
+				DataUtils.convCloudBaseData(rawdata);
+				
 			}
 
 			rawdata.statusTimerReset = this.controllerConfig.realtimeInterval;

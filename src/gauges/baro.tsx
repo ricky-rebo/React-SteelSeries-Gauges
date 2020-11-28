@@ -141,7 +141,7 @@ class BaroGauge extends Component<Props, State> {
 			}
 		}
 
-		componentDidUpdate() {
+		componentDidUpdate(_prevProps: Props, prevState: State) {
 			if(this.gauge) {
 				if (this.state.minValue !== this.gauge.getMinValue() || this.state.maxValue !== this.gauge.getMaxValue()) {
 					this.gauge.setMinValue(this.state.minValue);
@@ -152,7 +152,8 @@ class BaroGauge extends Component<Props, State> {
 				if(this.params.trendVisible)
 					this.gauge.setTrend(this.state.trend);
 
-				this.gauge.setUnitString(this.state.displayUnit);
+				if(this.state.displayUnit !== prevState.displayUnit)
+					this.gauge.setUnitString(this.state.displayUnit);
 
 				this.gauge.setArea(this.state.areas);
 				this.gauge.setSection(this.state.sections);
@@ -174,6 +175,8 @@ class BaroGauge extends Component<Props, State> {
 					<div>
 						<button onClick={() => this.props.controller.changeUnits({ pressUnit: UNITS.Press.HPA})}>{UNITS.Press.HPA}</button>
 						<button onClick={() => this.props.controller.changeUnits({ pressUnit: UNITS.Press.KPA})}>{UNITS.Press.KPA}</button>
+						<button onClick={() => this.props.controller.changeUnits({ pressUnit: UNITS.Press.INHG})}>{UNITS.Press.INHG}</button>
+						<button onClick={() => this.props.controller.changeUnits({ pressUnit: UNITS.Press.MB})}>{UNITS.Press.MB}</button>
 					</div>
 					
 				</div>

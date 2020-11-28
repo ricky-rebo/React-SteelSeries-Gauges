@@ -254,9 +254,9 @@ class DataUtils {
    * @param data 
    */
   static convCloudBaseData = (data: any) => {
-    const convFunc = data.cloudbaseuni === 'm' ? DataUtils.ft2m : DataUtils.m2ft;
+    const convFunc = data.cloudbaseunit === 'm' ? DataUtils.m2ft : DataUtils.ft2m;
     data.cloudbasevalue = convFunc(data.cloudbasevalue);
-    data.cloudbaseunit = data.cloudbaseuni === 'm' ? 'ft' : 'm';
+    data.cloudbaseunit = data.cloudbaseunit === 'm' ? 'ft' : 'm';
   }
 
 

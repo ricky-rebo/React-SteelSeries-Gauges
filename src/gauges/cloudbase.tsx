@@ -50,8 +50,9 @@ class CloudBaseGauge extends Component<Props, State> {
 			: {};
 
 		this.update = this.update.bind(this);
+		this.unitUpdate = this.unitUpdate.bind(this);
 
-		this.props.controller.subscribe(CloudBaseGauge.NAME, this.update);
+		this.props.controller.subscribe(CloudBaseGauge.NAME, this.update, this.unitUpdate);
 	}
 
 	componentDidMount() {
@@ -65,12 +66,11 @@ class CloudBaseGauge extends Component<Props, State> {
 		let newState: any = {};
 
 		newState.value=DataUtils.extractInteger(cloudbasevalue);
-		
-		newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value, 2), this.props.controller.gaugeConfig.uvScaleDefMax);
 
 		if(cloudbaseunit === UNITS.Cloud.M) {
 			// adjust metre gauge in jumps of 1000 metres, don't downscale during the session
-			newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value,1000), this.props.controller.gaugeConfig.cloudScaleDefMaxm, newState.maxValue);
+			newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value, 1000), this.props.controller.gaugeConfig.cloudScaleDefMaxm);
+			
 			if(newState.value <= 1000 && this.props.controller.controllerConfig.roundCloudbaseVal) {
 				// and round the value to the nearest  10 m
 				newState.value = Math.round(newState.value / 10) * 10;
@@ -81,7 +81,8 @@ class CloudBaseGauge extends Component<Props, State> {
 			}
 		}
 		else {
-			newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value,2000), this.props.controller.gaugeConfig.cloudScaleDefMaxft, newState.maxValue);
+			newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value, 2000), this.props.controller.gaugeConfig.cloudScaleDefMaxft);
+			
 			if(newState.value <= 2000 && this.props.controller.controllerConfig.roundCloudbaseVal){
 				// and round the value to the nearest  50 ft
 				newState.value = Math.round(newState.value / 50) * 50;
@@ -92,21 +93,25 @@ class CloudBaseGauge extends Component<Props, State> {
 			}
 		}
 
-		if(this.gauge.getMaxValue() > newState.maxValue) {
-			newState.maxValue = this.gauge.getMaxValue();
-		}
-
 		this.setState(newState);
 	}
 
 	async unitUpdate({ cloud }: { cloud: string }) {
-		if(cloud !== this.state.displayUnit)
-			this.setState({ displayUnit: cloud });
+		let unitStr = cloud === UNITS.Cloud.M
+			? this.props.controller.lang.metres
+			: this.props.controller.lang.feet
+		if(unitStr !== this.state.displayUnit) {
+			this.setState({ displayUnit: unitStr });
+		}
 	}
 
-	componentDidUpdate() {
+	componentDidUpdate(_prevProps: Props, prevState: State) {
 		if(this.state.maxValue !== this.gauge.getMaxValue()) {
 			this.gauge.setMaxValue(this.state.maxValue);
+		}
+
+		if(this.state.displayUnit !== prevState.displayUnit) {
+			this.gauge.setUnitString(this.state.displayUnit);
 		}
 
 		//FIXME setValueAnimated() from steelseries lib not working!
