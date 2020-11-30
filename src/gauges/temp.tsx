@@ -108,6 +108,11 @@ class TempGauge extends Component<Props, State> {
 	_setState(data: LocalDataDef, sel?: string) {
 		let newState: any = {};
 
+		if(data.tempunit !== this.state.displayUnit) {
+			newState.displayUnit = data.tempunit,
+			newState.sections = GaugeUtils.createTempSections(data.tempunit === UNITS.Temp.C)
+		}
+
 		if(sel) {
 			newState.title = this.props.controller.lang.temp_title_out;
 			newState.selected = sel;
@@ -117,15 +122,10 @@ class TempGauge extends Component<Props, State> {
 			newState.selected = this.state.selected;
 		}
 
-		if(data.tempunit !== this.state.displayUnit) {
-			newState.displayUnit = data.tempunit;
-			newState.sections = GaugeUtils.createTempSections(data.tempunit === UNITS.Temp.C);
-		}
-
 		newState.minValue = data.tempunit === UNITS.Temp.C
 			? this.props.controller.gaugeConfig.tempScaleDefMinC
 			: this.props.controller.gaugeConfig.tempScaleDefMinF;
-		newState.maxValue = data.tempunit === UNITS.Temp.F
+		newState.maxValue = data.tempunit === UNITS.Temp.C
 			? this.props.controller.gaugeConfig.tempScaleDefMaxC
 			: this.props.controller.gaugeConfig.tempScaleDefMaxF;
 
@@ -195,7 +195,7 @@ class TempGauge extends Component<Props, State> {
 			this.gauge.setMinMeasuredValueVisible(this.state.maxMinVisible);
 		}
 
-		if(this.state.selected !== prevState.selected) {
+		if(this.state.displayUnit !== prevState.displayUnit) {
 			this.gauge.setUnitString(this.state.displayUnit);
 			this.gauge.setSection(this.state.sections);
 		}
@@ -226,8 +226,14 @@ class TempGauge extends Component<Props, State> {
 					style={this.style}
 				></canvas>
 			</div>
-			<button onClick={() => this.setInOutTemp('out')}>Out</button>
-			<button onClick={() => this.setInOutTemp('in')}>In</button>
+			<div>
+				<button onClick={() => this.setInOutTemp('out')}>Out</button>
+				<button onClick={() => this.setInOutTemp('in')}>In</button>
+			</div>
+			<div>
+				<button onClick={() => this.props.controller.changeUnits({ tempUnit: UNITS.Temp.C})}>{UNITS.Temp.C}</button>
+				<button onClick={() => this.props.controller.changeUnits({ tempUnit: UNITS.Temp.F})}>{UNITS.Temp.F}</button>
+			</div>
 		</div>
 	}
 }

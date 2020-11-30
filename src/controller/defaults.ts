@@ -1,7 +1,7 @@
 import { ControllerConfig, GaugeConfig, StatusType, WProgram } from "./data_types";
 // @ts-ignore
 import steelseries from '../libs/steelseries';
-import { DewTempType } from "../gauges/dew";
+import { TempType as DewTempType } from "../gauges/dew";
 
 export const CONTROLLER_CONFIG: ControllerConfig = {
   weatherProgram: WProgram.CUMULUS,

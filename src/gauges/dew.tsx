@@ -301,7 +301,7 @@ interface State {
 	//graph: string
 }
 
-enum TempType {
+export enum TempType {
 	APP = 'app',
 	DEW = 'dew',
 	WND = 'wnd',

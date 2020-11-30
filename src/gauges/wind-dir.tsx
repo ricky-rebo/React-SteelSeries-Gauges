@@ -34,7 +34,7 @@ class WindDirGauge extends Component<Props, State> {
 				lcdtitleStrings: [this.props.controller.lang.latest_web, this.props.controller.lang.tenminavg_web],
 				pointerTypeLatest: this.props.controller.gaugeConfig.pointer, 
 				pointerTypeAverage:this.props.controller.gaugeConfig.dirAvgPointer,
-				pointerColorAverage:this.props.controller.gaugeConfig.dirAvgPointerColor,
+				pointerColorAverage:this.props.controller.gaugeConfig.dirAvgPointerColour,
 				degreeScale: true,
 				pointSymbols: this.props.controller.lang.compass,
 				roseVisible: false,

@@ -179,12 +179,12 @@ export default class GaugesController {
 
 	changeUnits({ tempUnit, rainUnit, pressUnit, windUnit, cloudUnit }: CustUnits) {
 		//TODO remove
-		console.log("changeUnits() called")
+		//console.log("changeUnits() called")
 		let units: DisplayUnits = {...this.displayUnits};
 		let somethingChanged = false;
 
 		if(tempUnit && (tempUnit === UNITS.Temp.C || tempUnit === UNITS.Temp.F)) {
-			console.log("new temp unit: " + tempUnit)
+			//console.log("new temp unit: " + tempUnit)
 			if(tempUnit !== units.temp) {
 				units.temp = tempUnit;
 				DataUtils.convTempData(this.data);
@@ -213,6 +213,7 @@ export default class GaugesController {
 				units.wind = windUnit;
 				units.windrun = DataUtils.getWindrunUnits(windUnit);
 				DataUtils.convWindData(this.data, windUnit);
+				somethingChanged = true;
 			}
 		}
 

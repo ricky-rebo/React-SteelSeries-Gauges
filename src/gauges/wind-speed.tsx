@@ -5,6 +5,7 @@ import steelseries from '../libs/steelseries.js';
 import DataUtils from '../utils/data-utils';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
+import { UNITS } from '../controller/defaults';
 
 //TODO docs
 class WindSpeedGauge extends Component<Props, State> {
@@ -20,22 +21,32 @@ class WindSpeedGauge extends Component<Props, State> {
 
 		this.canvasRef = React.createRef();
 	
+		let { wind } = props.controller.getDisplayUnits();
+		let maxVal: number;
+		switch (wind) {
+			case UNITS.Wind.MPH: maxVal = props.controller.gaugeConfig.windScaleDefMaxMph; break;
+			case UNITS.Wind.Knots: maxVal = props.controller.gaugeConfig.windScaleDefMaxKts; break;
+			case UNITS.Wind.KM_H: maxVal = props.controller.gaugeConfig.windScaleDefMaxKmh; break;
+			case UNITS.Wind.M_S: 	maxVal = props.controller.gaugeConfig.windScaleDefMaxMs; break;
+			default: maxVal = 0.0001;
+		}
 		this.state = {
-			value:  0.0001,
-			maxValue:  this.props.controller.gaugeConfig.windScaleDefMaxKph,
+			value: 0.0001,
+			maxValue: maxVal,
 			area: [],
-			maxGustToday:0
+			maxGustToday: 0.0001,
+			displayUnit: wind
 		}
 
 		this.params = {
-			...this.props.controller.commonParams,
-			size: Math.ceil(this.props.size * this.props.controller.gaugeConfig.gaugeScaling),
+			...props.controller.commonParams,
+			size: Math.ceil(props.size * props.controller.gaugeConfig.gaugeScaling),
 			maxValue: this.state.maxValue,
 			niceScale: false,
 			area: this.state.area,
 			maxMeasuredValueVisible: true,
-			titleString: this.props.controller.lang.wind_title,
-			unitString: this.props.controller.getDisplayUnits().wind,
+			titleString: props.controller.lang.wind_title,
+			unitString: this.state.displayUnit,
 			thresholdVisible: false,
 		};
 
@@ -58,6 +69,10 @@ class WindSpeedGauge extends Component<Props, State> {
 	async update({ wlatest, wgustTM, wspeed, wgust, windunit }: DataParamDef) {
 		let newState: any = {};
 
+		if(windunit !== this.state.displayUnit) {
+			newState.displayUnit = windunit;
+		}
+
 		newState.value = DataUtils.extractDecimal(wlatest);
 		newState.maxGustToday = DataUtils.extractDecimal(wgustTM);
 
@@ -67,14 +82,14 @@ class WindSpeedGauge extends Component<Props, State> {
 		//let maxAvgToday = DataUtils.extractDecimal(data.windTM);
 
 		switch (windunit) {
-			case 'mph':
-			case 'kts':
+			case UNITS.Wind.MPH:
+			case UNITS.Wind.Knots:
 				newState.maxValue = Math.max(
 					GaugeUtils.nextHighest(newState.maxGustToday, 10),
 					this.props.controller.gaugeConfig.windScaleDefMaxMph
 				);
 				break;
-			case 'm/s':
+			case UNITS.Wind.M_S:
 				newState.maxValue = Math.max(
 					GaugeUtils.nextHighest(newState.maxGustToday, 5),
 					this.props.controller.gaugeConfig.windScaleDefMaxMs
@@ -95,7 +110,11 @@ class WindSpeedGauge extends Component<Props, State> {
 		this.setState(newState);
 	}
 
-	componentDidUpdate() {
+	componentDidUpdate(_prevProps: Props, prevState: State) {
+		if(this.state.displayUnit !== prevState.displayUnit) {
+			this.gauge.setUnitString(this.state.displayUnit);
+		}
+
 		if(this.gauge.getMaxValue() !== this.state.maxValue) {
 				this.gauge.setMaxValue(this.state.maxValue)
 		}
@@ -116,6 +135,12 @@ class WindSpeedGauge extends Component<Props, State> {
 					height={this.params.size}
 					style={this.style}
 				></canvas>
+				<div>
+					<button onClick={() => this.props.controller.changeUnits({ windUnit: UNITS.Wind.KM_H })}>{UNITS.Wind.KM_H}</button>
+					<button onClick={() => this.props.controller.changeUnits({ windUnit: UNITS.Wind.Knots })}>{UNITS.Wind.Knots}</button>
+					<button onClick={() => this.props.controller.changeUnits({ windUnit: UNITS.Wind.MPH })}>{UNITS.Wind.MPH}</button>
+					<button onClick={() => this.props.controller.changeUnits({ windUnit: UNITS.Wind.M_S })}>{UNITS.Wind.M_S}</button>
+				</div>
 			</div>
 		);
 	}
@@ -130,7 +155,8 @@ interface State {
 	value: number,
 	area: [],
 	maxValue: number,
-	maxGustToday:number,
+	maxGustToday: number,
+	displayUnit: string
 
 	//popUpTxt: string,
 	//graph: string

@@ -84,52 +84,52 @@ class BaroGauge extends Component<Props, State> {
 			}
 
 			newState.value = DataUtils.extractDecimal(press)
-			let recLow = DataUtils.extractDecimal(pressL),
-					recHigh = DataUtils.extractDecimal(pressH),
+			let low = DataUtils.extractDecimal(pressL),
+					high = DataUtils.extractDecimal(pressH),
 					todayLow = DataUtils.extractDecimal(pressTL),
 					todayHigh = DataUtils.extractDecimal(pressTH);
 
 			//let dps: number;
-			switch(press) {
+			switch(pressunit) {
 				case UNITS.Press.HPA:
 				case UNITS.Press.MB:
 					//  default min range 990-1030 - steps of 10 hPa
 					let { baroScaleDefMinhPa, baroScaleDefMaxhPa } = this.props.controller.gaugeConfig;
-					newState.minValue = Math.min(GaugeUtils.nextLowest(recLow - 2, 10), baroScaleDefMinhPa);
-					newState.maxValue = Math.max(GaugeUtils.nextHighest(recHigh + 2, 10), baroScaleDefMaxhPa);
+					newState.minValue = Math.min(GaugeUtils.nextLowest(low - 2, 10), baroScaleDefMinhPa);
+					newState.maxValue = Math.max(GaugeUtils.nextHighest(high + 2, 10), baroScaleDefMaxhPa);
 					//dps = 1; // 1 decimal place
 					break;
-				case UNITS.Press.INHG:
+				case UNITS.Press.KPA:
 					//  default min range 99-105 - steps of 1 kPa
 					let { baroScaleDefMinkPa, baroScaleDefMaxkPa } = this.props.controller.gaugeConfig;
-					newState.minValue = Math.min(GaugeUtils.nextLowest(recLow - 0.2, 1), baroScaleDefMinkPa);
-					newState.maxValue = Math.max(GaugeUtils.nextHighest(recHigh + 0.2, 1), baroScaleDefMaxkPa);
+					newState.minValue = Math.min(GaugeUtils.nextLowest(low - 0.2, 1), baroScaleDefMinkPa);
+					newState.maxValue = Math.max(GaugeUtils.nextHighest(high + 0.2, 1), baroScaleDefMaxkPa);
 					//dps = 2;
 					break;
-				case UNITS.Press.KPA:
+				case UNITS.Press.INHG:
 					// inHg: default min range 29.5-30.5 - steps of 0.5 inHg
 					let { baroScaleDefMininHg, baroScaleDefMaxinHg } = this.props.controller.gaugeConfig;
-					newState.minValue = Math.min(GaugeUtils.nextLowest(recLow - 0.1, 0.5), baroScaleDefMininHg);
-					newState.maxValue = Math.max(GaugeUtils.nextHighest(recHigh + 0.1, 0.5), baroScaleDefMaxinHg);
+					newState.minValue = Math.min(GaugeUtils.nextLowest(low - 0.1, 0.5), baroScaleDefMininHg);
+					newState.maxValue = Math.max(GaugeUtils.nextHighest(high + 0.1, 0.5), baroScaleDefMaxinHg);
 					//dps = 3;
 			}
 			/*let trendValRnd = trendVal.toFixed(dps),
 					todayLowRnd = todayLow.toFixed(dps),
 					todayHighRnd = todayHigh.toFixed(dps);*/
 			
-			if (recHigh === todayHigh && recLow === todayLow) {
+			if (high === todayHigh && low === todayLow) {
 				// VWS does not provide record hi/lo values
 				newState.sections = [];
 				newState.areas = [steelseries.Section(todayLow, todayHigh, this.props.controller.gaugeConfig.minMaxArea)];
 			}
 			else {
 				newState.sections = [
-						steelseries.Section(newState.minValue, recLow, 'rgba(255,0,0,0.5)'),
-						steelseries.Section(recHigh, newState.maxValue, 'rgba(255,0,0,0.5)')
+						steelseries.Section(newState.minValue, low, 'rgba(255,0,0,0.5)'),
+						steelseries.Section(high, newState.maxValue, 'rgba(255,0,0,0.5)')
 				];
 				newState.areas = [
-						steelseries.Section(newState.minValue, recLow, 'rgba(255,0,0,0.5)'),
-						steelseries.Section(recHigh, newState.maxValue, 'rgba(255,0,0,0.5)'),
+						steelseries.Section(newState.minValue, low, 'rgba(255,0,0,0.5)'),
+						steelseries.Section(high, newState.maxValue, 'rgba(255,0,0,0.5)'),
 						steelseries.Section(todayLow, todayHigh, this.props.controller.gaugeConfig.minMaxArea)
 				];
 			}

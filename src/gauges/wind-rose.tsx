@@ -7,6 +7,7 @@ import RGraph from '../libs/RGraph.rose.js';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
 import DataUtils from '../utils/data-utils';
+import { UNITS } from '../controller/defaults';
 
 function createCanvas(size: number) {
 	let canvas = document.createElement('canvas');
@@ -38,7 +39,6 @@ class WindRoseGauge extends Component<Props, State> {
 	showOdo: boolean;
 	odoParams: {
 		odoDigits: number,
-		title: string,
 
 		width: number,
 		height: number,
@@ -52,17 +52,19 @@ class WindRoseGauge extends Component<Props, State> {
 		this.canvasRef = React.createRef();
 		this.plotRef = React.createRef();
 
+		let { windrun } = props.controller.getDisplayUnits();
 		this.state = {
 			WindRoseData: [],
-			windrun: null
+			odoValue: 0,
+			odoUnit: props.controller.lang[windrun]
 		}
 
-		let tmpSize = Math.ceil(props.size * props.controller.gaugeConfig.gaugeScaling)
+		let size = Math.ceil(props.size * props.controller.gaugeConfig.gaugeScaling)
 		this.gaugeParams = {
-			size: tmpSize,
-			size2: tmpSize / 2,
-			plotSize: Math.floor(tmpSize * 0.68),
-			plotSize2: Math.floor(tmpSize * 0.68) / 2,
+			size: size,
+			size2: size / 2,
+			plotSize: Math.floor(size * 0.68),
+			plotSize2: Math.floor(size * 0.68) / 2,
 
 			compassStrings: props.controller.lang.compass,
 			titleString: props.controller.lang.windrose
@@ -73,11 +75,9 @@ class WindRoseGauge extends Component<Props, State> {
 
 		
 		this.showOdo = props.controller.gaugeConfig.showRoseGaugeOdo;
-		let digits = 5,
-				h = Math.ceil(this.gaugeParams.size * 0.08); // Sets the size of the odometer
+		let digits = 5,	h = Math.ceil(this.gaugeParams.size * 0.08); // Sets the size of the odometer
 		this.odoParams = {
 			odoDigits:  digits,
-			title:  props.controller.lang.km,
 			height: h,
 			width: Math.ceil(Math.floor(h * 0.68) * digits)  // 'Magic' number, do not alter
 		}
@@ -160,8 +160,17 @@ class WindRoseGauge extends Component<Props, State> {
 		}
 	}
 
-	async update({ WindRoseData, windrun }: DataParamDef) {
-		this.setState({ WindRoseData: WindRoseData, windrun: windrun });
+	async update({ WindRoseData, windrun, windunit }: DataParamDef) {
+		let newState: any = {
+			WindRoseData: WindRoseData,
+			odoValue: windrun
+		}
+
+		if(this.state.odoUnit !== DataUtils.getWindrunUnits(windunit)) {
+			newState.odoUnit = DataUtils.getWindrunUnits(windunit);
+		}
+
+		this.setState(newState);
 	}
 
 	componentDidUpdate() {
@@ -208,7 +217,7 @@ class WindRoseGauge extends Component<Props, State> {
 			if (this.showOdo) {
 				//FIXME TweenJS animation broken
 				//this.odoGauge.setValueAnimated(DataUtils.extractDecimal(this.state.windrun));
-				this.odoGauge.setValue(DataUtils.extractDecimal(this.state.windrun));
+				this.odoGauge.setValue(DataUtils.extractDecimal(this.state.odoValue));
 			}
 		}
 	}
@@ -231,6 +240,13 @@ class WindRoseGauge extends Component<Props, State> {
 							></canvas>
 						: ''
 				}
+				<div>
+					<button onClick={() => this.props.controller.changeUnits({ windUnit: UNITS.Wind.KM_H })}>{UNITS.Wind.KM_H}</button>
+					<button onClick={() => this.props.controller.changeUnits({ windUnit: UNITS.Wind.Knots })}>{UNITS.Wind.Knots}</button>
+					<button onClick={() => this.props.controller.changeUnits({ windUnit: UNITS.Wind.MPH })}>{UNITS.Wind.MPH}</button>
+					<button onClick={() => this.props.controller.changeUnits({ windUnit: UNITS.Wind.M_S })}>{UNITS.Wind.M_S}</button>
+				</div>
+
 				<div style={{ display: 'none' }}>
 					<canvas
 						ref={this.plotRef}
@@ -286,54 +302,30 @@ class WindRoseGauge extends Component<Props, State> {
 			ctx.strokeStyle = this.props.controller.gaugeConfig.background.labelColor.getRgbaColor();
 			ctx.fillStyle = this.props.controller.gaugeConfig.background.labelColor.getRgbaColor();
 			ctx.fillText(
-				this.odoParams.title,
+				this.state.odoUnit,
 				this.gaugeParams.plotSize2,
 				this.gaugeParams.plotSize * 0.75,
 				this.gaugeParams.plotSize * 0.5
 			);
 			ctx.restore();
 	}
-
-	// External functions -- REALLY NEEDED?
-	setTitle(newTitle: string) {
-			this.gaugeParams.titleString = newTitle;
-	}
-
-	setOdoTitle(newTitle: string) {
-			this.odoParams.title = newTitle;
-	}
-
-	setCompassStrings(newArray: string[]) {
-			this.gaugeParams.compassStrings = newArray;
-			//if (!cache.firstRun) {
-			// Redraw the background
-			steelseries.drawBackground(
-				this.buffers.ctxBackground,
-				this.props.controller.gaugeConfig.background,
-				this.gaugeParams.size2,
-				this.gaugeParams.size2,
-				this.gaugeParams.size,
-				this.gaugeParams.size
-			);
-			// Add the compass points
-			this._drawCompassPoints(this.buffers.ctxBackground, this.gaugeParams.size);
-			//}
-	}
 }
 
 interface Props {
-		controller: GaugesController,
-		size: number
+	controller: GaugesController,
+	size: number
 }
 
 interface State {
 	WindRoseData: any[],
-	windrun: any
+	odoValue: number,
+	odoUnit: string
 }
 
 type DataParamDef = {
 	WindRoseData: any[];
 	windrun: any;
+	windunit: string
 };
 
 export default WindRoseGauge;
