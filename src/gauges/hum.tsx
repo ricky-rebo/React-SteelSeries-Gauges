@@ -5,7 +5,9 @@ import steelseries from '../libs/steelseries.js';
 import DataUtils from '../utils/data-utils';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
+import Cookies, { Cookie } from 'universal-cookie/es6';
 
+const COOKIE_NAME = 'hum-display';
 
 //TODO docs
 class HumGauge extends Component<Props, State> {
@@ -15,21 +17,33 @@ class HumGauge extends Component<Props, State> {
 	gauge: any;
 	params: any;
 	style: any;
+	cookies: Cookie;
 
 	constructor(props: Props) {
 		super(props);
 
 		this.canvasRef = React.createRef();
+
+		let tempType = TempType.OUT;
+		if(props.controller.controllerConfig.useCookies && props.controller.gaugeConfig.showIndoorTempHum) {
+			this.cookies = new Cookies();
+			let sel = this.cookies.get(COOKIE_NAME);
+			if(sel) tempType = sel;
+			else {
+				//TODO set expire date
+				this.cookies.set(COOKIE_NAME, tempType, { path: '/' });
+			}
+		}
 		
 		this.state = {
-			areas: [],
 			title: this.props.controller.lang.hum_title_out,
-			value: 0.0001,
+			selected: tempType,
 
-			//popUpTxt: '',
-			//popUpGraph: '',
+			value: 0.0001,
+			areas: [],
 			
-			selected: 'out'
+			//popUpTxt: '',
+			//graph: '',
 		}
 
 		this.params = {
@@ -67,25 +81,33 @@ class HumGauge extends Component<Props, State> {
 		this._setState(mapLocalData(data));
 	}
 
-	setInOutHum(sel: string) {
-		if(this.state.data)
+	setInOutHum(sel: TempType) {
+		if(this.state.data) {
 			this._setState(this.state.data, sel);
+
+			if(this.props.controller.controllerConfig.useCookies && this.cookies)
+				this.cookies.set(COOKIE_NAME, sel);
+		}
 	}
 
-	_setState(data: LocalDataDef, sel?: string) {
+	_setState(data: LocalDataDef, sel?: TempType) {
 		let newState: any = {};
 
 		if(sel) {
 			newState.selected = sel
-			if(sel === 'out') newState.title = this.props.controller.lang.hum_title_out;
-			else 							newState.title = this.props.controller.lang.hum_title_in;
+			if(sel === TempType.OUT) {
+				newState.title = this.props.controller.lang.hum_title_out;
+			}
+			else {
+				newState.title = this.props.controller.lang.hum_title_in;
+			}
 		}
 		else {
 			newState.selected = this.state.selected;
 			newState.data = data;
 		}
 
-		if(newState.selected == 'out') {
+		if(newState.selected == TempType.OUT) {
 			newState.value = DataUtils.extractDecimal(data.hum);
 		
 			newState.areas = [
@@ -139,8 +161,8 @@ class HumGauge extends Component<Props, State> {
 						style={this.style}
 					></canvas>
 				</div>
-				<button onClick={() => this.setInOutHum('out')}>Out</button>
-				<button onClick={() => this.setInOutHum('in')}>In</button>
+				<button onClick={() => this.setInOutHum(TempType.OUT)}>Out</button>
+				<button onClick={() => this.setInOutHum(TempType.IN)}>In</button>
 			</div>
 		);
 	}
@@ -158,7 +180,7 @@ interface State {
 	title: string,
 	areas: any[],
 
-	selected: string,
+	selected: TempType,
 
 	//popUpTxt: string,
 	//graph: string
@@ -184,5 +206,7 @@ function mapLocalData(data: any) {
 	}
 	return locData;
 }
+
+enum TempType { OUT = 'out', IN = 'in' };
 
 export default HumGauge;

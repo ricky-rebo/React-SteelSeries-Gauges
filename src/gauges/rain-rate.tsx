@@ -7,6 +7,7 @@ import GaugeUtils from '../utils/gauge-utils';
 import DataUtils from '../utils/data-utils';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
+import { UNITS } from '../controller/defaults.js';
 
 //TODO docs
 class RainRateGauge extends Component<Props, State> {
@@ -22,11 +23,20 @@ class RainRateGauge extends Component<Props, State> {
 
 				this.canvasRef = React.createRef();
 
+				let { rain } = props.controller.getDisplayUnits();
+				let max = (rain === UNITS.Rain.MM)
+					? this.props.controller.gaugeConfig.rainRateScaleDefMaxmm
+					: 0.5;
 				this.state = {
-					maxMeasured: 0,
-					maxValue: props.controller.gaugeConfig.rainRateScaleDefMaxmm,
 					value: 0.0001,
-					scaleDecimals: 1
+					maxMeasured: 0,
+					maxValue: max,
+
+					displayUnit: rain + '/h',
+					sections: GaugeUtils.createRainRateSections(rain === UNITS.Rain.MM),
+					lcdDecimals: (rain === UNITS.Rain.MM) ? 1 : 2,
+					scaleDecimals: (rain === UNITS.Rain.MM) ? 0 : (props.controller.gaugeConfig.rainRateScaleDefMaxIn < 1 ? 2 : 1),
+					labelNumberFormat: (rain === UNITS.Rain.MM) ? props.controller.gaugeConfig.labelFormat : steelseries.LabelNumberFormat.FRACTIONAL
 					
 					//popUpTxt: '',
 					//graph: '',
@@ -35,14 +45,14 @@ class RainRateGauge extends Component<Props, State> {
 				this.params = {
 					...this.props.controller.commonParams,
 					size: Math.ceil(this.props.size * this.props.controller.gaugeConfig.gaugeScaling),
-					section: GaugeUtils.createRainRateSections(true),
+					section: this.state.sections,
 					maxValue: this.state.maxValue,
 					thresholdVisible: false,
 					maxMeasuredValueVisible: true,
 					titleString: props.controller.lang.rrate_title,
-					unitString: props.controller.getDisplayUnits().rain+'/h',
+					unitString: this.state.displayUnit,
 					lcdDecimals: 1,
-					labelNumberFormat: props.controller.gaugeConfig.labelFormat,
+					labelNumberFormat: this.state.labelNumberFormat,
 					fractionalScaleDecimals: this.state.scaleDecimals,
 					niceScale: false,
 				};
@@ -66,13 +76,25 @@ class RainRateGauge extends Component<Props, State> {
 		async update({ rrate, rrateTM, rainunit }: DataParamDef) {
 			let newState: any = {};
 
+			if(rainunit+'/h' !== this.state.displayUnit) {
+				newState.displayUnit = rainunit+'/h';
+				newState.sections = GaugeUtils.createRainRateSections(rainunit === UNITS.Rain.MM);
+				newState.lcdDecimals = (rainunit === UNITS.Rain.MM) ? 1 : 2;
+				newState.labelNumberFormat = (rainunit === UNITS.Rain.MM)
+					? this.props.controller.gaugeConfig.labelFormat
+					: steelseries.LabelNumberFormat.FRACTIONAL
+					
+			}
+
 			newState.value = DataUtils.extractDecimal(rrate);
 			newState.maxMeasured = DataUtils.extractDecimal(rrateTM);
 			let overallMax = Math.max(newState.maxMeasured, newState.value)
 
-			if (rainunit === 'mm') { // 10, 20, 30...
+			if (rainunit === UNITS.Rain.MM) { // 10, 20, 30...
 				newState.maxValue = GaugeUtils.nextHighest(overallMax, 10);
-			} else {
+				newState.scaleDecimals = 1;
+			}
+			else {
 				// inches 0.5, 1.0, 2.0, 3.0 ... 10, 20, 30...
 				if (overallMax <= 0.5) {
 					newState.maxValue = 0.5;
@@ -89,7 +111,14 @@ class RainRateGauge extends Component<Props, State> {
 			this.setState(newState);
 		}
 
-		componentDidUpdate() {
+		componentDidUpdate(_prevProps: Props, prevState: State) {
+			if(this.state.displayUnit !== prevState.displayUnit) {
+				this.gauge.setUnitString(this.state.displayUnit);
+				this.gauge.setSection(this.state.sections);
+				this.gauge.setLabelNumberFormat(this.state.labelNumberFormat);
+				this.gauge.setLcdDecimals(this.state.lcdDecimals);
+			}
+
 			if (this.state.maxValue !== this.gauge.getMaxValue()) {
 				this.gauge.setValue(0.0001);
 				this.gauge.setFractionalScaleDecimals(this.state.scaleDecimals);
@@ -114,6 +143,11 @@ class RainRateGauge extends Component<Props, State> {
 						height={this.params.size}
 						style={this.style}
 					></canvas>
+					<div>
+						<button onClick={() => this.props.controller.changeUnits({ rainUnit: UNITS.Rain.MM} )}>{UNITS.Rain.MM}</button>
+						<button onClick={() => this.props.controller.changeUnits({ rainUnit: UNITS.Rain.IN} )}>{UNITS.Rain.IN}</button>
+					</div>
+						
 				</div>
 			);
 		}
@@ -128,7 +162,12 @@ interface State {
 		value: number,
 		maxMeasured: number,
 		maxValue: number,
-		scaleDecimals: number
+
+		displayUnit: string,
+		sections: any,
+		lcdDecimals: number,
+		scaleDecimals: number,
+		labelNumberFormat: any
 
 		//popUpTxt?: string,
 		//graph?: string

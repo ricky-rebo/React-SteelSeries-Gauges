@@ -7,6 +7,7 @@ import GaugeUtils from '../utils/gauge-utils';
 import DataUtils from '../utils/data-utils';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
+import { UNITS } from '../controller/defaults.js';
 
 //TODO docs
 class RainGauge extends Component<Props, State> {
@@ -22,32 +23,47 @@ class RainGauge extends Component<Props, State> {
 
 			this.canvasRef = React.createRef();
 
+			let { rain } = props.controller.getDisplayUnits();
+			let { rainScaleDefMaxmm, rainScaleDefMaxIn, rainUseGradientColours, rainUseSectionColours } = props.controller.gaugeConfig;
 			this.state = {
-					maxValue: this.props.controller.gaugeConfig.rainScaleDefMaxmm,
+					maxValue: (rain === UNITS.Rain.MM) ? rainScaleDefMaxmm : rainScaleDefMaxIn,
 					value: 0.0001,
 					title: props.controller.lang.rain_title,
-					scaleDecimals: 1,
+
+					displayUnit: rain,
+					lcdDecimals: (rain === UNITS.Rain.MM) ? 1 : 2,
+					scaleDecimals: (rain === UNITS.Rain.MM) ? 1 : (rainScaleDefMaxIn < 1 ? 2 : 1),
+					labelNumberFormat: (rain === UNITS.Rain.MM)
+						? steelseries.LabelNumberFormat
+						: steelseries.LabelNumberFormat.FRACTIONAL,
+					sections: rainUseGradientColours
+						? GaugeUtils.createRainfallGradient(rain === UNITS.Rain.MM)
+						: null,
+					grandient: rainUseSectionColours
+						? GaugeUtils.createRainfallSections(rain === UNITS.Rain.MM)
+						: []
 					
 					//popUpTxt: '',
 					//graph: '',
 			}
-			let { rainUseGradientColours, rainUseSectionColour } = props.controller.gaugeConfig;
 
 			this.params = {
 				...this.props.controller.commonParams,
 				size: Math.ceil(this.props.size * this.props.controller.gaugeConfig.gaugeScaling),
-				maxValue: this.state.maxValue,
-				thresholdVisible: false,
 				titleString: this.state.title,
-				unitString: this.props.controller.getDisplayUnits().rain,
-				valueColor: steelseries.ColorDef.BLUE,
+				thresholdVisible: false,
 				useValueGradient: rainUseGradientColours,
-				valueGradient: rainUseGradientColours ? GaugeUtils.createRainfallGradient(true) : null,
-				useSectionColors: rainUseSectionColour,
-				section: rainUseSectionColour ? GaugeUtils.createRainfallSections(true) : [],
-				labelNumberFormat: props.controller.gaugeConfig.labelFormat,
+				useSectionColors: rainUseSectionColours,
+				niceScale: false,
+
+				maxValue: this.state.maxValue,
+				unitString: this.state.displayUnit,
+				lcdDecimals: this.state.lcdDecimals,
+				valueColor: steelseries.ColorDef.BLUE,
+				valueGradient: this.state.grandient,
+				section: this.state.sections,
+				labelNumberFormat: this.state.labelNumberFormat,
 				fractionalScaleDecimals: this.state.scaleDecimals,
-				niceScale: false
 			};
 
 			this.style = this.props.controller.gaugeConfig.showGaugeShadow
@@ -69,8 +85,24 @@ class RainGauge extends Component<Props, State> {
 	async update({ rfall, rainunit }: DataParamDef) {
 		let newState: any = {};
 
+		if(rainunit !== this.state.displayUnit) {
+			let { rainScaleDefMaxIn, rainUseGradientColours, rainUseSectionColours } = this.props.controller.gaugeConfig;
+			newState.displayUnit = rainunit;
+			newState.lcdDecimals = (rainunit === UNITS.Rain.MM) ? 1 : 2,
+			newState.scaleDecimals = (rainunit === UNITS.Rain.MM) ? 1 : (rainScaleDefMaxIn < 1 ? 2 : 1),
+			newState.labelNumberFormat = (rainunit === UNITS.Rain.MM)
+				? steelseries.LabelNumberFormat
+				: steelseries.LabelNumberFormat.FRACTIONAL,
+			newState.sections = rainUseGradientColours
+				? GaugeUtils.createRainfallGradient(rainunit === UNITS.Rain.MM)
+				: null,
+			newState.grandient = rainUseSectionColours
+				? GaugeUtils.createRainfallSections(rainunit === UNITS.Rain.MM)
+				: []
+		}
+
 		newState.value = DataUtils.extractDecimal(rfall);
-		if (rainunit === 'mm') { // 10, 20, 30...
+		if (rainunit === UNITS.Rain.MM) { // 10, 20, 30...
 			newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value, 10), this.props.controller.gaugeConfig.rainScaleDefMaxmm);
 		}
 		else {
@@ -88,12 +120,19 @@ class RainGauge extends Component<Props, State> {
 		this.setState(newState);
 	}
 
-	componentDidUpdate() {
+	componentDidUpdate(_prevProps: Props, prevState: State) {
+		if(this.state.displayUnit !== prevState.displayUnit) {
+			this.gauge.setUnitString(this.state.displayUnit);
+			this.gauge.setSection(this.state.sections);
+			this.gauge.setGradient(this.state.grandient);
+			this.gauge.setFractionalScaleDecimals(this.state.scaleDecimals);
+			this.gauge.setLabelNumberFormat(this.state.labelNumberFormat);
+			this.gauge.setLcdDecimals(this.state.lcdDecimals);
+		}
+
 		if (this.state.maxValue !== this.gauge.getMaxValue()) {
 			// Gauge scale is too low, increase it.
-			// First set the pointer back to zero so we get a nice animation
 			this.gauge.setValue(0);
-			// and redraw the gauge with the new scale
 			this.gauge.setFractionalScaleDecimals(this.state.scaleDecimals);
 			this.gauge.setMaxValue(this.state.maxValue);
 		}
@@ -113,6 +152,10 @@ class RainGauge extends Component<Props, State> {
 					height={this.params.size}
 					style={this.style}
 				></canvas>
+				<div>
+					<button onClick={() => this.props.controller.changeUnits({ rainUnit: UNITS.Rain.MM})}>{UNITS.Rain.MM}</button>
+					<button onClick={() => this.props.controller.changeUnits({ rainUnit: UNITS.Rain.IN})}>{UNITS.Rain.IN}</button>
+				</div>
 			</div>
 		);
 	}
@@ -124,10 +167,17 @@ interface Props {
 }
 
 interface State {
+		title: string,
+
 		value: number,
 		maxValue: number,
-		title: string,
-		scaleDecimals: number
+
+		displayUnit: string,
+		lcdDecimals: number,
+		scaleDecimals: number,
+		labelNumberFormat: steelseries.LabelNumberFormat,
+		sections: any,
+		grandient: any
 
 		//popUpTxt?: string,
 		//graph?: string

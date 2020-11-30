@@ -1,3 +1,4 @@
+import { DewTempType } from '../gauges/dew.js';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
 
@@ -50,7 +51,7 @@ export interface GaugeConfig {
 
 	tempTrendVisible      : boolean,
 	showIndoorTempHum: boolean,
-	dewDisplayType: string,
+	dewDisplayType: DewTempType,
 
 	pressureTrendVisible  : boolean,
 	rainUseSectionColours : boolean,
@@ -202,7 +203,7 @@ export interface CustomConfig {
 	pressureTrendVisible?   : boolean,
 
 	/** Initial 'scale' to display on the Dew Gauge (default: Type.DewDisplay.APPARENT) */
-	dewDisplayType?: string
+	dewDisplayType?: DewTempType
 	/** Show variation in wind direction over the last 10 minutes on the direction gauge (dfault: true) */
 	showWindVariation?: boolean,
 	/** Show the METAR substring for wind speed/direction over the last 10 minutes on the direction gauge popup (dafeult: false) */

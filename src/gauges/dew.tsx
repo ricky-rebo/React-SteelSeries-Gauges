@@ -5,6 +5,10 @@ import steelseries from '../libs/steelseries.js';
 import DataUtils from '../utils/data-utils';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
+import Cookies from 'universal-cookie/es6';
+import { UNITS } from '../controller/defaults';
+
+const COOKIE_NAME = 'dew-display';
 
 //TODO docs
 class DewGauge extends Component<Props, State> {
@@ -14,55 +18,62 @@ class DewGauge extends Component<Props, State> {
 	gauge: any;
 	params: any;
 	style: any;
+	cookies: Cookies;
 
 	constructor(props: Props) {
 		super(props);
 
 		this.canvasRef = React.createRef();
 
-		//TODO get selected radio from cookie, if null get from config
-		let sel: TempType = TempType.APP, title: string = '';
-		switch(props.controller.gaugeConfig.dewDisplayType) {
-			case 'dew':
-				sel = TempType.DEW;
-				title = props.controller.lang.dew_title;
-				break;
-			case 'app':
-				sel = TempType.APP;
-				title = props.controller.lang.apptemp_title;
-				break;
-			case 'wnd':
-				sel = TempType.WND;
-				title = props.controller.lang.chill_title;
-				break;
-			case 'hea':
-				sel = TempType.HEA;
-				title = props.controller.lang.heat_title;
-				break;
-			case 'hum':
-				sel = TempType.HUM;
-				title = props.controller.lang.humdx_title;
+		let sel: TempType;
+		if(props.controller.controllerConfig.useCookies) {
+			this.cookies = new Cookies();
+
+			sel = this.cookies.get(COOKIE_NAME);
+
+			if(!sel) {
+				sel = props.controller.gaugeConfig.dewDisplayType;
+				this.cookies.set(COOKIE_NAME, sel);
+			}
+		}
+		else {
+			sel = props.controller.gaugeConfig.dewDisplayType;
 		}
 
+		let title: string = '';
+		switch(sel) {
+			case TempType.DEW: title = props.controller.lang.dew_title; break;
+			case TempType.APP: title = props.controller.lang.apptemp_title; break;
+			case TempType.WND: title = props.controller.lang.chill_title; break;
+			case TempType.HEA: title = props.controller.lang.heat_title; break;
+			case TempType.HUM: title = props.controller.lang.humdx_title;
+		}
+
+		//TODO get temptype from cookies, if config.useCookies = true
+
 		let startVal = this.props.controller.gaugeConfig.tempScaleDefMinC + 0.0001;
+		let { temp } = this.props.controller.getDisplayUnits();
 		this.state = {
-			sections: GaugeUtils.createTempSections(true),
-			areas: [],
-			minValue: this.props.controller.gaugeConfig.tempScaleDefMinC,
-			maxValue: this.props.controller.gaugeConfig.tempScaleDefMaxC,
-			displayUnit: this.props.controller.getDisplayUnits().temp,
+			title: title,
+			displayUnit: temp,
+			selected: sel,
+
 			value: startVal,
 			low: startVal,
 			high: startVal,
-			minMeasuredVisible: false,
-			maxMeasuredVisible: false,
-			title: title,
+			minValue: (temp === UNITS.Temp.C)
+				? this.props.controller.gaugeConfig.tempScaleDefMinC
+				: this.props.controller.gaugeConfig.tempScaleDefMinF,
+			maxValue: (temp === UNITS.Temp.C)
+				? this.props.controller.gaugeConfig.tempScaleDefMaxC
+				: this.props.controller.gaugeConfig.tempScaleDefMaxF,
+			minMeasuredVisible: (sel === TempType.WND),
+			maxMeasuredVisible: (sel === TempType.HEA),
+			sections: GaugeUtils.createTempSections(temp === UNITS.Temp.C),
+			areas: [],
 
-			trend: null,
 			//popUpTxt: '',
 			//graph: '',
-			
-			selected: sel
 		}
 
 		this.params = {
@@ -98,25 +109,32 @@ class DewGauge extends Component<Props, State> {
 	}
 
 	showTemp(sel: TempType) {
-		if(this.state.data)
+		if(this.state.data) {
 			this._setState(this.state.data, sel);
+
+			if(this.props.controller.controllerConfig.useCookies && this.cookies)
+				this.cookies.set(COOKIE_NAME, sel);
+		}
 	}
 
 	_setState(data: LocalDataDef, sel?: TempType) {
 		let newState: any = {};
+
+		if(data.tempunit !== this.state.displayUnit) {
+			newState.displayUnit = data.tempunit,
+			newState.sections = GaugeUtils.createTempSections(data.tempunit === UNITS.Temp.C)
+		}
 
 		if(sel) {
 			newState.selected = sel;
 			switch (sel) {
 				case TempType.DEW:
 					newState.title = this.props.controller.lang.dew_title;
-					newState.minMeasuredVisible = false;
-					newState.maxMeasuredVisible = false;
+					newState.minMeasuredVisible = newState.maxMeasuredVisible = false;
 					break;
 				case TempType.APP:
 					newState.title = this.props.controller.lang.apptemp_title;
-					newState.minMeasuredVisible = false;
-					newState.maxMeasuredVisible = false;
+					newState.minMeasuredVisible = newState.maxMeasuredVisible = false;
 				break;
 				case TempType.WND:
 					newState.title = this.props.controller.lang.chill_title;
@@ -130,8 +148,7 @@ class DewGauge extends Component<Props, State> {
 				break;
 				case TempType.HUM:
 					newState.title = this.props.controller.lang.humdx_title;
-					newState.minMeasuredVisible = false;
-					newState.maxMeasuredVisible = false;
+					newState.minMeasuredVisible = newState.maxMeasuredVisible = false;
 			}
 		}
 		else {
@@ -139,10 +156,10 @@ class DewGauge extends Component<Props, State> {
 			newState.data = data;
 		}
 
-		newState.minValue = data.tempunit[1] === 'C'
+		newState.minValue = data.tempunit === UNITS.Temp.C
 			? this.props.controller.gaugeConfig.tempScaleDefMinC
 			: this.props.controller.gaugeConfig.tempScaleDefMinF;
-		newState.maxValue = data.tempunit[1] === 'C'
+		newState.maxValue = data.tempunit === UNITS.Temp.C
 			? this.props.controller.gaugeConfig.tempScaleDefMaxC
 			: this.props.controller.gaugeConfig.tempScaleDefMaxF;
 		
@@ -206,6 +223,11 @@ class DewGauge extends Component<Props, State> {
 			//TODO change shown graph
 		}
 
+		if(this.state.displayUnit !== prevState.displayUnit) {
+			this.gauge.setUnitString(this.state.displayUnit);
+			this.gauge.setSection(this.state.sections)
+		}
+
 		if (this.state.minValue !== this.gauge.getMinValue() || this.state.maxValue !== this.gauge.getMaxValue()) {
 			this.gauge.setMinValue(this.state.minValue);
 			this.gauge.setMaxValue(this.state.maxValue);
@@ -217,7 +239,7 @@ class DewGauge extends Component<Props, State> {
 		this.gauge.setMinMeasuredValue(this.state.low);
 		this.gauge.setMaxMeasuredValue(this.state.high);
 		this.gauge.setArea(this.state.areas);
-		//FIXME Tween.js anmationa in steelseries lib not workig 
+		//FIXME Tween.js anmation in steelseries lib not workig 
 		//this.gauge.setValueAnimated(this.state.value);
 		this.gauge.setValue(this.state.value);
 
@@ -235,11 +257,18 @@ class DewGauge extends Component<Props, State> {
 						style={this.style}
 					></canvas>
 				</div>
-				<button onClick={() => this.showTemp(TempType.APP)}>App</button>
-				<button onClick={() => this.showTemp(TempType.DEW)}>Dew</button>
-				<button onClick={() => this.showTemp(TempType.WND)}>Wnd</button>
-				<button onClick={() => this.showTemp(TempType.HEA)}>Hea</button>
-				<button onClick={() => this.showTemp(TempType.HUM)}>Hum</button>
+				<div>
+					<button onClick={() => this.showTemp(TempType.APP)}>App</button>
+					<button onClick={() => this.showTemp(TempType.DEW)}>Dew</button>
+					<button onClick={() => this.showTemp(TempType.WND)}>Wnd</button>
+					<button onClick={() => this.showTemp(TempType.HEA)}>Hea</button>
+					<button onClick={() => this.showTemp(TempType.HUM)}>Hum</button>
+				</div>
+				<div>
+					<button onClick={() => this.props.controller.changeUnits({ tempUnit: UNITS.Temp.C})}>{UNITS.Temp.C}</button>
+					<button onClick={() => this.props.controller.changeUnits({ tempUnit: UNITS.Temp.F})}>{UNITS.Temp.F}</button>
+				</div>
+				
 			</div>
 		);
 	}
@@ -253,19 +282,18 @@ interface Props {
 interface State {
 	data?: LocalDataDef,
 
+	title: string,
 	displayUnit: string,
-	minMeasuredVisible: boolean,
-	maxMeasuredVisible: boolean,
-
 	selected: TempType,
-
+	
+	minValue: number,
+	maxValue: number,
 	value: number,
 	low: number,
 	high: number,
-	minValue: number,
-	maxValue: number,
-	trend: any,
-	title: string,
+	minMeasuredVisible: boolean,
+	maxMeasuredVisible: boolean,
+
 	sections: any[],
 	areas: any[],
 
@@ -311,3 +339,4 @@ function mapLocalData(data: any) {
 }
 
 export default DewGauge;
+export { DewGauge, TempType as DewTempType };

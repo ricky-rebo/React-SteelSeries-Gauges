@@ -21,13 +21,14 @@ class CloudBaseGauge extends Component<Props, State> {
 
 		this.canvasRef = React.createRef();
 	
+		let { cloud } = props.controller.getDisplayUnits();
 		this.state = {
 			value:  0.0001,
-			sections: GaugeUtils.createCloudBaseSections(true),
-			maxValue:  props.controller.gaugeConfig.cloudScaleDefMaxm,
-			displayUnit: props.controller.getDisplayUnits().cloud === UNITS.Cloud.M
-				? this.props.controller.lang.metres
-				: this.props.controller.lang.feet
+			sections: GaugeUtils.createCloudBaseSections(cloud === UNITS.Cloud.M),
+			displayUnit: (cloud === UNITS.Cloud.M) ? props.controller.lang.metres : props.controller.lang.feet,
+			maxValue:  (cloud === UNITS.Cloud.M) 
+				? props.controller.gaugeConfig.cloudScaleDefMaxm
+				: props.controller.gaugeConfig.cloudScaleDefMaxft
 
 			//popUpTxt: '',
 			//popUpGraph: '',
@@ -50,9 +51,8 @@ class CloudBaseGauge extends Component<Props, State> {
 			: {};
 
 		this.update = this.update.bind(this);
-		this.unitUpdate = this.unitUpdate.bind(this);
 
-		this.props.controller.subscribe(CloudBaseGauge.NAME, this.update, this.unitUpdate);
+		this.props.controller.subscribe(CloudBaseGauge.NAME, this.update);
 	}
 
 	componentDidMount() {
@@ -64,6 +64,13 @@ class CloudBaseGauge extends Component<Props, State> {
 
 	async update({cloudbasevalue, cloudbaseunit} : DataParamsDef) {
 		let newState: any = {};
+
+		if(cloudbaseunit !== this.state.displayUnit) {
+			newState.displayUnit = (cloudbaseunit === UNITS.Cloud.M)
+				? this.props.controller.lang.metres
+				: this.props.controller.lang.feet
+			newState.sections = GaugeUtils.createCloudBaseSections(cloudbaseunit === UNITS.Cloud.M);
+		}
 
 		newState.value=DataUtils.extractInteger(cloudbasevalue);
 
@@ -96,22 +103,14 @@ class CloudBaseGauge extends Component<Props, State> {
 		this.setState(newState);
 	}
 
-	async unitUpdate({ cloud }: { cloud: string }) {
-		let unitStr = cloud === UNITS.Cloud.M
-			? this.props.controller.lang.metres
-			: this.props.controller.lang.feet
-		if(unitStr !== this.state.displayUnit) {
-			this.setState({ displayUnit: unitStr });
-		}
-	}
-
 	componentDidUpdate(_prevProps: Props, prevState: State) {
-		if(this.state.maxValue !== this.gauge.getMaxValue()) {
-			this.gauge.setMaxValue(this.state.maxValue);
-		}
-
 		if(this.state.displayUnit !== prevState.displayUnit) {
 			this.gauge.setUnitString(this.state.displayUnit);
+			this.gauge.setSection(this.state.sections);
+		}
+
+		if(this.state.maxValue !== this.gauge.getMaxValue()) {
+			this.gauge.setMaxValue(this.state.maxValue);
 		}
 
 		//FIXME setValueAnimated() from steelseries lib not working!

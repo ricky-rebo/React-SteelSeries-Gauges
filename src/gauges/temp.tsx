@@ -5,6 +5,10 @@ import steelseries from '../libs/steelseries.js';
 import DataUtils from '../utils/data-utils';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
+import { UNITS } from '../controller/defaults';
+import Cookies from 'universal-cookie/es6';
+
+const COOKIE_NAME = 'temp-display';
 
 //TODO docs
 class TempGauge extends Component<Props, State> {
@@ -14,32 +18,56 @@ class TempGauge extends Component<Props, State> {
 	gauge: any;
 	params: any;
 	style: any;
+	cookies: Cookies;
 
 	constructor(props: Props) {
 		super(props);
 
 		this.canvasRef = React.createRef();
+
+		let tempType: TempType = TempType.OUT;;
+		if(props.controller.controllerConfig.useCookies && props.controller.gaugeConfig.showIndoorTempHum) {
+			this.cookies = new Cookies();
+
+			let sel = this.cookies.get(COOKIE_NAME);
+			if(sel) tempType = sel;
+			else {
+				//TODO set expire date
+				this.cookies.set(COOKIE_NAME, tempType);
+			}
+		}
+		
+		let { temp } = props.controller.getDisplayUnits();
 		this.state = {
-			value: this.props.controller.gaugeConfig.tempScaleDefMinC + 0.0001,
-			minValue: this.props.controller.gaugeConfig.tempScaleDefMinC,
-			maxValue: this.props.controller.gaugeConfig.tempScaleDefMaxC,
-			trend: null,
+			value: (temp === UNITS.Temp.C)
+				? this.props.controller.gaugeConfig.tempScaleDefMinC + 0.0001
+				: this.props.controller.gaugeConfig.tempScaleDefMinF + 0.0001,
+			minValue: (temp === UNITS.Temp.C)
+				? this.props.controller.gaugeConfig.tempScaleDefMinC
+				: this.props.controller.gaugeConfig.tempScaleDefMinF,
+			maxValue: (temp === UNITS.Temp.C)
+				? this.props.controller.gaugeConfig.tempScaleDefMaxC
+				: this.props.controller.gaugeConfig.tempScaleDefMaxF,
+			trend: steelseries.TrendState.OFF,
 			areas: [],
 
-			title: this.props.controller.lang.temp_title_out,
-			displayUnit: this.props.controller.getDisplayUnits().temp,
+			title: (tempType === TempType.OUT)
+				? this.props.controller.lang.temp_title_out
+				: this.props.controller.lang.temp_title_in,
+			displayUnit: temp,
+			sections: GaugeUtils.createTempSections(temp === UNITS.Temp.C),
 			maxMinVisible: false,
 
 			//popUpTxt: '',
 			//graph: '',
 			
-			selected: 'out'
+			selected: tempType
 		}
 
 		this.params = {
 			...this.props.controller.commonParams,
 			size: Math.ceil(this.props.size * this.props.controller.gaugeConfig.gaugeScaling),
-			section: GaugeUtils.createTempSections(true),
+			section: this.state.sections,
 			area: [],
 			minValue: this.state.minValue,
 			maxValue: this.state.maxValue,
@@ -89,15 +117,20 @@ class TempGauge extends Component<Props, State> {
 			newState.selected = this.state.selected;
 		}
 
-		newState.minValue = data.tempunit[1] === 'C'
+		if(data.tempunit !== this.state.displayUnit) {
+			newState.displayUnit = data.tempunit;
+			newState.sections = GaugeUtils.createTempSections(data.tempunit === UNITS.Temp.C);
+		}
+
+		newState.minValue = data.tempunit === UNITS.Temp.C
 			? this.props.controller.gaugeConfig.tempScaleDefMinC
 			: this.props.controller.gaugeConfig.tempScaleDefMinF;
-		newState.maxValue = data.tempunit[1] === 'C'
+		newState.maxValue = data.tempunit === UNITS.Temp.F
 			? this.props.controller.gaugeConfig.tempScaleDefMaxC
 			: this.props.controller.gaugeConfig.tempScaleDefMaxF;
 
 		let lowScale: number, highScale: number;
-		if(newState.selected === 'out') {
+		if(newState.selected === TempType.OUT) {
 			newState.value = DataUtils.extractDecimal(data.temp);
 			
 			lowScale = GaugeUtils.getMinTemp(newState.minValue, data);
@@ -137,7 +170,7 @@ class TempGauge extends Component<Props, State> {
 		}
 		
 		// auto scale the ranges
-		let scaleStep = data.tempunit[1] === 'C' ? 10 : 20;
+		let scaleStep = data.tempunit === UNITS.Temp.C ? 10 : 20;
 		while (lowScale < newState.minValue) {
 			newState.minValue -= scaleStep;
 			if (highScale <= newState.maxValue - scaleStep) {
@@ -160,6 +193,11 @@ class TempGauge extends Component<Props, State> {
 			this.gauge.setTitleString(this.state.title);
 			this.gauge.setMaxMeasuredValueVisible(this.state.maxMinVisible);
 			this.gauge.setMinMeasuredValueVisible(this.state.maxMinVisible);
+		}
+
+		if(this.state.selected !== prevState.selected) {
+			this.gauge.setUnitString(this.state.displayUnit);
+			this.gauge.setSection(this.state.sections);
 		}
 
 		if (this.state.minValue !== this.gauge.getMinValue() || this.state.maxValue !== this.gauge.getMaxValue()) {
@@ -204,18 +242,21 @@ interface State {
 
 	displayUnit: string,
 	maxMinVisible: boolean,
-	selected: string,
+	selected: TempType,
 
 	value: number,
 	minValue: number,
 	maxValue: number,
 	trend: any,
 	title: string,
-	areas: any[]
+	areas: any[],
+	sections: any
 
 	//popUpTxt: string,
 	//graph: string
 }
+
+enum TempType { OUT = 'out', IN = 'in' }
 
 interface LocalDataDef {
 	temp: any, tempunit: string, temptrend: any,

@@ -21,14 +21,21 @@ class BaroGauge extends Component<Props, State> {
 
 			this.canvasRef = React.createRef();
 
+			let { press } = props.controller.getDisplayUnits();
 			this.state = {
-				sections: [],
-				areas: [],
+				value: props.controller.gaugeConfig.baroScaleDefMinhPa + 0.0001,
 				minValue: props.controller.gaugeConfig.baroScaleDefMinhPa,
 				maxValue: props.controller.gaugeConfig.baroScaleDefMaxhPa,
-				value: props.controller.gaugeConfig.baroScaleDefMinhPa + 0.0001,
+				sections: [],
+				areas: [],
 				trend: steelseries.TrendState.OFF,
-				displayUnit: props.controller.getDisplayUnits().press
+
+				displayUnit: press,
+				lcdDecimals: (press === UNITS.Press.HPA || press === UNITS.Press.MB) ? 1 : 2,
+				scaleDecimals: (press === UNITS.Press.HPA || press === UNITS.Press.MB) ? 0 : 1,
+				labelNumberFormat: (press === UNITS.Press.HPA || press === UNITS.Press.MB)
+					? props.controller.gaugeConfig.labelFormat
+					: steelseries.LabelNumberFormat.FRACTIONAL
 			}
 
 			this.params = {
@@ -42,10 +49,10 @@ class BaroGauge extends Component<Props, State> {
 				niceScale: false,
 				titleString: props.controller.lang.baro_title,
 				unitString: this.state.displayUnit,
-				lcdDecimals: 1,
+				lcdDecimals: this.state.lcdDecimals,
 				trendVisible: props.controller.gaugeConfig.pressureTrendVisible,
-				labelNumberFormat: props.controller.gaugeConfig.labelFormat,
-				fractionalScaleDecimals: 0
+				labelNumberFormat: this.state.labelNumberFormat,
+				fractionalScaleDecimals: this.state.scaleDecimals
 			};
 
 			this.style = this.props.controller.gaugeConfig.showGaugeShadow
@@ -53,9 +60,8 @@ class BaroGauge extends Component<Props, State> {
 				: {};
 
 			this.update = this.update.bind(this);
-			this.unitUpdate = this.unitUpdate.bind(this);
 
-			this.props.controller.subscribe(BaroGauge.NAME, this.update, this.unitUpdate);
+			this.props.controller.subscribe(BaroGauge.NAME, this.update);
 		}
 
 		componentDidMount() {
@@ -68,81 +74,87 @@ class BaroGauge extends Component<Props, State> {
 		async update({press, pressL, pressH, pressTL, pressTH, presstrendval, pressunit}: DataParamsDef) {
 			let newState: any = {};
 
-				newState.value = DataUtils.extractDecimal(press)
-				let recLow = DataUtils.extractDecimal(pressL),
-						recHigh = DataUtils.extractDecimal(pressH),
-						todayLow = DataUtils.extractDecimal(pressTL),
-						todayHigh = DataUtils.extractDecimal(pressTH);
+			if(pressunit !== this.state.displayUnit) {
+				newState.displayUnit = pressunit;
+				newState.lcdDecimals = (pressunit === UNITS.Press.HPA || pressunit === UNITS.Press.MB) ? 1 : 2,
+				newState.scaleDecimals = (pressunit === UNITS.Press.HPA || pressunit === UNITS.Press.MB) ? 0 : 1,
+				newState.labelNumberFormat = (pressunit === UNITS.Press.HPA || pressunit === UNITS.Press.MB)
+					? this.props.controller.gaugeConfig.labelFormat
+					: steelseries.LabelNumberFormat.FRACTIONAL
+			}
 
-				//let dps: number;
-				if (pressunit === UNITS.Press.HPA || pressunit === UNITS.Press.MB) {
+			newState.value = DataUtils.extractDecimal(press)
+			let recLow = DataUtils.extractDecimal(pressL),
+					recHigh = DataUtils.extractDecimal(pressH),
+					todayLow = DataUtils.extractDecimal(pressTL),
+					todayHigh = DataUtils.extractDecimal(pressTH);
+
+			//let dps: number;
+			switch(press) {
+				case UNITS.Press.HPA:
+				case UNITS.Press.MB:
 					//  default min range 990-1030 - steps of 10 hPa
 					let { baroScaleDefMinhPa, baroScaleDefMaxhPa } = this.props.controller.gaugeConfig;
 					newState.minValue = Math.min(GaugeUtils.nextLowest(recLow - 2, 10), baroScaleDefMinhPa);
 					newState.maxValue = Math.max(GaugeUtils.nextHighest(recHigh + 2, 10), baroScaleDefMaxhPa);
 					//dps = 1; // 1 decimal place
-				}
-				else if (pressunit === UNITS.Press.KPA) {
-						//  default min range 99-105 - steps of 1 kPa
-						let { baroScaleDefMinkPa, baroScaleDefMaxkPa } = this.props.controller.gaugeConfig;
-						newState.minValue = Math.min(GaugeUtils.nextLowest(recLow - 0.2, 1), baroScaleDefMinkPa);
-						newState.maxValue = Math.max(GaugeUtils.nextHighest(recHigh + 0.2, 1), baroScaleDefMaxkPa);
-						//dps = 2;
-				}
-				else {
-						// inHg: default min range 29.5-30.5 - steps of 0.5 inHg
-						let { baroScaleDefMininHg, baroScaleDefMaxinHg } = this.props.controller.gaugeConfig;
-						newState.minValue = Math.min(GaugeUtils.nextLowest(recLow - 0.1, 0.5), baroScaleDefMininHg);
-						newState.maxValue = Math.max(GaugeUtils.nextHighest(recHigh + 0.1, 0.5), baroScaleDefMaxinHg);
-						//dps = 3;
-				}
-				/*let trendValRnd = trendVal.toFixed(dps),
-						todayLowRnd = todayLow.toFixed(dps),
-						todayHighRnd = todayHigh.toFixed(dps);*/
-				
-				if (recHigh === todayHigh && recLow === todayLow) {
-					// VWS does not provide record hi/lo values
-					newState.sections = [];
-					newState.areas = [steelseries.Section(todayLow, todayHigh, this.props.controller.gaugeConfig.minMaxArea)];
-				}
-				else {
-					newState.sections = [
-							steelseries.Section(newState.minValue, recLow, 'rgba(255,0,0,0.5)'),
-							steelseries.Section(recHigh, newState.maxValue, 'rgba(255,0,0,0.5)')
-					];
-					newState.areas = [
-							steelseries.Section(newState.minValue, recLow, 'rgba(255,0,0,0.5)'),
-							steelseries.Section(recHigh, newState.maxValue, 'rgba(255,0,0,0.5)'),
-							steelseries.Section(todayLow, todayHigh, this.props.controller.gaugeConfig.minMaxArea)
-					];
-				}
+					break;
+				case UNITS.Press.INHG:
+					//  default min range 99-105 - steps of 1 kPa
+					let { baroScaleDefMinkPa, baroScaleDefMaxkPa } = this.props.controller.gaugeConfig;
+					newState.minValue = Math.min(GaugeUtils.nextLowest(recLow - 0.2, 1), baroScaleDefMinkPa);
+					newState.maxValue = Math.max(GaugeUtils.nextHighest(recHigh + 0.2, 1), baroScaleDefMaxkPa);
+					//dps = 2;
+					break;
+				case UNITS.Press.KPA:
+					// inHg: default min range 29.5-30.5 - steps of 0.5 inHg
+					let { baroScaleDefMininHg, baroScaleDefMaxinHg } = this.props.controller.gaugeConfig;
+					newState.minValue = Math.min(GaugeUtils.nextLowest(recLow - 0.1, 0.5), baroScaleDefMininHg);
+					newState.maxValue = Math.max(GaugeUtils.nextHighest(recHigh + 0.1, 0.5), baroScaleDefMaxinHg);
+					//dps = 3;
+			}
+			/*let trendValRnd = trendVal.toFixed(dps),
+					todayLowRnd = todayLow.toFixed(dps),
+					todayHighRnd = todayHigh.toFixed(dps);*/
+			
+			if (recHigh === todayHigh && recLow === todayLow) {
+				// VWS does not provide record hi/lo values
+				newState.sections = [];
+				newState.areas = [steelseries.Section(todayLow, todayHigh, this.props.controller.gaugeConfig.minMaxArea)];
+			}
+			else {
+				newState.sections = [
+						steelseries.Section(newState.minValue, recLow, 'rgba(255,0,0,0.5)'),
+						steelseries.Section(recHigh, newState.maxValue, 'rgba(255,0,0,0.5)')
+				];
+				newState.areas = [
+						steelseries.Section(newState.minValue, recLow, 'rgba(255,0,0,0.5)'),
+						steelseries.Section(recHigh, newState.maxValue, 'rgba(255,0,0,0.5)'),
+						steelseries.Section(todayLow, todayHigh, this.props.controller.gaugeConfig.minMaxArea)
+				];
+			}
 
-				if (this.params.trendVisible) {
-					// Convert the WD change over 3 hours to an hourly rate
-					let trendVal = DataUtils.extractDecimal(presstrendval) / (this.props.controller.controllerConfig.weatherProgram === 2 ? 3 : 1);
-					
-					// Use the baroTrend rather than simple arithmetic test - steady is more/less than zero!
-					newState.trend = GaugeUtils.baroTrend(trendVal, pressunit, false);
+			if (this.params.trendVisible) {
+				// Convert the WD change over 3 hours to an hourly rate
+				let trendVal = DataUtils.extractDecimal(presstrendval) / (this.props.controller.controllerConfig.weatherProgram === 2 ? 3 : 1);
+				
+				// Use the baroTrend rather than simple arithmetic test - steady is more/less than zero!
+				newState.trend = GaugeUtils.baroTrend(trendVal, pressunit, false);
 			}
 
 			this.setState(newState);
 			//End of update()
 		}
 
-		async unitUpdate({ press }: { press: string }) {
-			//TODO remove
-			console.log("baro unitUpdate() called")
-			if(press !== this.state.displayUnit) {
-				//TODO remove
-				console.log("baro unit updated")
-				let newState = {...this.state};
-				newState.displayUnit = press;
-				this.setState(newState);
-			}
-		}
-
 		componentDidUpdate(_prevProps: Props, prevState: State) {
 			if(this.gauge) {
+				if(this.state.displayUnit !== prevState.displayUnit) {
+					this.gauge.setUnitString(this.state.displayUnit);
+					this.gauge.setLcdDecimals(this.state.lcdDecimals);
+					this.gauge.setFractionalScaleDecimals(this.state.scaleDecimals);
+					this.gauge.setLabelNumberFormat(this.state.labelNumberFormat);
+				}
+
 				if (this.state.minValue !== this.gauge.getMinValue() || this.state.maxValue !== this.gauge.getMaxValue()) {
 					this.gauge.setMinValue(this.state.minValue);
 					this.gauge.setMaxValue(this.state.maxValue);
@@ -152,9 +164,7 @@ class BaroGauge extends Component<Props, State> {
 				if(this.params.trendVisible)
 					this.gauge.setTrend(this.state.trend);
 
-				if(this.state.displayUnit !== prevState.displayUnit)
-					this.gauge.setUnitString(this.state.displayUnit);
-
+				
 				this.gauge.setArea(this.state.areas);
 				this.gauge.setSection(this.state.sections);
 				//FIXME TweenJS anomation broken in setValueAniimated()
@@ -199,13 +209,17 @@ interface Props {
 }
 
 interface State {
-	sections: { start: number, stop: number, color: any}[],
-	areas: { start: number, stop: number, color: any}[],
+	value: number,
 	minValue: number,
 	maxValue: number,
-	value: number,
+	sections: { start: number, stop: number, color: any}[],
+	areas: { start: number, stop: number, color: any}[],
 	trend: any,
-	displayUnit: string
+
+	displayUnit: string,
+	lcdDecimals: number,
+	scaleDecimals: number,
+	labelNumberFormat: steelseries.LabelNumberFormat
 }
 
 export default BaroGauge;

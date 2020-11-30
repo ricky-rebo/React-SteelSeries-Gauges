@@ -15,11 +15,12 @@ import CloudBaseGauge from '../gauges/cloudbase';
 import Cookies from 'universal-cookie/es6';
 
 const ERR_RT_RETRY = 5;
+const COOKIE_NAME = 'units';
 
 export default class GaugesController {
 	min_rt_ver: number
 	controllerConfig: ControllerConfig;
-	gaugeConfig: any;
+	gaugeConfig: GaugeConfig;
 	commonParams: any;
 
 	lang: any;
@@ -44,11 +45,20 @@ export default class GaugesController {
 		this.controllerConfig = setControllerConfig(config);
 		this.gaugeConfig = setGaugeConfigs(config);
 
-		let displUnits = setDisplayUnits(config);
-		this.displayUnits = displUnits.units;
-		this.customUnits = displUnits.customUnits;
-		if(this.controllerConfig.useCookies)
+		if(this.controllerConfig.useCookies) {
 			this.cookies = new Cookies();
+			let units = this.cookies.get(COOKIE_NAME);
+			if(units) {
+				this.displayUnits = units;
+				this.customUnits = true;
+			}
+			else {
+				let displUnits = setDisplayUnits(config);
+				this.displayUnits = displUnits.units;
+				this.customUnits = displUnits.customUnits;
+				this.cookies.set(COOKIE_NAME, this.displayUnits, { path: '/' }); //TODO set expire date
+			}
+		}
 
 		//dashboard mode used only by Cumulus MX!
 		if(this.controllerConfig.weatherProgram !== WProgram.CUMULUS)
@@ -174,6 +184,7 @@ export default class GaugesController {
 		let somethingChanged = false;
 
 		if(tempUnit && (tempUnit === UNITS.Temp.C || tempUnit === UNITS.Temp.F)) {
+			console.log("new temp unit: " + tempUnit)
 			if(tempUnit !== units.temp) {
 				units.temp = tempUnit;
 				DataUtils.convTempData(this.data);

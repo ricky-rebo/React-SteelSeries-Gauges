@@ -1,6 +1,7 @@
 import { ControllerConfig, GaugeConfig, StatusType, WProgram } from "./data_types";
 // @ts-ignore
 import steelseries from '../libs/steelseries';
+import { DewTempType } from "../gauges/dew";
 
 export const CONTROLLER_CONFIG: ControllerConfig = {
   weatherProgram: WProgram.CUMULUS,
@@ -32,36 +33,36 @@ export const GAUGE_CONFIG: GaugeConfig = {
   gaugeMobileScaling : 0.85,
   showGaugeShadow    : true,
   
-  digitalFont        : false,
-  digitalForecast    : false,
+  digitalFont     : false,
+  digitalForecast : false,
 
-  frameDesign           : steelseries.FrameDesign.TILTED_GRAY,
-  background            : steelseries.BackgroundColor.BEIGE,
-  foreground            : steelseries.ForegroundType.TYPE1,
-  pointer               : steelseries.PointerType.TYPE8,
-  pointerColour         : steelseries.ColorDef.RED,
-  dirAvgPointer         : steelseries.PointerType.TYPE8,
-  dirAvgPointerColour   : steelseries.ColorDef.BLUE,
-  gaugeType             : steelseries.GaugeType.TYPE4,
-  lcdColour             : steelseries.LcdColor.STANDARD,
-  knob                  : steelseries.KnobType.STANDARD_KNOB,
-  knobStyle             : steelseries.KnobStyle.SILVER,
-  labelFormat           : steelseries.LabelNumberFormat.STANDARD,
-  tickLabelOrientation  : steelseries.TickLabelOrientation.HORIZONTAL, // was .NORMAL up to v1.6.4
+  frameDesign          : steelseries.FrameDesign.TILTED_GRAY,
+  background           : steelseries.BackgroundColor.BEIGE,
+  foreground           : steelseries.ForegroundType.TYPE1,
+  pointer              : steelseries.PointerType.TYPE8,
+  pointerColour        : steelseries.ColorDef.RED,
+  dirAvgPointer        : steelseries.PointerType.TYPE8,
+  dirAvgPointerColour  : steelseries.ColorDef.BLUE,
+  gaugeType            : steelseries.GaugeType.TYPE4,
+  lcdColour            : steelseries.LcdColor.STANDARD,
+  knob                 : steelseries.KnobType.STANDARD_KNOB,
+  knobStyle            : steelseries.KnobStyle.SILVER,
+  labelFormat          : steelseries.LabelNumberFormat.STANDARD,
+  tickLabelOrientation : steelseries.TickLabelOrientation.HORIZONTAL, // was .NORMAL up to v1.6.4
   
-  tempTrendVisible      : true,
-  showIndoorTempHum  : true,
-  dewDisplayType     : 'app',
+  tempTrendVisible  : true,
+  showIndoorTempHum : true,
+  dewDisplayType    : DewTempType.APP,
 
   pressureTrendVisible  : true,
   rainUseSectionColours : false,                                       // Only one of these colour options should be true
   rainUseGradientColours: false,                                       // Set both to false to use the pointer colour
   
-  uvLcdDecimals         : 1,
-  showSunshineLed    : true,
+  uvLcdDecimals   : 1,
+  showSunshineLed : true,
   // sunshine threshold values
-  sunshineThreshold     : 50,    // the value in W/m² above which we can consider the Sun to be shining, *if* the current value exceeds...
-  sunshineThresholdPct  : 75,    // the percentage of theoretical solar irradiance above which we consider the Sun to be shining
+  sunshineThreshold    : 50,    // the value in W/m² above which we can consider the Sun to be shining, *if* the current value exceeds...
+  sunshineThresholdPct : 75,    // the percentage of theoretical solar irradiance above which we consider the Sun to be shining
   
   showWindVariation  : true,
   showWindMetar      : false,

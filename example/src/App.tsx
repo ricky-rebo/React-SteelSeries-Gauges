@@ -12,7 +12,7 @@ class App extends React.Component {
     this.controller = new GaugesController(Lang.IT, {
       weatherProgram: Type.Program.WHEATHER_DISPLAY,
       realTimeUrl: "/customclientraw.txt",
-      realtimeInterval: 7,
+      realtimeInterval: 7
     });
   }
 	

@@ -7,7 +7,7 @@ import GaugeSize from './style/gaugeSize';
 import StatusScrollerGauge from './gauges/status-scroller';
 import LedGauge from './gauges/led';
 import StatusTimerGauge from './gauges/status-timer';
-import DewGauge from './gauges/dew';
+import DewGauge, { DewTempType } from './gauges/dew';
 import HumGauge from './gauges/hum';
 import RainGauge from './gauges/rain';
 import RainRateGauge from './gauges/rain-rate';
@@ -58,7 +58,7 @@ const Gauge = {
 
 const Type = {
   Program: {...WProgram},
-  DewDisplay: {}
+  DewDisplay: {...DewTempType}
 }
 
 export { ExampleComponent, Gauge, GaugeSize, GaugesController, Type, LANG as Lang, UNITS as Units};

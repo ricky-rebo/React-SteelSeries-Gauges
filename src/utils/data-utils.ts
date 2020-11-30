@@ -126,7 +126,7 @@ class DataUtils {
    * @param data 
    */
   static convRainData = (data: any) => {
-    const convFunc = data.rainunit === 'mm' ? DataUtils.in2mm : DataUtils.mm2in;
+    const convFunc = data.rainunit === 'mm' ? DataUtils.mm2in : DataUtils.in2mm;
     data.rfall = convFunc(data.rfall);
     data.rrate = convFunc(data.rrate);
     data.rrateTM = convFunc(data.rrateTM);
