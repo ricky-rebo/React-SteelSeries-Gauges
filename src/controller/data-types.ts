@@ -1,4 +1,4 @@
-import { DewTempType } from '../gauges/dew.js';
+import { DewTemp } from '../gauges/data-types.js';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
 
@@ -23,10 +23,10 @@ export interface ControllerConfig {
 }
 
 export interface GaugeConfig {
-	minMaxArea            : string,
-	windAvgArea           : string,
-	windVariationSector   : string,
-	shadowColour          : string,
+	minMaxArea: string,
+	windAvgArea: string,
+	windVariationSector: string,
+	shadowColour: string,
 
 	gaugeScaling: number,
 	gaugeMobileScaling: number,
@@ -35,70 +35,75 @@ export interface GaugeConfig {
 	digitalFont: boolean,
 	digitalForecast: boolean,
 
-	frameDesign           : steelseries.FrameDesign,
-	background            : steelseries.BackgroundColor,
-	foreground            : steelseries.ForegroundType,
-	pointer               : steelseries.PointerType,
-	pointerColour         : steelseries.ColorDef,
-	dirAvgPointer         : steelseries.PointerType,
-	dirAvgPointerColour   : steelseries.ColorDef,
-	gaugeType             : steelseries.GaugeType,
-	lcdColour             : steelseries.LcdColor,
-	knob                  : steelseries.KnobType,
-	knobStyle             : steelseries.KnobStyle,
-	labelFormat           : steelseries.LabelNumberFormat,
-	tickLabelOrientation  : steelseries.TickLabelOrientation,
+	frameDesign: steelseries.FrameDesign,
+	background: steelseries.BackgroundColor,
+	foreground: steelseries.ForegroundType,
+	pointer: steelseries.PointerType,
+	pointerColour: steelseries.ColorDef,
+	dirAvgPointer: steelseries.PointerType,
+	dirAvgPointerColour: steelseries.ColorDef,
+	gaugeType: steelseries.GaugeType,
+	lcdColour: steelseries.LcdColor,
+	knob: steelseries.KnobType,
+	knobStyle: steelseries.KnobStyle,
+	labelFormat: steelseries.LabelNumberFormat,
+	tickLabelOrientation: steelseries.TickLabelOrientation,
 
-	tempTrendVisible      : boolean,
+	tempTrendVisible: boolean,
 	showIndoorTempHum: boolean,
-	dewDisplayType: DewTempType,
+	dewDisplayType: DewTemp,
 
-	pressureTrendVisible  : boolean,
-	rainUseSectionColours : boolean,
+	pressureTrendVisible: boolean,
+	rainUseSectionColours: boolean,
 	rainUseGradientColours: boolean,
 	
-	uvLcdDecimals         : number,
+	uvLcdDecimals: number,
 	showSunshineLed: boolean,
-	sunshineThreshold     : number,
-	sunshineThresholdPct  : number,
+	sunshineThreshold: number,
+	sunshineThresholdPct: number,
 
 	showWindVariation: boolean,
 	showWindMetar: boolean,
 	showRoseGaugeOdo: boolean,
 	showRoseOnDirGauge: boolean,
 
-	tempScaleDefMinC      : number,
-	tempScaleDefMaxC      : number,
-	tempScaleDefMinF      : number,
-	tempScaleDefMaxF      : number,
-	baroScaleDefMinhPa    : number,
-	baroScaleDefMaxhPa    : number,
-	baroScaleDefMinkPa    : number,
-	baroScaleDefMaxkPa    : number,
-	baroScaleDefMininHg   : number,
-	baroScaleDefMaxinHg   : number,
-	windScaleDefMaxMph    : number,
-	windScaleDefMaxKts    : number,
-	windScaleDefMaxMs     : number,
-	windScaleDefMaxKmh    : number,
-	rainScaleDefMaxmm     : number,
-	rainScaleDefMaxIn     : number,
-	rainRateScaleDefMaxmm : number,
-	rainRateScaleDefMaxIn : number,
-	uvScaleDefMax         : number,
-	solarGaugeScaleMax    : number,
-
-	cloudScaleDefMaxft    : number,
-	cloudScaleDefMaxm     : number
+	tempScaleDefMinC: number,
+	tempScaleDefMaxC: number,
+	tempScaleDefMinF: number,
+	tempScaleDefMaxF: number,
+	baroScaleDefMinhPa: number,
+	baroScaleDefMaxhPa: number,
+	baroScaleDefMinkPa: number,
+	baroScaleDefMaxkPa: number,
+	baroScaleDefMininHg: number,
+	baroScaleDefMaxinHg: number,
+	windScaleDefMaxMph: number,
+	windScaleDefMaxKts: number,
+	windScaleDefMaxMs: number,
+	windScaleDefMaxKmh: number,
+	rainScaleDefMaxmm: number,
+	rainScaleDefMaxIn: number,
+	rainRateScaleDefMaxmm: number,
+	rainRateScaleDefMaxIn: number,
+	uvScaleDefMax: number,
+	solarGaugeScaleMax: number,
+	cloudScaleDefMaxft: number,
+	cloudScaleDefMaxm: number
 }
 
+export type TempUnit = "°C"|"°F"|"";
+export type RainUnit = "mm"|"in"|"";
+export type PressUnit = "hPa"|"inHg"|"mb"|"kPa"|"";
+export type WindUnit = "km/h"|"m/s"|"mph"|"kts"|"";
+export type WindrunUnit = "km"|"miles"|"n.miles"|"";
+export type CloudUnit = "m"|"ft"|"";
 export interface DisplayUnits {
-	temp   : string,
-	rain   : string,
-  press  : string,
-  wind   : string,
-  windrun: string,
-  cloud  : string
+	temp: TempUnit,
+	rain: RainUnit,
+  press: PressUnit,
+  wind: WindUnit,
+  windrun: WindrunUnit,
+  cloud: CloudUnit
 }
 
 
@@ -183,7 +188,7 @@ export interface CustomConfig {
 	dirAvgPointer?        : steelseries.PointerType,
 	dirAvgPointerColour?  : steelseries.ColorDef,
 	gaugeType?            : steelseries.GaugeType,
-	lcdColour?            :  steelseries.LcdColor,
+	lcdColour?            : steelseries.LcdColor,
 	knob?                 : steelseries.KnobType,
 	knobStyle?            : steelseries.KnobStyle,
 	labelFormat?				  : steelseries.LabelNumberFormat,
@@ -192,7 +197,7 @@ export interface CustomConfig {
 	
 	/** Show a drop shadow outside the gauges (default: true) */
 	showGaugeShadow?: boolean,
-	/** Colour to use for gauge shadows - default 30% transparent black */
+	/** Colour to use for gauge shadows - default 30 transparent black */
 	shadowColour?: string
 
 	/** Show the indoor temperature/humidity options (default: false) */
@@ -203,7 +208,7 @@ export interface CustomConfig {
 	pressureTrendVisible?   : boolean,
 
 	/** Initial 'scale' to display on the Dew Gauge (default: Type.DewDisplay.APPARENT) */
-	dewDisplayType?: DewTempType
+	dewDisplayType?: DewTemp
 	/** Show variation in wind direction over the last 10 minutes on the direction gauge (dfault: true) */
 	showWindVariation?: boolean,
 	/** Show the METAR substring for wind speed/direction over the last 10 minutes on the direction gauge popup (dafeult: false) */
@@ -230,11 +235,11 @@ export interface CustomConfig {
 	// ****************************************************
 	//             Measure Units properties
 	// ****************************************************
-	tempUnit?: string,
-	rainUnit?: string,
-	pressUnit?: string,
-	windUnit?: string,
-	cloudUnit?: string
+	tempUnit?: TempUnit,
+	rainUnit?: RainUnit,
+	pressUnit?: PressUnit,
+	windUnit?: WindUnit,
+	cloudUnit?: CloudUnit
 }
 
 export enum WProgram {
@@ -246,3 +251,111 @@ export enum WProgram {
 export enum StatusType { 
 	LOADING, OK, STATION_OFFLINE, SENSOR_CONTACT_LOST, TIMEOUT, ERROR, FATAL_ERROR 
 };
+
+export interface RtData {
+	date: string,
+	timeUTC: string,
+	dateFormat: string,
+	SensorContactLost: number,
+	forecast: string,
+
+	tempunit: TempUnit,
+	temp: number,
+	temptrend: number,
+	tempTL: number,
+	tempTH: number,
+	dew: number,
+	dewpointTL: number,
+	dewpointTH: number,
+	apptemp: number,
+	apptempTL: number,
+	apptempTH: number,
+	wchill: number,
+	wchillTL: number,
+	heatindex: number,
+	heatindexTH: number,
+	humidex: number,
+	intemp: number,
+	intempTL?: number,
+	intempTH?: number,
+	
+	TtempTL: string,
+	TtempTH: string,
+	TintempTL?: string,
+	TintempTH?: string,
+	TdewpointTL: string,
+	TdewpointTH: string,
+	TapptempTL: string,
+	TapptempTH: string,
+	TwchillTL: string,
+	TheatindexTH: string,
+
+	windunit: WindUnit,
+	wlatest: number,
+	wspeed: number,windTM: number,
+	wgust: number,
+	wgustTM: number,
+	
+	domwinddir: string,
+	bearing: number,
+	avgbearing: number,
+	BearingRangeFrom10: number,
+	BearingRangeTo10: number,
+	bearingTM: number,
+	windrun: number,
+	WindRoseData?: number[],
+	Tbeaufort: string,
+	TwgustTM: string,
+
+	pressunit: PressUnit,
+	press: number,
+	presstrendval: number,
+	pressL: number,
+	pressH: number,
+	pressTL: number,
+	pressTH: number,
+	TpressTL: string,
+	TpressTH: string,
+
+	rainunit: RainUnit,
+	rfall: number,
+	hourlyrainTH: number,
+	rrate: number,
+	rrateTM: number,
+	TrrateTM: string,
+	ThourlyrainTH: string,
+	LastRainTipISO: string,
+	LastRained: string,
+
+	hum: number,
+	humTL: number,
+	humTH: number,
+	inhum: number,
+	inhumTL?: number,
+	inhumTH?: number,
+	ThumTL: string,
+	ThumTH: string,
+	TinhumTL?: string,
+	TinhumTH?: string,
+	
+	UV: number,
+	UVTH: number,
+	SolarRad: number,
+	CurrentSolarMax: number,
+	SolarTM: number,
+
+	cloudbaseunit: CloudUnit,
+	cloudbasevalue: number,
+
+	version: string,
+	build: string,
+	ver: number
+}
+
+export type Raw<T> = {
+	[P in keyof T]?: string;
+};
+
+export type RawData = {
+	[P in keyof Omit<RtData, "WindRoseData">]?: string;
+} & { WindRoseData?: number[] };

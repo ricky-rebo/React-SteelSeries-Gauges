@@ -1,7 +1,7 @@
-import { ControllerConfig, GaugeConfig, StatusType, WProgram } from "./data_types";
+import { CloudUnit, ControllerConfig, GaugeConfig, PressUnit, RainUnit, StatusType, TempUnit, WindrunUnit, WindUnit, WProgram } from "./data-types";
 // @ts-ignore
 import steelseries from '../libs/steelseries';
-import { TempType as DewTempType } from "../gauges/dew";
+import { DewTemp } from "../gauges/data-types";
 
 export const CONTROLLER_CONFIG: ControllerConfig = {
   weatherProgram: WProgram.CUMULUS,
@@ -52,7 +52,7 @@ export const GAUGE_CONFIG: GaugeConfig = {
   
   tempTrendVisible  : true,
   showIndoorTempHum : true,
-  dewDisplayType    : DewTempType.APP,
+  dewDisplayType    : DewTemp.APP,
 
   pressureTrendVisible  : true,
   rainUseSectionColours : false,                                       // Only one of these colour options should be true
@@ -95,7 +95,15 @@ export const GAUGE_CONFIG: GaugeConfig = {
   cloudScaleDefMaxm     : 1000,
 }
 
-export const UNITS = {
+type UnitsType = {
+  Temp: { [unitName: string]: TempUnit },
+  Rain: { [unitName: string]: RainUnit },
+  Press: { [unitName: string]: PressUnit },
+  Wind: { [unitName: string]: WindUnit },
+  Windrun: { [unitName: string]: WindrunUnit },
+  Cloud: { [unitName: string]: CloudUnit }
+}
+export const UNITS: UnitsType = {
   Temp: {
     C: '°C',
     F: '°F'

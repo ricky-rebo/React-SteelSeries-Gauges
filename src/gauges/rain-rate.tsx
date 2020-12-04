@@ -3,11 +3,11 @@ import React, { Component } from 'react';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
 
-import GaugeUtils from '../utils/gauge-utils';
-import DataUtils from '../utils/data-utils';
+import GaugeUtils from './gauge-utils';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
 import { UNITS } from '../controller/defaults.js';
+import { extractDecimal } from '../controller/data-utils.js';
 
 //TODO docs
 class RainRateGauge extends Component<Props, State> {
@@ -86,8 +86,8 @@ class RainRateGauge extends Component<Props, State> {
 					
 			}
 
-			newState.value = DataUtils.extractDecimal(rrate);
-			newState.maxMeasured = DataUtils.extractDecimal(rrateTM);
+			newState.value = extractDecimal(rrate);
+			newState.maxMeasured = extractDecimal(rrateTM);
 			let overallMax = Math.max(newState.maxMeasured, newState.value)
 
 			if (rainunit === UNITS.Rain.MM) { // 10, 20, 30...
@@ -144,8 +144,8 @@ class RainRateGauge extends Component<Props, State> {
 						style={this.style}
 					></canvas>
 					<div>
-						<button onClick={() => this.props.controller.changeUnits({ rainUnit: UNITS.Rain.MM} )}>{UNITS.Rain.MM}</button>
-						<button onClick={() => this.props.controller.changeUnits({ rainUnit: UNITS.Rain.IN} )}>{UNITS.Rain.IN}</button>
+						<button onClick={() => this.props.controller.changeUnits({ rain: UNITS.Rain.MM} )}>{UNITS.Rain.MM}</button>
+						<button onClick={() => this.props.controller.changeUnits({ rain: UNITS.Rain.IN} )}>{UNITS.Rain.IN}</button>
 					</div>
 						
 				</div>

@@ -7,7 +7,6 @@ import GaugeSize from './style/gaugeSize';
 import StatusScrollerGauge from './gauges/status-scroller';
 import LedGauge from './gauges/led';
 import StatusTimerGauge from './gauges/status-timer';
-import DewGauge, { DewTempType } from './gauges/dew';
 import HumGauge from './gauges/hum';
 import RainGauge from './gauges/rain';
 import RainRateGauge from './gauges/rain-rate';
@@ -19,11 +18,13 @@ import WindDirGauge from './gauges/wind-dir';
 import WindSpeedGauge from './gauges/wind-speed';
 import WindRoseGauge from './gauges/wind-rose';
 
-import { WProgram } from './controller/data_types';
+import { WProgram } from './controller/data-types';
 import { UNITS } from './controller/defaults';
 
 // @ts-ignore
 import LANG from './controller/language.js';
+import { DewTemp } from './gauges/data-types';
+import DewGauge from './gauges/dew';
 
 class ExampleComponent extends React.Component<{ text: string }, {}> {
   constructor(props: { text: string }) { super(props); }
@@ -58,7 +59,7 @@ const Gauge = {
 
 const Type = {
   Program: {...WProgram},
-  DewDisplay: {...DewTempType}
+  DewDisplay: {...DewTemp}
 }
 
 export { ExampleComponent, Gauge, GaugeSize, GaugesController, Type, LANG as Lang, UNITS as Units};

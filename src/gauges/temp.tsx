@@ -1,12 +1,13 @@
 import React, { Component } from 'react';
-import GaugeUtils from '../utils/gauge-utils';
+import GaugeUtils from './gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
-import DataUtils from '../utils/data-utils';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
 import { UNITS } from '../controller/defaults';
 import Cookies from 'universal-cookie/es6';
+import { InOutTemp } from './data-types';
+import { extractDecimal } from '../controller/data-utils';
 
 const COOKIE_NAME = 'temp-display';
 
@@ -25,7 +26,7 @@ class TempGauge extends Component<Props, State> {
 
 		this.canvasRef = React.createRef();
 
-		let tempType: TempType = TempType.OUT;;
+		let tempType: InOutTemp = InOutTemp.OUT;;
 		if(props.controller.controllerConfig.useCookies && props.controller.gaugeConfig.showIndoorTempHum) {
 			this.cookies = new Cookies();
 
@@ -51,7 +52,7 @@ class TempGauge extends Component<Props, State> {
 			trend: steelseries.TrendState.OFF,
 			areas: [],
 
-			title: (tempType === TempType.OUT)
+			title: (tempType === InOutTemp.OUT)
 				? this.props.controller.lang.temp_title_out
 				: this.props.controller.lang.temp_title_in,
 			displayUnit: temp,
@@ -130,8 +131,8 @@ class TempGauge extends Component<Props, State> {
 			: this.props.controller.gaugeConfig.tempScaleDefMaxF;
 
 		let lowScale: number, highScale: number;
-		if(newState.selected === TempType.OUT) {
-			newState.value = DataUtils.extractDecimal(data.temp);
+		if(newState.selected === InOutTemp.OUT) {
+			newState.value = extractDecimal(data.temp);
 			
 			lowScale = GaugeUtils.getMinTemp(newState.minValue, data);
 			highScale = GaugeUtils.getMaxTemp(newState.maxValue, data);
@@ -139,24 +140,24 @@ class TempGauge extends Component<Props, State> {
 			//loc = this.props.controller.lang.temp_out_info;
 			
 			if(this.params.trendVisible) {
-				let trendVal = DataUtils.extractDecimal(data.temptrend);
+				let trendVal = extractDecimal(data.temptrend);
 				newState.trend = GaugeUtils.tempTrend(trendVal, data.tempunit, false);
 			}
 
-			let low = DataUtils.extractDecimal(data.tempTL);
-			let high = DataUtils.extractDecimal(data.tempTH);
+			let low = extractDecimal(data.tempTL);
+			let high = extractDecimal(data.tempTH);
 			newState.areas = [steelseries.Section(low, high, this.props.controller.gaugeConfig.minMaxArea)];
 		}
 		else {
 			//Indoor selected 
-			newState.value = DataUtils.extractDecimal(data.intemp);
+			newState.value = extractDecimal(data.intemp);
 
 			if (data.intempTL && data.intempTH) { // Indoor - and Max/Min values supplied
 				lowScale = GaugeUtils.getMinTemp(newState.minValue, data);
 				highScale = GaugeUtils.getMaxTemp(newState.maxValue, data);
 
-				let low = DataUtils.extractDecimal(data.intempTL);
-				let high = DataUtils.extractDecimal(data.intempTH);
+				let low = extractDecimal(data.intempTL);
+				let high = extractDecimal(data.intempTH);
 				newState.areas = [steelseries.Section(low, high, this.props.controller.gaugeConfig.minMaxArea)];
 			}
 			else { // Indoor - no Max/Min values supplied
@@ -231,8 +232,8 @@ class TempGauge extends Component<Props, State> {
 				<button onClick={() => this.setInOutTemp('in')}>In</button>
 			</div>
 			<div>
-				<button onClick={() => this.props.controller.changeUnits({ tempUnit: UNITS.Temp.C})}>{UNITS.Temp.C}</button>
-				<button onClick={() => this.props.controller.changeUnits({ tempUnit: UNITS.Temp.F})}>{UNITS.Temp.F}</button>
+				<button onClick={() => this.props.controller.changeUnits({ temp: UNITS.Temp.C})}>{UNITS.Temp.C}</button>
+				<button onClick={() => this.props.controller.changeUnits({ temp: UNITS.Temp.F})}>{UNITS.Temp.F}</button>
 			</div>
 		</div>
 	}
@@ -248,7 +249,7 @@ interface State {
 
 	displayUnit: string,
 	maxMinVisible: boolean,
-	selected: TempType,
+	selected: InOutTemp,
 
 	value: number,
 	minValue: number,
@@ -261,8 +262,6 @@ interface State {
 	//popUpTxt: string,
 	//graph: string
 }
-
-enum TempType { OUT = 'out', IN = 'in' }
 
 interface LocalDataDef {
 	temp: any, tempunit: string, temptrend: any,

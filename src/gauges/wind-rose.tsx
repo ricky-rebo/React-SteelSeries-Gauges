@@ -1,13 +1,13 @@
 import React, { Component } from 'react';
-import GaugeUtils from '../utils/gauge-utils';
+import GaugeUtils from './gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
 // @ts-ignore
 import RGraph from '../libs/RGraph.rose.js';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
-import DataUtils from '../utils/data-utils';
 import { UNITS } from '../controller/defaults';
+import { extractDecimal, getWindrunUnits } from '../controller/data-utils';
 
 function createCanvas(size: number) {
 	let canvas = document.createElement('canvas');
@@ -166,8 +166,8 @@ class WindRoseGauge extends Component<Props, State> {
 			odoValue: windrun
 		}
 
-		if(this.state.odoUnit !== DataUtils.getWindrunUnits(windunit)) {
-			newState.odoUnit = DataUtils.getWindrunUnits(windunit);
+		if(this.state.odoUnit !== getWindrunUnits(windunit)) {
+			newState.odoUnit = getWindrunUnits(windunit);
 		}
 
 		this.setState(newState);
@@ -216,8 +216,8 @@ class WindRoseGauge extends Component<Props, State> {
 			// update the odometer
 			if (this.showOdo) {
 				//FIXME TweenJS animation broken
-				//this.odoGauge.setValueAnimated(DataUtils.extractDecimal(this.state.windrun));
-				this.odoGauge.setValue(DataUtils.extractDecimal(this.state.odoValue));
+				//this.odoGauge.setValueAnimated(extractDecimal(this.state.windrun));
+				this.odoGauge.setValue(extractDecimal(this.state.odoValue));
 			}
 		}
 	}
@@ -241,10 +241,10 @@ class WindRoseGauge extends Component<Props, State> {
 						: ''
 				}
 				<div>
-					<button onClick={() => this.props.controller.changeUnits({ windUnit: UNITS.Wind.KM_H })}>{UNITS.Wind.KM_H}</button>
-					<button onClick={() => this.props.controller.changeUnits({ windUnit: UNITS.Wind.Knots })}>{UNITS.Wind.Knots}</button>
-					<button onClick={() => this.props.controller.changeUnits({ windUnit: UNITS.Wind.MPH })}>{UNITS.Wind.MPH}</button>
-					<button onClick={() => this.props.controller.changeUnits({ windUnit: UNITS.Wind.M_S })}>{UNITS.Wind.M_S}</button>
+					<button onClick={() => this.props.controller.changeUnits({ wind: UNITS.Wind.KM_H })}>{UNITS.Wind.KM_H}</button>
+					<button onClick={() => this.props.controller.changeUnits({ wind: UNITS.Wind.Knots })}>{UNITS.Wind.Knots}</button>
+					<button onClick={() => this.props.controller.changeUnits({ wind: UNITS.Wind.MPH })}>{UNITS.Wind.MPH}</button>
+					<button onClick={() => this.props.controller.changeUnits({ wind: UNITS.Wind.M_S })}>{UNITS.Wind.M_S}</button>
 				</div>
 
 				<div style={{ display: 'none' }}>

@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
-import GaugeUtils from '../utils/gauge-utils';
+import GaugeUtils from './gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
-import DataUtils from '../utils/data-utils';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
+import { extractInteger } from '../controller/data-utils';
 
 //TODO docs
 class SolarGauge extends Component<Props, State> {
@@ -71,9 +71,9 @@ class SolarGauge extends Component<Props, State> {
 	async update({ SolarRad, SolarTM, CurrentSolarMax } : DataParamDef) {
 		let newState: any = {};
 
-		newState.value = DataUtils.extractInteger(SolarRad);
-		newState.maxToday = DataUtils.extractInteger(SolarTM);
-		newState.currMaxValue = DataUtils.extractInteger(CurrentSolarMax);
+		newState.value = extractInteger(SolarRad);
+		newState.maxToday = extractInteger(SolarTM);
+		newState.currMaxValue = extractInteger(CurrentSolarMax);
 
 		newState.maxValue = Math.max(newState.value, newState.currMaxValue, newState.maxToday, this.props.controller.gaugeConfig.solarGaugeScaleMax);
 		newState.maxValue = GaugeUtils.nextHighest(newState.maxValue, 100);

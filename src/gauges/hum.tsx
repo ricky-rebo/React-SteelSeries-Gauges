@@ -1,11 +1,12 @@
 import React, { Component } from 'react';
-import GaugeUtils from '../utils/gauge-utils';
+import GaugeUtils from './gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
-import DataUtils from '../utils/data-utils';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
 import Cookies, { Cookie } from 'universal-cookie/es6';
+import { InOutTemp } from './data-types';
+import { extractDecimal } from '../controller/data-utils';
 
 const COOKIE_NAME = 'hum-display';
 
@@ -24,7 +25,7 @@ class HumGauge extends Component<Props, State> {
 
 		this.canvasRef = React.createRef();
 
-		let tempType = TempType.OUT;
+		let tempType = InOutTemp.OUT;
 		if(props.controller.controllerConfig.useCookies && props.controller.gaugeConfig.showIndoorTempHum) {
 			this.cookies = new Cookies();
 			let sel = this.cookies.get(COOKIE_NAME);
@@ -81,7 +82,7 @@ class HumGauge extends Component<Props, State> {
 		this._setState(mapLocalData(data));
 	}
 
-	setInOutHum(sel: TempType) {
+	setInOutHum(sel: InOutTemp) {
 		if(this.state.data) {
 			this._setState(this.state.data, sel);
 
@@ -90,12 +91,12 @@ class HumGauge extends Component<Props, State> {
 		}
 	}
 
-	_setState(data: LocalDataDef, sel?: TempType) {
+	_setState(data: LocalDataDef, sel?: InOutTemp) {
 		let newState: any = {};
 
 		if(sel) {
 			newState.selected = sel
-			if(sel === TempType.OUT) {
+			if(sel === InOutTemp.OUT) {
 				newState.title = this.props.controller.lang.hum_title_out;
 			}
 			else {
@@ -107,25 +108,25 @@ class HumGauge extends Component<Props, State> {
 			newState.data = data;
 		}
 
-		if(newState.selected == TempType.OUT) {
-			newState.value = DataUtils.extractDecimal(data.hum);
+		if(newState.selected == InOutTemp.OUT) {
+			newState.value = extractDecimal(data.hum);
 		
 			newState.areas = [
 				steelseries.Section(
-					DataUtils.extractDecimal(data.humTL), 
-					DataUtils.extractDecimal(data.humTH), 
+					extractDecimal(data.humTL), 
+					extractDecimal(data.humTH), 
 					this.props.controller.gaugeConfig.minMaxArea
 				)
 			];
 		}
 		else {
-			newState.value = DataUtils.extractDecimal(data.inhum);
+			newState.value = extractDecimal(data.inhum);
 			if (data.inhumTL && data.inhumTH) {
 				// Indoor - and Max/Min values supplied
 				newState.areas=[
 					steelseries.Section(
-						DataUtils.extractDecimal(data.inhumTL), 
-						DataUtils.extractDecimal(data.inhumTH), 
+						extractDecimal(data.inhumTL), 
+						extractDecimal(data.inhumTH), 
 						this.props.controller.gaugeConfig.minMaxArea
 					)
 				];
@@ -161,8 +162,8 @@ class HumGauge extends Component<Props, State> {
 						style={this.style}
 					></canvas>
 				</div>
-				<button onClick={() => this.setInOutHum(TempType.OUT)}>Out</button>
-				<button onClick={() => this.setInOutHum(TempType.IN)}>In</button>
+				<button onClick={() => this.setInOutHum(InOutTemp.OUT)}>Out</button>
+				<button onClick={() => this.setInOutHum(InOutTemp.IN)}>In</button>
 			</div>
 		);
 	}
@@ -180,7 +181,7 @@ interface State {
 	title: string,
 	areas: any[],
 
-	selected: TempType,
+	selected: InOutTemp,
 
 	//popUpTxt: string,
 	//graph: string
@@ -206,7 +207,5 @@ function mapLocalData(data: any) {
 	}
 	return locData;
 }
-
-enum TempType { OUT = 'out', IN = 'in' };
 
 export default HumGauge;

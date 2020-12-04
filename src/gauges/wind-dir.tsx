@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
-import GaugeUtils from '../utils/gauge-utils';
+import GaugeUtils from './gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
-import DataUtils from '../utils/data-utils';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
+import { extractInteger, extractDecimal } from '../controller/data-utils';
 
 //TODO docs
 class WindDirGauge extends Component<Props, State> {
@@ -61,18 +61,18 @@ class WindDirGauge extends Component<Props, State> {
 	async update({ bearing, avgbearing, BearingRangeFrom10, BearingRangeTo10, wspeed, wgust, windunit, WindRoseData }: DataParamDef) {
 		let newState: any = {};
 
-		newState.valueLatest = DataUtils.extractInteger(bearing);
-		newState.valueAverage = DataUtils.extractInteger(avgbearing);
-		let bearingFrom = DataUtils.extractInteger(BearingRangeFrom10);
-		let bearingTo = DataUtils.extractInteger(BearingRangeTo10);
+		newState.valueLatest = extractInteger(bearing);
+		newState.valueAverage = extractInteger(avgbearing);
+		let bearingFrom = extractInteger(BearingRangeFrom10);
+		let bearingTo = extractInteger(BearingRangeTo10);
 
 		if(newState.valueAverage === 0) {
 			newState.valueLatest = 0;
 		}
 
 		if(this.props.controller.gaugeConfig.showWindVariation) {
-			let windSpd = DataUtils.extractDecimal(wspeed);
-			let windGst = DataUtils.extractDecimal(wgust);
+			let windSpd = extractDecimal(wspeed);
+			let windGst = extractDecimal(wgust);
 			let avgKnots: number, gstKnots: number;
 			switch(windunit.toLowerCase()){
 				case 'mph':

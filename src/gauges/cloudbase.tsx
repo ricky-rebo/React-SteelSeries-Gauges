@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
-import GaugeUtils from '../utils/gauge-utils';
+import GaugeUtils from './gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
-import DataUtils from '../utils/data-utils';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
 import { UNITS } from '../controller/defaults';
+import { extractInteger } from '../controller/data-utils';
 
 //TODO docs
 class CloudBaseGauge extends Component<Props, State> {
@@ -72,7 +72,7 @@ class CloudBaseGauge extends Component<Props, State> {
 			newState.sections = GaugeUtils.createCloudBaseSections(cloudbaseunit === UNITS.Cloud.M);
 		}
 
-		newState.value=DataUtils.extractInteger(cloudbasevalue);
+		newState.value = extractInteger(cloudbasevalue);
 
 		if(cloudbaseunit === UNITS.Cloud.M) {
 			// adjust metre gauge in jumps of 1000 metres, don't downscale during the session
@@ -128,8 +128,8 @@ class CloudBaseGauge extends Component<Props, State> {
 					style={this.style}
 				></canvas>
 				<div>
-					<button onClick={() => this.props.controller.changeUnits({ cloudUnit: UNITS.Cloud.M })}>{UNITS.Cloud.M}</button>
-					<button onClick={() => this.props.controller.changeUnits({ cloudUnit: UNITS.Cloud.FT })}>{UNITS.Cloud.FT}</button>
+					<button onClick={() => this.props.controller.changeUnits({ cloud: UNITS.Cloud.M })}>{UNITS.Cloud.M}</button>
+					<button onClick={() => this.props.controller.changeUnits({ cloud: UNITS.Cloud.FT })}>{UNITS.Cloud.FT}</button>
 				</div>
 					
 			</div>

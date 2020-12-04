@@ -1,6 +1,6 @@
+import { extractDecimal } from '../controller/data-utils.js';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
-import DataUtils from './data-utils.js';
 
 export default class GaugeUtils {
 	/**
@@ -79,10 +79,10 @@ export default class GaugeUtils {
    */
   static getMinTemp = (deflt: number, { tempTL, dewpointTL, apptempTL, wchillTL }: getMinTempDataDef) => {
     return Math.min(
-        DataUtils.extractDecimal(tempTL, deflt),
-        DataUtils.extractDecimal(dewpointTL, deflt),
-        DataUtils.extractDecimal(apptempTL, deflt),
-        DataUtils.extractDecimal(wchillTL, deflt));
+        extractDecimal(tempTL, deflt),
+        extractDecimal(dewpointTL, deflt),
+        extractDecimal(apptempTL, deflt),
+        extractDecimal(wchillTL, deflt));
   }
 
   /**
@@ -92,10 +92,10 @@ export default class GaugeUtils {
    */
   static getMaxTemp = (deflt: number, { tempTH, apptempTH, heatindexTH, humidex }: getMaxTempDataDef) => {
     return Math.max(
-      DataUtils.extractDecimal(tempTH, deflt),
-      DataUtils.extractDecimal(apptempTH, deflt),
-      DataUtils.extractDecimal(heatindexTH, deflt),
-      DataUtils.extractDecimal(humidex, deflt));
+      extractDecimal(tempTH, deflt),
+      extractDecimal(apptempTH, deflt),
+      extractDecimal(heatindexTH, deflt),
+      extractDecimal(humidex, deflt));
   }
 
   /**

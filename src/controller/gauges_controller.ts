@@ -3,16 +3,16 @@ import steelseries from '../libs/steelseries';
 // @ts-ignore
 import LANG from './language';
 
-import DataUtils from '../utils/data-utils';
-
 import LedGauge from '../gauges/led';
 import StatusScrollerGauge from '../gauges/status-scroller';
 import StatusTimerGauge from '../gauges/status-timer';
 
-import { ControllerConfig, CustomConfig, DisplayUnits, GaugeConfig, StatusType, WProgram } from './data_types';
+// @ts-ignore
+import { ControllerConfig, CustomConfig, DisplayUnits, GaugeConfig, RawData, RtData, StatusType, WProgram } from './data-types';
 import { CONTROLLER_CONFIG, GAUGE_CONFIG, DISPLAY_UNITS, Status, UNITS } from './defaults';
 import CloudBaseGauge from '../gauges/cloudbase';
 import Cookies from 'universal-cookie/es6';
+import { calcCloudbase, convBaroData, convCloudBaseData, convRainData, convTempData, getWindrunUnits, isStationOffline, parseLastRain } from './data-utils';
 
 const ERR_RT_RETRY = 5;
 const COOKIE_NAME = 'units';
@@ -177,50 +177,49 @@ export default class GaugesController {
 		
 	}
 
-	changeUnits({ tempUnit, rainUnit, pressUnit, windUnit, cloudUnit }: CustUnits) {
+	changeUnits({ temp, rain, press, wind, cloud }: Partial<DisplayUnits>) {
 		//TODO remove
 		//console.log("changeUnits() called")
 		let units: DisplayUnits = {...this.displayUnits};
 		let somethingChanged = false;
 
-		if(tempUnit && (tempUnit === UNITS.Temp.C || tempUnit === UNITS.Temp.F)) {
-			//console.log("new temp unit: " + tempUnit)
-			if(tempUnit !== units.temp) {
-				units.temp = tempUnit;
-				DataUtils.convTempData(this.data);
+		if(temp) {
+			if(temp !== units.temp) {
+				units.temp = temp;
+				convTempData(this.data);
 				somethingChanged = true;
 			}
 		}
 	
-		if(rainUnit && (rainUnit === UNITS.Rain.MM || rainUnit === UNITS.Rain.IN)) {
-			if(rainUnit !== units.rain) {
-				units.rain = rainUnit;
-				DataUtils.convRainData(this.data);
+		if(rain) {
+			if(rain !== units.rain) {
+				units.rain = rain;
+				convRainData(this.data, rain);
 				somethingChanged = true;
 			}
 		}
 
-		if(pressUnit && (pressUnit === UNITS.Press.HPA || pressUnit === UNITS.Press.INHG || pressUnit === UNITS.Press.MB || pressUnit === UNITS.Press.KPA)) {
-			if(pressUnit !== units.press) {
-				units.press = pressUnit;
-				DataUtils.convBaroData(this.data, pressUnit);
+		if(press) {
+			if(press !== units.press) {
+				units.press = press;
+				convBaroData(this.data, press);
 				somethingChanged = true;
 			}
 		}
 
-		if(windUnit && (windUnit === UNITS.Wind.KM_H || windUnit === UNITS.Wind.M_S || windUnit === UNITS.Wind.MPH || windUnit === UNITS.Wind.Knots)) {
-			if(windUnit !== units.wind) {
-				units.wind = windUnit;
-				units.windrun = DataUtils.getWindrunUnits(windUnit);
-				DataUtils.convWindData(this.data, windUnit);
+		if(wind) {
+			if(wind !== units.wind) {
+				units.wind = wind;
+				units.windrun = getWindrunUnits(wind);
+				convRainData(this.data, wind);
 				somethingChanged = true;
 			}
 		}
 
-		if(cloudUnit && (cloudUnit === UNITS.Cloud.M || cloudUnit === UNITS.Cloud.FT)) {
-			if(cloudUnit !== units.cloud) {
-				units.cloud = cloudUnit;
-				DataUtils.convCloudBaseData(this.data);
+		if(cloud) {
+			if(cloud !== units.cloud) {
+				units.cloud = cloud;
+				convCloudBaseData(this.data);
 				somethingChanged = true;
 			}
 		}
@@ -261,15 +260,17 @@ export default class GaugesController {
 	}
 
 	_checkRtErr(err: any) {
-		this._updateStatus(Status.Error, err, ERR_RT_RETRY);
-		this.rtDownLoadTimer = setTimeout(this._getRealTime, ERR_RT_RETRY * 1000);
+		if(err.substr(0, err.indexOf(':')) !== 'AbortError') {
+			this._updateStatus(Status.Error, err, ERR_RT_RETRY);
+			this.rtDownLoadTimer = setTimeout(this._getRealTime, ERR_RT_RETRY * 1000);
+		}
 	}
 
-	_processData = (rawdata: any) => {
-		if(rawdata.ver !== undefined && rawdata.ver >= this.min_rt_ver) {  
+	_processData = (/*rawdata: RawData*/rawdata: any) => {
+		if(rawdata.ver && +rawdata.ver >= this.min_rt_ver) {  
 			
 			// *** CHECK IF STATION IS OFFLINE ***
-			let stationOffMsg = DataUtils.isStationOffline(rawdata, this.controllerConfig.stationTimeout, this.lang);
+			let stationOffMsg = isStationOffline(rawdata, this.controllerConfig.stationTimeout, this.lang);
 			if(stationOffMsg !== null) {
 				this._updateStatus(Status.StationOffline);
 				rawdata.forecast = stationOffMsg;
@@ -287,7 +288,7 @@ export default class GaugesController {
 			
 
 			// mainpulate the last rain time into something more friendly
-			rawdata.LastRained = DataUtils.parseLastRain(rawdata, this.lang);
+			rawdata.LastRained = parseLastRain(rawdata, this.lang);
 	
 
 			// de-encode the forecast string if required (Cumulus support for extended characters)
@@ -331,7 +332,7 @@ export default class GaugesController {
 				rawdata.cloudbaseunit = (rawdata.windunit === UNITS.Wind.MPH || rawdata.windunit === UNITS.Wind.Knots)
 					? UNITS.Cloud.FT
 					: UNITS.Cloud.M;
-				rawdata.cloudbasevalue = DataUtils.calcCloudbase(rawdata);
+				rawdata.cloudbasevalue = calcCloudbase(rawdata);
 			}
 
 
@@ -350,7 +351,7 @@ export default class GaugesController {
 						rain: rawdata.rainunit,
 						press: rawdata.pressunit,
 						wind: rawdata.windunit,
-						windrun: DataUtils.getWindrunUnits(rawdata.windunit),
+						windrun: getWindrunUnits(rawdata.windunit),
 						cloud: rawdata.cloudbaseunit
 					};
 
@@ -369,27 +370,27 @@ export default class GaugesController {
 			
 			// Temperature data conversion for display required?
 			if (rawdata.tempunit !== this.displayUnits.temp) {
-				DataUtils.convTempData(rawdata); // temp needs converting
+				convTempData(rawdata); // temp needs converting
 			}
 
 			// Rain data conversion for display required?
 			if (rawdata.rainunit !== this.displayUnits.rain) {
-				DataUtils.convRainData(rawdata); // rain needs converting
+				convRainData(rawdata, this.displayUnits.rain); // rain needs converting
 			}
 
 			// Wind data conversion for display required?
 			if (rawdata.windunit !== this.displayUnits.wind) {
-				DataUtils.convWindData(rawdata, this.displayUnits.wind); // wind needs converting
+				convRainData(rawdata, this.displayUnits.wind); // wind needs converting
 			}
 
 			// Pressure data conversion for display required?
 			if (rawdata.pressunit !== this.displayUnits.press) {
-				DataUtils.convBaroData(rawdata, this.displayUnits.press);
+				convBaroData(rawdata, this.displayUnits.press);
 			}
 
 			if (rawdata.cloudbaseunit !== this.displayUnits.cloud) {
 				// Cloud height needs converting
-				DataUtils.convCloudBaseData(rawdata);
+				convCloudBaseData(rawdata);
 				
 			}
 
@@ -553,28 +554,27 @@ const setGaugeConfigs = (conf: CustomConfig) => {
 	return gaugeConfig;
 }
 
-type CustUnits = { tempUnit?: string, rainUnit?: string, pressUnit?: string, windUnit?: string, cloudUnit?: string };
-const setDisplayUnits = ({ tempUnit, rainUnit, pressUnit, windUnit, cloudUnit }: CustUnits) => {
+const setDisplayUnits = ({ tempUnit, rainUnit, pressUnit, windUnit, cloudUnit }: Partial<CustomConfig>) => {
 	let customUnits: boolean = false;
 	if(tempUnit || rainUnit || pressUnit || windUnit || cloudUnit)
 		customUnits = true;
 	
-	let displayUnits: any = {...DISPLAY_UNITS};
-	if(tempUnit && (tempUnit === UNITS.Temp.C || tempUnit === UNITS.Temp.F))
+	let displayUnits: DisplayUnits = {...DISPLAY_UNITS};
+	if(tempUnit)
 		displayUnits.temp = tempUnit;
 	
-	if(rainUnit && (rainUnit === UNITS.Rain.MM || rainUnit === UNITS.Rain.IN))
+	if(rainUnit)
 		displayUnits.rain = rainUnit;
 
-	if(pressUnit && (pressUnit === UNITS.Press.HPA || pressUnit === UNITS.Press.INHG || pressUnit === UNITS.Press.MB || pressUnit === UNITS.Press.KPA))
+	if(pressUnit)
 		displayUnits.press = pressUnit;
 
-	if(windUnit && (windUnit === UNITS.Wind.KM_H || windUnit === UNITS.Wind.M_S || windUnit === UNITS.Wind.MPH || windUnit === UNITS.Wind.Knots)) {
+	if(windUnit) {
 		displayUnits.wind = windUnit;
-		displayUnits.windrun = DataUtils.getWindrunUnits(windUnit);
+		displayUnits.windrun = getWindrunUnits(windUnit);
 	}
 
-	if(cloudUnit && (cloudUnit === UNITS.Cloud.M || cloudUnit === UNITS.Cloud.FT))
+	if(cloudUnit)
 		displayUnits.cloud = cloudUnit;
 	
 	return {

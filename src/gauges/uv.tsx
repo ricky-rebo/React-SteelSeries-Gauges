@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
-import GaugeUtils from '../utils/gauge-utils';
+import GaugeUtils from './gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
-import DataUtils from '../utils/data-utils';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
+import { extractDecimal } from '../controller/data-utils';
 
 //TODO docs
 class UVGauge extends Component<Props, State> {
@@ -79,7 +79,7 @@ class UVGauge extends Component<Props, State> {
 	async update({ UV }: DataParamDef) {
 		let newState: any = {};
 
-		newState.value = DataUtils.extractDecimal(UV);
+		newState.value = extractDecimal(UV);
 	
 		let indx: number;
 		if (+newState.value === 0) 			indx = 0;

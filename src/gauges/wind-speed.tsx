@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
-import GaugeUtils from '../utils/gauge-utils';
+import GaugeUtils from './gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
-import DataUtils from '../utils/data-utils';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
 import { UNITS } from '../controller/defaults';
+import { extractDecimal } from '../controller/data-utils';
 
 //TODO docs
 class WindSpeedGauge extends Component<Props, State> {
@@ -73,13 +73,13 @@ class WindSpeedGauge extends Component<Props, State> {
 			newState.displayUnit = windunit;
 		}
 
-		newState.value = DataUtils.extractDecimal(wlatest);
-		newState.maxGustToday = DataUtils.extractDecimal(wgustTM);
+		newState.value = extractDecimal(wlatest);
+		newState.maxGustToday = extractDecimal(wgustTM);
 
-		let average = DataUtils.extractDecimal(wspeed);
-		let gust = DataUtils.extractDecimal(wgust);
+		let average = extractDecimal(wspeed);
+		let gust = extractDecimal(wgust);
 		
-		//let maxAvgToday = DataUtils.extractDecimal(data.windTM);
+		//let maxAvgToday = extractDecimal(data.windTM);
 
 		switch (windunit) {
 			case UNITS.Wind.MPH:
@@ -136,10 +136,10 @@ class WindSpeedGauge extends Component<Props, State> {
 					style={this.style}
 				></canvas>
 				<div>
-					<button onClick={() => this.props.controller.changeUnits({ windUnit: UNITS.Wind.KM_H })}>{UNITS.Wind.KM_H}</button>
-					<button onClick={() => this.props.controller.changeUnits({ windUnit: UNITS.Wind.Knots })}>{UNITS.Wind.Knots}</button>
-					<button onClick={() => this.props.controller.changeUnits({ windUnit: UNITS.Wind.MPH })}>{UNITS.Wind.MPH}</button>
-					<button onClick={() => this.props.controller.changeUnits({ windUnit: UNITS.Wind.M_S })}>{UNITS.Wind.M_S}</button>
+					<button onClick={() => this.props.controller.changeUnits({ wind: UNITS.Wind.KM_H })}>{UNITS.Wind.KM_H}</button>
+					<button onClick={() => this.props.controller.changeUnits({ wind: UNITS.Wind.Knots })}>{UNITS.Wind.Knots}</button>
+					<button onClick={() => this.props.controller.changeUnits({ wind: UNITS.Wind.MPH })}>{UNITS.Wind.MPH}</button>
+					<button onClick={() => this.props.controller.changeUnits({ wind: UNITS.Wind.M_S })}>{UNITS.Wind.M_S}</button>
 				</div>
 			</div>
 		);

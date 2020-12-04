@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
-import GaugeUtils from '../utils/gauge-utils';
+import GaugeUtils from './gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
-import DataUtils from '../utils/data-utils';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
 import { UNITS } from '../controller/defaults';
+import { extractDecimal } from '../controller/data-utils';
 
 //TODO docs
 class BaroGauge extends Component<Props, State> {
@@ -83,11 +83,11 @@ class BaroGauge extends Component<Props, State> {
 					: steelseries.LabelNumberFormat.FRACTIONAL
 			}
 
-			newState.value = DataUtils.extractDecimal(press)
-			let low = DataUtils.extractDecimal(pressL),
-					high = DataUtils.extractDecimal(pressH),
-					todayLow = DataUtils.extractDecimal(pressTL),
-					todayHigh = DataUtils.extractDecimal(pressTH);
+			newState.value = extractDecimal(press)
+			let low = extractDecimal(pressL),
+					high = extractDecimal(pressH),
+					todayLow = extractDecimal(pressTL),
+					todayHigh = extractDecimal(pressTH);
 
 			//let dps: number;
 			switch(pressunit) {
@@ -136,7 +136,7 @@ class BaroGauge extends Component<Props, State> {
 
 			if (this.params.trendVisible) {
 				// Convert the WD change over 3 hours to an hourly rate
-				let trendVal = DataUtils.extractDecimal(presstrendval) / (this.props.controller.controllerConfig.weatherProgram === 2 ? 3 : 1);
+				let trendVal = extractDecimal(presstrendval) / (this.props.controller.controllerConfig.weatherProgram === 2 ? 3 : 1);
 				
 				// Use the baroTrend rather than simple arithmetic test - steady is more/less than zero!
 				newState.trend = GaugeUtils.baroTrend(trendVal, pressunit, false);
@@ -183,10 +183,10 @@ class BaroGauge extends Component<Props, State> {
 							style={this.style}
 					></canvas>
 					<div>
-						<button onClick={() => this.props.controller.changeUnits({ pressUnit: UNITS.Press.HPA})}>{UNITS.Press.HPA}</button>
-						<button onClick={() => this.props.controller.changeUnits({ pressUnit: UNITS.Press.KPA})}>{UNITS.Press.KPA}</button>
-						<button onClick={() => this.props.controller.changeUnits({ pressUnit: UNITS.Press.INHG})}>{UNITS.Press.INHG}</button>
-						<button onClick={() => this.props.controller.changeUnits({ pressUnit: UNITS.Press.MB})}>{UNITS.Press.MB}</button>
+						<button onClick={() => this.props.controller.changeUnits({ press: UNITS.Press.HPA})}>{UNITS.Press.HPA}</button>
+						<button onClick={() => this.props.controller.changeUnits({ press: UNITS.Press.KPA})}>{UNITS.Press.KPA}</button>
+						<button onClick={() => this.props.controller.changeUnits({ press: UNITS.Press.INHG})}>{UNITS.Press.INHG}</button>
+						<button onClick={() => this.props.controller.changeUnits({ press: UNITS.Press.MB})}>{UNITS.Press.MB}</button>
 					</div>
 					
 				</div>
