@@ -9,36 +9,34 @@ import StatusTimerGauge from '../gauges/status-timer';
 
 // @ts-ignore
 import { ControllerConfig, CustomConfig, DisplayUnits, GaugeConfig, RawData, RtData, StatusType, WProgram } from './data-types';
-import { CONTROLLER_CONFIG, GAUGE_CONFIG, DISPLAY_UNITS, Status, UNITS } from './defaults';
+import { CONTROLLER_CONFIG, GAUGE_CONFIG, DISPLAY_UNITS, Status } from './defaults';
 import CloudBaseGauge from '../gauges/cloudbase';
 import Cookies from 'universal-cookie/es6';
-import { calcCloudbase, convBaroData, convCloudBaseData, convRainData, convTempData, getWindrunUnits, isStationOffline, parseLastRain } from './data-utils';
+import { calcCloudbase, convBaroData, convCloudBaseData, convRainData, convTempData, convWindData, ERR_VAL, getWindrunUnits, isStationOffline, parseLastRain, parseRawData } from './data-utils';
 
 const ERR_RT_RETRY = 5;
 const COOKIE_NAME = 'units';
 
 export default class GaugesController {
-	min_rt_ver: number
+	min_rt_ver: number;
+	lang: any;
 	controllerConfig: ControllerConfig;
 	gaugeConfig: GaugeConfig;
 	commonParams: any;
 
-	lang: any;
-
 	fetchController: AbortController;
-	data: any = {};
 	status: any = Status.Loading;
+	displayUnits: DisplayUnits;
+	data: RtData;
 
 	gauges: string[] = [];
 	dataUpdate: any[] = [];
 	unitsUpdate: any[] = [];
 	statusUpdate: any[] = [];
 	
-	displayUnits: DisplayUnits;
 	firstRun: any = true;
 	customUnits: boolean = false;
 	cookies: Cookies;
-
 	rtDownLoadTimer: NodeJS.Timeout;
 
 	constructor(lang: LANG, config: CustomConfig) {
@@ -186,7 +184,7 @@ export default class GaugesController {
 		if(temp) {
 			if(temp !== units.temp) {
 				units.temp = temp;
-				convTempData(this.data);
+				convTempData(this.data, temp);
 				somethingChanged = true;
 			}
 		}
@@ -211,7 +209,7 @@ export default class GaugesController {
 			if(wind !== units.wind) {
 				units.wind = wind;
 				units.windrun = getWindrunUnits(wind);
-				convRainData(this.data, wind);
+				convWindData(this.data, wind);
 				somethingChanged = true;
 			}
 		}
@@ -219,7 +217,7 @@ export default class GaugesController {
 		if(cloud) {
 			if(cloud !== units.cloud) {
 				units.cloud = cloud;
-				convCloudBaseData(this.data);
+				convCloudBaseData(this.data, cloud);
 				somethingChanged = true;
 			}
 		}
@@ -234,8 +232,6 @@ export default class GaugesController {
 				this.cookies.set('units', units, { path: '/', expires: expireDate })
 			}
 		}
-		
-		this.dataUpdate.forEach(upd => upd(this.data));
 	}
 
 	getDisplayUnits = () => (this.displayUnits);
@@ -266,16 +262,18 @@ export default class GaugesController {
 		}
 	}
 
-	_processData = (/*rawdata: RawData*/rawdata: any) => {
-		if(rawdata.ver && +rawdata.ver >= this.min_rt_ver) {  
+	_processData = (/*rawdata: RawData*/rawData: any) => {
+		if(rawData.ver && +rawData.ver >= this.min_rt_ver) {
+			
+			let data = parseRawData(rawData);
 			
 			// *** CHECK IF STATION IS OFFLINE ***
-			let stationOffMsg = isStationOffline(rawdata, this.controllerConfig.stationTimeout, this.lang);
+			let stationOffMsg = isStationOffline(data, this.controllerConfig.stationTimeout, this.lang);
 			if(stationOffMsg !== null) {
 				this._updateStatus(Status.StationOffline);
-				rawdata.forecast = stationOffMsg;
+				data.forecast = stationOffMsg;
 			}
-			else if(+rawdata.SensorContactLost === 1) {
+			else if(+data.SensorContactLost === 1) {
 				this._updateStatus(Status.SensorContactLost);
 			} 
 			else if(this.status.type !== 'OK') {
@@ -283,56 +281,24 @@ export default class GaugesController {
 			}
 
 
-			if(!rawdata.dateFormat) rawdata.dateFormat = 'y/m/d';
-			else rawdata.dateFormat = rawdata.dateFormat.replace('%', ''); //WD leaves a trailing % char from the tag
+			if(data.dateFormat === "") data.dateFormat = 'y/m/d';
+			else data.dateFormat = data.dateFormat.replace('%', ''); //WD leaves a trailing % char from the tag
 			
 
 			// mainpulate the last rain time into something more friendly
-			rawdata.LastRained = parseLastRain(rawdata, this.lang);
+			data.LastRained = parseLastRain(data, this.lang);
 	
 
 			// de-encode the forecast string if required (Cumulus support for extended characters)
-			rawdata.forecast = stripHtml(rawdata.forecast).trim();
-
-
-			// clean up temperature units - remove html encoded degree symbols
-			if(rawdata.tempunit.length > 1) rawdata.tempunit = rawdata.tempunit.replace(/&\S*;/, '°');  
-			else rawdata.tempunit = '°' + rawdata.tempunit;
-			
-
-			// WView sends ' in', ' mb', or ' hPa'
-			rawdata.pressunit = rawdata.pressunit.trim();
-			if (rawdata.pressunit === 'in') // Cumulus and WView send 'in'
-				rawdata.pressunit = UNITS.Press.INHG
-
-
-			// WView sends ' kmh' etc -- WeatherCat sends "MPH"
-			rawdata.windunit = rawdata.windunit.trim().toLowerCase();
-			if (rawdata.windunit === 'knots') // WeatherCat/weewx send "Knots", we use "kts"
-				rawdata.windunit = UNITS.Wind.Knots 
-			else if (rawdata.windunit === 'kmh' || rawdata.windunit === 'kph') // WD wind unit omits '/', weewx sends 'kph' 
-				rawdata.windunit = UNITS.Wind.KM_H 
+			data.forecast = stripHtml(data.forecast).trim();
 
 			
-			// WView sends ' mm' etc
-			rawdata.rainunit = rawdata.rainunit.trim(); 
-
-
-			// change WeatherCat units from Metres/Feet to m/ft
-			if(!rawdata.cloudbaseunit)
-				rawdata.cloudbaseunit = '';
-			else if (rawdata.cloudbaseunit.toLowerCase() === 'metres')
-				rawdata.cloudbaseunit = UNITS.Cloud.M;
-			else if (rawdata.cloudbaseunit.toLowerCase() === 'feet')
-				rawdata.cloudbaseunit = UNITS.Cloud.FT;
-			if (this.gauges.some(gauge => gauge === CloudBaseGauge.NAME) && rawdata.cloudbasevalue === '' ) {
+			if (this.gauges.some(gauge => gauge === CloudBaseGauge.NAME) && data.cloudbasevalue === ERR_VAL ) {
 				// Some Wheather Programs (MeteoBridge? WeatherCat? VWS? WView?) do not provide a cloud base value, so we have to calculate it...
 				// It isn't clear which programs, there are many logic inconsistencies in the original gauges.js
 				// assume if the station uses an imperial wind speed they want cloud base in feet, otherwise metres
-				rawdata.cloudbaseunit = (rawdata.windunit === UNITS.Wind.MPH || rawdata.windunit === UNITS.Wind.Knots)
-					? UNITS.Cloud.FT
-					: UNITS.Cloud.M;
-				rawdata.cloudbasevalue = calcCloudbase(rawdata);
+				data.cloudbaseunit = (data.windunit === "mph" || data.windunit === "kts") ? "ft" : "m";
+				data.cloudbasevalue = calcCloudbase(data);
 			}
 
 
@@ -340,19 +306,19 @@ export default class GaugesController {
 			if(this.firstRun) {
 				//TODO get user pref units from cookie
 
-				let units = null;
+				let units = undefined;;
 				if(this.controllerConfig.useCookies && this.cookies) {
 					units = this.cookies.get('units');
 				}
 
-				if(!units || units === null) {
+				if(!units) {
 					units = {
-						temp: rawdata.tempunit,
-						rain: rawdata.rainunit,
-						press: rawdata.pressunit,
-						wind: rawdata.windunit,
-						windrun: getWindrunUnits(rawdata.windunit),
-						cloud: rawdata.cloudbaseunit
+						temp: data.tempunit,
+						rain: data.rainunit,
+						press: data.pressunit,
+						wind: data.windunit,
+						windrun: getWindrunUnits(data.windunit),
+						cloud: data.cloudbaseunit
 					};
 
 					if(this.controllerConfig.useCookies && this.cookies) {
@@ -364,46 +330,47 @@ export default class GaugesController {
 
 				this._updateUnits(units);
 
-				rawdata.statusTimerStart = true;
+				data.statusTimerStart = true;
 				this.firstRun = false;
 			}
 			
 			// Temperature data conversion for display required?
-			if (rawdata.tempunit !== this.displayUnits.temp) {
-				convTempData(rawdata); // temp needs converting
+			if (data.tempunit !== this.displayUnits.temp) {
+				convTempData(data, this.displayUnits.temp); // temp needs converting
 			}
 
 			// Rain data conversion for display required?
-			if (rawdata.rainunit !== this.displayUnits.rain) {
-				convRainData(rawdata, this.displayUnits.rain); // rain needs converting
+			if (data.rainunit !== this.displayUnits.rain) {
+				convRainData(data, this.displayUnits.rain); // rain needs converting
 			}
 
 			// Wind data conversion for display required?
-			if (rawdata.windunit !== this.displayUnits.wind) {
-				convRainData(rawdata, this.displayUnits.wind); // wind needs converting
+			if (data.windunit !== this.displayUnits.wind) {
+				convWindData(data, this.displayUnits.wind); // wind needs converting
 			}
 
 			// Pressure data conversion for display required?
-			if (rawdata.pressunit !== this.displayUnits.press) {
-				convBaroData(rawdata, this.displayUnits.press);
+			if (data.pressunit !== this.displayUnits.press) {
+				convBaroData(data, this.displayUnits.press);
 			}
 
-			if (rawdata.cloudbaseunit !== this.displayUnits.cloud) {
+			if (data.cloudbaseunit !== this.displayUnits.cloud) {
 				// Cloud height needs converting
-				convCloudBaseData(rawdata);
+				convCloudBaseData(data, this.displayUnits.cloud);
 				
 			}
 
-			rawdata.statusTimerReset = this.controllerConfig.realtimeInterval;
+			data.statusTimerReset = this.controllerConfig.realtimeInterval;
 
 			//TODO remove
-			console.log(rawdata);
-			this._updateData(rawdata);
+			console.log(data);
+			this.data = data;
+			this._updateData(data);
 
 			return true;
 		}
 		else {
-			if(rawdata.ver < this.min_rt_ver)
+			if(rawData.ver < this.min_rt_ver)
 				this._updateStatus(Status.FatalError, `Your ${this.controllerConfig.realTimeUrl.substr(this.controllerConfig.realTimeUrl.lastIndexOf('/') + 1)} file template needs updating!`);
 			else
 				this._updateStatus(Status.Error, this.lang.realtimeCorrupt);
@@ -413,14 +380,16 @@ export default class GaugesController {
 
 
 	/* *** Updates Pubblish *** */
-	_updateData = (data: any) => {
-		this.data = data;
-		this.dataUpdate.forEach(upd => upd(this.data));
+	_updateData = (data?: RtData) => {
+		if(data) this.data = data;
+		if(this.data) {
+			this.dataUpdate.forEach(upd => upd(this.data));
+		}
 	}
 
 	_updateUnits = (units: any) => {
 		this.displayUnits = units;
-		this.unitsUpdate.forEach(upd => upd(units));
+		this._updateData();
 	}
 
 	_updateStatus = (status: any, msg?: string, timer?: number) => {

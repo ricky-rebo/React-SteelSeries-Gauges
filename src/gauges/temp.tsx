@@ -1,13 +1,12 @@
 import React, { Component } from 'react';
-import GaugeUtils from './gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
-import { UNITS } from '../controller/defaults';
 import Cookies from 'universal-cookie/es6';
 import { InOutTemp } from './data-types';
-import { extractDecimal } from '../controller/data-utils';
+import { createTempSections, gaugeShadow, getMinTemp, getMaxTemp, tempTrend } from './gauge-utils.js';
+import { RtData, TempUnit } from '../controller/data-types.js';
 
 const COOKIE_NAME = 'temp-display';
 
@@ -40,13 +39,13 @@ class TempGauge extends Component<Props, State> {
 		
 		let { temp } = props.controller.getDisplayUnits();
 		this.state = {
-			value: (temp === UNITS.Temp.C)
+			value: (temp === "°C")
 				? this.props.controller.gaugeConfig.tempScaleDefMinC + 0.0001
 				: this.props.controller.gaugeConfig.tempScaleDefMinF + 0.0001,
-			minValue: (temp === UNITS.Temp.C)
+			minValue: (temp === "°C")
 				? this.props.controller.gaugeConfig.tempScaleDefMinC
 				: this.props.controller.gaugeConfig.tempScaleDefMinF,
-			maxValue: (temp === UNITS.Temp.C)
+			maxValue: (temp === "°C")
 				? this.props.controller.gaugeConfig.tempScaleDefMaxC
 				: this.props.controller.gaugeConfig.tempScaleDefMaxF,
 			trend: steelseries.TrendState.OFF,
@@ -56,7 +55,7 @@ class TempGauge extends Component<Props, State> {
 				? this.props.controller.lang.temp_title_out
 				: this.props.controller.lang.temp_title_in,
 			displayUnit: temp,
-			sections: GaugeUtils.createTempSections(temp === UNITS.Temp.C),
+			sections: createTempSections(temp === "°C"),
 			maxMinVisible: false,
 
 			//popUpTxt: '',
@@ -81,7 +80,7 @@ class TempGauge extends Component<Props, State> {
 		};
 
 		this.style = this.props.controller.gaugeConfig.showGaugeShadow
-			? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
+			? gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
 			: {};
 
 		this.update = this.update.bind(this);
@@ -96,7 +95,7 @@ class TempGauge extends Component<Props, State> {
 		}
 	}
 
-	async update(data: any) {
+	async update(data: RtData) {
 		this._setState(mapLocalData(data));
 	}
 
@@ -111,7 +110,7 @@ class TempGauge extends Component<Props, State> {
 
 		if(data.tempunit !== this.state.displayUnit) {
 			newState.displayUnit = data.tempunit,
-			newState.sections = GaugeUtils.createTempSections(data.tempunit === UNITS.Temp.C)
+			newState.sections = createTempSections(data.tempunit === "°C")
 		}
 
 		if(sel) {
@@ -123,41 +122,41 @@ class TempGauge extends Component<Props, State> {
 			newState.selected = this.state.selected;
 		}
 
-		newState.minValue = data.tempunit === UNITS.Temp.C
+		newState.minValue = data.tempunit === "°C"
 			? this.props.controller.gaugeConfig.tempScaleDefMinC
 			: this.props.controller.gaugeConfig.tempScaleDefMinF;
-		newState.maxValue = data.tempunit === UNITS.Temp.C
+		newState.maxValue = data.tempunit === "°C"
 			? this.props.controller.gaugeConfig.tempScaleDefMaxC
 			: this.props.controller.gaugeConfig.tempScaleDefMaxF;
 
 		let lowScale: number, highScale: number;
 		if(newState.selected === InOutTemp.OUT) {
-			newState.value = extractDecimal(data.temp);
+			newState.value = data.temp;
 			
-			lowScale = GaugeUtils.getMinTemp(newState.minValue, data);
-			highScale = GaugeUtils.getMaxTemp(newState.maxValue, data);
+			lowScale = newState.minValue, data;
+			highScale = newState.maxValue, data;
 
 			//loc = this.props.controller.lang.temp_out_info;
 			
 			if(this.params.trendVisible) {
-				let trendVal = extractDecimal(data.temptrend);
-				newState.trend = GaugeUtils.tempTrend(trendVal, data.tempunit, false);
+				let trendVal = data.temptrend;
+				newState.trend = tempTrend(trendVal, data.tempunit, false);
 			}
 
-			let low = extractDecimal(data.tempTL);
-			let high = extractDecimal(data.tempTH);
+			let low = data.tempTL;
+			let high = data.tempTH;
 			newState.areas = [steelseries.Section(low, high, this.props.controller.gaugeConfig.minMaxArea)];
 		}
 		else {
 			//Indoor selected 
-			newState.value = extractDecimal(data.intemp);
+			newState.value = data.intemp;
 
 			if (data.intempTL && data.intempTH) { // Indoor - and Max/Min values supplied
-				lowScale = GaugeUtils.getMinTemp(newState.minValue, data);
-				highScale = GaugeUtils.getMaxTemp(newState.maxValue, data);
+				lowScale = getMinTemp(newState.minValue, data);
+				highScale = getMaxTemp(newState.maxValue, data);
 
-				let low = extractDecimal(data.intempTL);
-				let high = extractDecimal(data.intempTH);
+				let low = data.intempTL;
+				let high = data.intempTH;
 				newState.areas = [steelseries.Section(low, high, this.props.controller.gaugeConfig.minMaxArea)];
 			}
 			else { // Indoor - no Max/Min values supplied
@@ -171,7 +170,7 @@ class TempGauge extends Component<Props, State> {
 		}
 		
 		// auto scale the ranges
-		let scaleStep = data.tempunit === UNITS.Temp.C ? 10 : 20;
+		let scaleStep = data.tempunit === "°C" ? 10 : 20;
 		while (lowScale < newState.minValue) {
 			newState.minValue -= scaleStep;
 			if (highScale <= newState.maxValue - scaleStep) {
@@ -232,8 +231,8 @@ class TempGauge extends Component<Props, State> {
 				<button onClick={() => this.setInOutTemp('in')}>In</button>
 			</div>
 			<div>
-				<button onClick={() => this.props.controller.changeUnits({ temp: UNITS.Temp.C})}>{UNITS.Temp.C}</button>
-				<button onClick={() => this.props.controller.changeUnits({ temp: UNITS.Temp.F})}>{UNITS.Temp.F}</button>
+				<button onClick={() => this.props.controller.changeUnits({ temp: "°C"})}> °C </button>
+				<button onClick={() => this.props.controller.changeUnits({ temp: "°F"})}> °F </button>
 			</div>
 		</div>
 	}
@@ -247,7 +246,7 @@ interface Props {
 interface State {
 	data?: LocalDataDef,
 
-	displayUnit: string,
+	displayUnit: TempUnit,
 	maxMinVisible: boolean,
 	selected: InOutTemp,
 
@@ -264,13 +263,13 @@ interface State {
 }
 
 interface LocalDataDef {
-	temp: any, tempunit: string, temptrend: any,
-	tempTL: any, dewpointTL: any, apptempTL: any, wchillTL: any,
-	tempTH: any, apptempTH: any, heatindexTH: any, humidex: any,
-	intemp: any, intempTL: any, intempTH: any
+	temp: number, tempunit: TempUnit, temptrend: number,
+	tempTL: number, dewpointTL: number, apptempTL: number, wchillTL: number,
+	tempTH: number, apptempTH: number, heatindexTH: number, humidex: number,
+	intemp: number, intempTL?: number, intempTH?: number
 }
 
-function mapLocalData(data: any) {
+function mapLocalData(data: RtData) {
 	let locData: LocalDataDef = {
 		temp				: data.temp,
 		tempunit		: data.tempunit,

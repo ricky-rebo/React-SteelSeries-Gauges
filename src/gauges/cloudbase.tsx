@@ -1,11 +1,10 @@
 import React, { Component } from 'react';
-import GaugeUtils from './gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
-import { UNITS } from '../controller/defaults';
-import { extractInteger } from '../controller/data-utils';
+import { CloudUnit, RtData } from '../controller/data-types';
+import { createCloudBaseSections, gaugeShadow, nextHighest } from './gauge-utils.js';
 
 //TODO docs
 class CloudBaseGauge extends Component<Props, State> {
@@ -24,9 +23,9 @@ class CloudBaseGauge extends Component<Props, State> {
 		let { cloud } = props.controller.getDisplayUnits();
 		this.state = {
 			value:  0.0001,
-			sections: GaugeUtils.createCloudBaseSections(cloud === UNITS.Cloud.M),
-			displayUnit: (cloud === UNITS.Cloud.M) ? props.controller.lang.metres : props.controller.lang.feet,
-			maxValue:  (cloud === UNITS.Cloud.M) 
+			sections: createCloudBaseSections(cloud === "m"),
+			displayUnit: (cloud === "m") ? props.controller.lang.metres : props.controller.lang.feet,
+			maxValue:  (cloud === "m") 
 				? props.controller.gaugeConfig.cloudScaleDefMaxm
 				: props.controller.gaugeConfig.cloudScaleDefMaxft
 
@@ -47,7 +46,7 @@ class CloudBaseGauge extends Component<Props, State> {
 		};
 
 		this.style = this.props.controller.gaugeConfig.showGaugeShadow
-			? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
+			? gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
 			: {};
 
 		this.update = this.update.bind(this);
@@ -62,21 +61,21 @@ class CloudBaseGauge extends Component<Props, State> {
 		}
 	}
 
-	async update({cloudbasevalue, cloudbaseunit} : DataParamsDef) {
+	async update({ cloudbasevalue, cloudbaseunit } : RtData) {
 		let newState: any = {};
 
 		if(cloudbaseunit !== this.state.displayUnit) {
-			newState.displayUnit = (cloudbaseunit === UNITS.Cloud.M)
+			newState.displayUnit = (cloudbaseunit === "m")
 				? this.props.controller.lang.metres
 				: this.props.controller.lang.feet
-			newState.sections = GaugeUtils.createCloudBaseSections(cloudbaseunit === UNITS.Cloud.M);
+			newState.sections = createCloudBaseSections(cloudbaseunit === "m");
 		}
 
-		newState.value = extractInteger(cloudbasevalue);
+		newState.value = cloudbasevalue;
 
-		if(cloudbaseunit === UNITS.Cloud.M) {
+		if(cloudbaseunit === "m") {
 			// adjust metre gauge in jumps of 1000 metres, don't downscale during the session
-			newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value, 1000), this.props.controller.gaugeConfig.cloudScaleDefMaxm);
+			newState.maxValue = Math.max(nextHighest(newState.value, 1000), this.props.controller.gaugeConfig.cloudScaleDefMaxm);
 			
 			if(newState.value <= 1000 && this.props.controller.controllerConfig.roundCloudbaseVal) {
 				// and round the value to the nearest  10 m
@@ -88,7 +87,7 @@ class CloudBaseGauge extends Component<Props, State> {
 			}
 		}
 		else {
-			newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value, 2000), this.props.controller.gaugeConfig.cloudScaleDefMaxft);
+			newState.maxValue = Math.max(nextHighest(newState.value, 2000), this.props.controller.gaugeConfig.cloudScaleDefMaxft);
 			
 			if(newState.value <= 2000 && this.props.controller.controllerConfig.roundCloudbaseVal){
 				// and round the value to the nearest  50 ft
@@ -128,8 +127,8 @@ class CloudBaseGauge extends Component<Props, State> {
 					style={this.style}
 				></canvas>
 				<div>
-					<button onClick={() => this.props.controller.changeUnits({ cloud: UNITS.Cloud.M })}>{UNITS.Cloud.M}</button>
-					<button onClick={() => this.props.controller.changeUnits({ cloud: UNITS.Cloud.FT })}>{UNITS.Cloud.FT}</button>
+					<button onClick={() => this.props.controller.changeUnits({ cloud: "m" })}> m </button>
+					<button onClick={() => this.props.controller.changeUnits({ cloud: "ft" })}> ft </button>
 				</div>
 					
 			</div>
@@ -146,13 +145,8 @@ interface State {
 	value: number,
 	sections: any[],
 	maxValue: number,
-	displayUnit: string
+	displayUnit: CloudUnit
 	//popUpTxt: string,
 }
-
-type DataParamsDef = {
-	cloudbasevalue: any,
-	cloudbaseunit: string
-};
 
 export default CloudBaseGauge;

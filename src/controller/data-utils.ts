@@ -1,6 +1,6 @@
-import { RawData, RtData } from "./data-types";
-import { UNITS } from "./defaults";
+import { CloudUnit, PressUnit, RainUnit, RawData, RtData, TempUnit, WindUnit } from "./data-types";
 
+export const ERR_VAL = -9999;
 
 export const parseRawData = (rawData: RawData) => {
 	let data: RtData = {
@@ -107,13 +107,12 @@ export const parseRawData = (rawData: RawData) => {
 }
 
 
-
 /**
  * 
- * @param param0 
+ * @param data
  * @param lang 
  */
-export const parseLastRain = ({ LastRainTipISO, dateFormat }: {LastRainTipISO: string, dateFormat: string}, lang: any) => {
+export const parseLastRain = ({ LastRainTipISO, dateFormat }: RtData, lang: any) => {
 	try {
 		let [date, time] = LastRainTipISO.split(' '); 
 		let dt = date.replace(/\//g, '-').split('-');  // WD uses dd/mm/yyyy, we use a '-'
@@ -149,11 +148,11 @@ export const parseLastRain = ({ LastRainTipISO, dateFormat }: {LastRainTipISO: s
 
 /**
  * //TODO
- * @param param0 
+ * @param data 
  * @param stationTimeout 
  * @param lang 
  */
-export const isStationOffline = ({ timeUTC }: { timeUTC: string }, stationTimeout: number, lang: any) => {
+export const isStationOffline = ({ timeUTC }: RtData, stationTimeout: number, lang: any) => {
 	let now = Date.now();
 	let tmp = timeUTC.split(',');
 	//console.log("tmp: " + tmp);
@@ -179,12 +178,12 @@ export const isStationOffline = ({ timeUTC }: { timeUTC: string }, stationTimeou
 
 /**
  * //TODO 
- * @param param0 
+ * @param data 
  */
-export const calcCloudbase = ({temp, tempunit, dew, cloudbaseunit}: {temp: string, tempunit: string, dew: string, cloudbaseunit: string}) => {
-	var sprd = +temp - +dew;
-	var cb = sprd * (tempunit[1] === 'C' ? 400 : 227.3); // cloud base in feet
-	if (cloudbaseunit === 'm') {
+export const calcCloudbase = ({ temp, tempunit, dew, cloudbaseunit }: RtData) => {
+	var sprd = temp - dew;
+	var cb = sprd * (tempunit === "°C" ? 400 : 227.3); // cloud base in feet
+	if (cloudbaseunit === "m") {
 			cb = +ft2m(cb);
 	}
 	return cb;
@@ -195,8 +194,10 @@ export const calcCloudbase = ({temp, tempunit, dew, cloudbaseunit}: {temp: strin
  * //TODO
  * @param data 
  */
-export const convTempData = (data: any) => {
-	const convFunc = data.tempunit[1] === 'C' ? c2f : f2c;
+export const convTempData = (data: RtData, to: TempUnit) => {
+	if(data.tempunit === to) return;
+
+	const convFunc = to === "°C" ? c2f : f2c;
 	data.apptemp = convFunc(data.apptemp);
 	data.apptempTH = convFunc(data.apptempTH);
 	data.apptempTL = convFunc(data.apptempTL);
@@ -216,16 +217,10 @@ export const convTempData = (data: any) => {
 	data.tempTL = convFunc(data.tempTL);
 	data.wchill = convFunc(data.wchill);
 	data.wchillTL = convFunc(data.wchillTL);
-	if (data.tempunit[1] === 'C') {
-			data.temptrend = (+extractDecimal(data.temptrend) * 9 / 5).toFixed(1);
-			data.tempunit = '°F';
-	} else {
-			data.temptrend = (+extractDecimal(data.temptrend) * 5 / 9).toFixed(1);
-			data.tempunit = '°C';
-	}
-
-	//TODO REMOVE
-	data.DEBUG = "TEMP DATA CONVERTED"
+	data.temptrend = to === "°F"
+		? toFixedNumber((data.temptrend * 9 / 5), 1)
+		: toFixedNumber((data.temptrend * 5 / 9), 1)
+	data.tempunit = to;
 }
 
 /**
@@ -233,8 +228,10 @@ export const convTempData = (data: any) => {
  * //TODO
  * @param data 
  */
-export const convRainData = (data: any, to: string) => {
-	const convFunc = to === UNITS.Rain.IN ? in2mm : mm2in;
+export const convRainData = (data: RtData, to: RainUnit) => {
+	if(data.rainunit === to) return;
+
+	const convFunc = to === "in" ? in2mm : mm2in;
 	data.rfall = convFunc(data.rfall);
 	data.rrate = convFunc(data.rrate);
 	data.rrateTM = convFunc(data.rrateTM);
@@ -248,7 +245,9 @@ export const convRainData = (data: any, to: string) => {
  * @param data
  * @param to 
  */
-export const convWindData = function (data: any, to: string) {
+export const convWindData = function (data: RtData, to: WindUnit) {
+	if(data.windunit === to) return;
+
 	const from = data.windunit;
 	let fromFunc1, toFunc1,
 			fromFunc2, toFunc2;
@@ -269,7 +268,6 @@ export const convWindData = function (data: any, to: string) {
 				fromFunc2 = dummy;
 				break;
 		case 'm/s':
-		// falls through
 		default:
 				fromFunc1 = dummy;
 				fromFunc2 = dummy;
@@ -289,7 +287,6 @@ export const convWindData = function (data: any, to: string) {
 				toFunc2 = dummy;
 				break;
 		case 'm/s':
-		// falls through
 		default:
 				toFunc1 = dummy;
 				toFunc2 = dummy;
@@ -309,7 +306,8 @@ export const convWindData = function (data: any, to: string) {
  * @param data 
  * @param to 
  */
-export const convBaroData = function (data: any, to: string) {
+export const convBaroData = function (data: RtData, to: PressUnit) {
+	if(data.pressunit === to) return;
 	let fromFunc, toFunc;
 	const dummy = (val: any) => val;
 
@@ -331,7 +329,6 @@ export const convBaroData = function (data: any, to: string) {
 	// convert to required units
 	switch (to) {
 		case 'hPa':
-		// falls through
 		case 'mb':
 			toFunc = dummy;
 			break;
@@ -358,76 +355,82 @@ export const convBaroData = function (data: any, to: string) {
  * convCloudBaseData() converts all the cloud base data units using the supplied conversion function
  * @param data 
  */
-export const convCloudBaseData = (data: any) => {
-	const convFunc = data.cloudbaseunit === 'm' ? m2ft : ft2m;
+export const convCloudBaseData = (data: RtData, to: CloudUnit) => {
+	if(data.cloudbaseunit === to) return;
+
+	const convFunc = to === "m" ? m2ft : ft2m;
 	data.cloudbasevalue = convFunc(data.cloudbasevalue);
-	data.cloudbaseunit = data.cloudbaseunit === 'm' ? 'ft' : 'm';
+	data.cloudbaseunit = to;
 }
 
 
 // ======================================
 // ===        UNITS CONVERSION        ===
 // ======================================
+const toFixedNumber = (num: number, digits: number, base?: number) => {
+  var pow = Math.pow(base||10, digits);
+  return Math.round(num * pow) / pow;
+}
 
 // Celsius to Fahrenheit
-const c2f = (val: any) => (extractDecimal(val) * 9 / 5 + 32).toFixed(1)
+const c2f = (val: number) => toFixedNumber((val * 9 / 5 + 32), 1);
 
 // Fahrenheit to Celsius
-const f2c = (val: any) => ((extractDecimal(val) - 32) * 5 / 9).toFixed(1)
+const f2c = (val: number) => toFixedNumber(((val - 32) * 5 / 9), 1);
 
 // mph to ms
-const mph2ms = (val: any) => (extractDecimal(val) * 0.447).toFixed(1)
+const mph2ms = (val: number) => toFixedNumber((val * 0.447), 1);
 
 // knots to ms
-const kts2ms = (val: any) => (extractDecimal(val) * 0.515).toFixed(1)
+const kts2ms = (val: number) => toFixedNumber((val * 0.515), 1);
 
 // kph to ms
-const kmh2ms = (val: any) => (extractDecimal(val) * 0.2778).toFixed(1)
+const kmh2ms = (val: number) => toFixedNumber((val * 0.2778), 1);
 
 // ms to kts
-const ms2kts = (val: any) => (extractDecimal(val) * 1.9426).toFixed(1)
+const ms2kts = (val: number) => toFixedNumber((val * 1.9426), 1);
 
 // ms to mph
-const ms2mph = (val: any) => (extractDecimal(val) * 2.237).toFixed(1)
+const ms2mph = (val: number) => toFixedNumber((val * 2.237), 1);
 
 // ms to kph
-const ms2kmh = (val: any) => (extractDecimal(val) * 3.6).toFixed(1)
+const ms2kmh = (val: number) => toFixedNumber((val * 3.6), 1);
 
 // mm to inches
-const mm2in = (val: any) => (extractDecimal(val) / 25.4).toFixed(2)
+const mm2in = (val: number) => toFixedNumber((val / 25.4), 2);
 
 // inches to mm
-const in2mm = (val: any) => (extractDecimal(val) * 25.4).toFixed(1)
+const in2mm = (val: number) => toFixedNumber((val * 25.4), 1);
 
 // miles to km
-const miles2km = (val: any) => (extractDecimal(val) * 1.609344).toFixed(1)
+const miles2km = (val: number) => toFixedNumber((val * 1.609344), 1);
 
 // nautical miles to km
-const nmiles2km = (val: any) => (extractDecimal(val) * 1.85200).toFixed(1)
+const nmiles2km = (val: number) => toFixedNumber((val * 1.85200), 1);
 
 // km to miles
-const km2miles = (val: any) => (extractDecimal(val) / 1.609344).toFixed(1)
+const km2miles = (val: number) => toFixedNumber((val / 1.609344), 1);
 
 // km to nautical miles
-const km2nmiles = (val: any) => (extractDecimal(val) / 1.85200).toFixed(1)
+const km2nmiles = (val: number) => toFixedNumber((val / 1.85200), 1);
 
 // hPa to inHg (@0°C)
-const hpa2inhg = (val: any, decimals?: number) => (extractDecimal(val) * 0.029528744).toFixed(decimals || 3)
+const hpa2inhg = (val: number, decimals?: number) => toFixedNumber((val * 0.029528744), decimals || 3);
 
 // inHg to hPa (@0°C)
-const inhg2hpa = (val: any) => (extractDecimal(val) / 0.029528744).toFixed(1)
+const inhg2hpa = (val: number) => toFixedNumber((val / 0.029528744), 1);
 
 // kPa to hPa
-const kpa2hpa = (val: any) => (extractDecimal(val) * 10).toFixed(1)
+const kpa2hpa = (val: number) => toFixedNumber((val * 10), 1);
 
 // hPa to kPa
-const hpa2kpa = (val: any, decimals?: number) => (extractDecimal(val) / 10).toFixed(decimals || 2)
+const hpa2kpa = (val: number, decimals?: number) => toFixedNumber((val / 10), decimals || 2);
 
 // m to ft
-const m2ft = (val: any) => (val * 3.2808399).toFixed(0)
+const m2ft = (val: number) => toFixedNumber((val * 3.2808399), 0);
 
 //feet to meters
-const ft2m = (val: number) => (val / 3.2808399).toFixed(0)
+const ft2m = (val: number) => toFixedNumber((val / 3.2808399), 0);
 
 
 
@@ -435,32 +438,61 @@ const ft2m = (val: number) => (val / 3.2808399).toFixed(0)
 // ===         OTHER FUNCTIONS         ===
 // =======================================
 const extractTempunit = (str?: string) => {
-	if(str && (str === "°C" || str === "°F")) {
-		return str;
+	if(str) {
+		// clean up temperature units - remove html encoded degree symbols
+		if(str.length > 1) str = str.replace(/&\S*;/, '°');
+		else str = "°" + str;
+
+		if(str === "°C" || str === "°F")
+			return str;
 	}
 	return "";
 }
 const extractRainunit = (str?: string) => {
-	if(str  && (str === "mm" || str === "in")) {
-		return str;
+	if(str) {
+		// WView sends ' mm' etc
+		str = str.trim();
+
+		if(str === "mm" || str === "in")
+			return str;
 	}
 	return "";
 }
 const extractPressunit = (str?: string) => {
-	if(str && (str === "hPa" || str === "inHg" || str === "mb" || str === "kPa")) {
-		return str;
+	if(str) {
+		// WView sends ' in', ' mb', or ' hPa'
+		str = str.trim();
+		if(str === 'in') str = "inHg"; // Cumulus and WView send 'in'
+
+		if(str === "hPa" || str === "inHg" || str === "mb" || str === "kPa")
+			return str;
 	}
 	return "";
 }
 const extractWindunit = (str?: string) => {
-	if(str && (str === "km/h" || str === "m/s" || str === "mph" || str === "kts")) {
-		return str;
+	if(str) {
+		// WView sends ' kmh' etc -- WeatherCat sends "MPH"
+		str = str.trim().toLowerCase();
+		if (str === 'knots') // WeatherCat/weewx send "Knots", we use "kts"
+			str = "kts" 
+		else if (str === 'kmh' || str === 'kph') // WD wind unit omits '/', weewx sends 'kph' 
+			str = "km/h";
+
+		if(str === "km/h" || str === "m/s" || str === "mph" || str === "kts")
+			return str;
 	}
 	return "";
 }
 const extractCloudunit = (str?: string) => {
-	if(str && (str === "m" || str === "ft")) {
-		return str;
+	if(str) {
+		// change WeatherCat units from Metres/Feet to m/ft
+		if (str.toLowerCase() === 'metres')
+			str = "m";
+		else if (str.toLowerCase() === 'feet')
+			str = "ft";
+
+		if(str === "m" || str === "ft")
+			return str;
 	}
 	return "";
 }
@@ -471,15 +503,15 @@ const extractCloudunit = (str?: string) => {
  * @param str 
  * @param errVal 
  */
-export const extractDecimal = (str?: string|number, errVal?: number) => {
+export const extractDecimal = (str?: string, errVal?: number) => {
 	if(str) {
-		let newStr = str.toString();
+		str = str/*.toString()*/.replace(',', '.');
 		let val;
-		if(val = (/[-+]?[0-9]+\.?[0-9]*/).exec(newStr.replace(',', '.')))
+		if(val = (/[-+]?[0-9]+\.?[0-9]*/).exec(str))
 			return +val[0];
 	}
 
-	return errVal || -9999; // error condition
+	return errVal || ERR_VAL; // error condition
 }
 
 /**
@@ -495,14 +527,14 @@ export const extractInteger = (str?: string, errVal?: number) => {
 			return +val[0];
 	}
 	
-	return errVal || -9999;
+	return errVal || ERR_VAL;
 }
 
 /**
  * 
  * @param spdUnits 
  */
-export const getWindrunUnits = function (spdUnits: string) {
+export const getWindrunUnits = function (spdUnits: WindUnit) {
 	switch (spdUnits) {
 		case 'mph': return 'miles';
 		case 'kts': return 'n.miles';

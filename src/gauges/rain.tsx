@@ -3,12 +3,10 @@ import React, { Component } from 'react';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
 
-import GaugeUtils from './gauge-utils';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
-import { UNITS } from '../controller/defaults.js';
-import { extractDecimal } from '../controller/data-utils.js';
-import { RainUnit } from '../controller/data-types.js';
+import { RainUnit, RtData } from '../controller/data-types.js';
+import { createRainfallGradient, createRainfallSections, gaugeShadow, nextHighest } from './gauge-utils.js';
 
 //TODO docs
 class RainGauge extends Component<Props, State> {
@@ -27,21 +25,21 @@ class RainGauge extends Component<Props, State> {
 			let { rain } = props.controller.getDisplayUnits();
 			let { rainScaleDefMaxmm, rainScaleDefMaxIn, rainUseGradientColours, rainUseSectionColours } = props.controller.gaugeConfig;
 			this.state = {
-					maxValue: (rain === UNITS.Rain.MM) ? rainScaleDefMaxmm : rainScaleDefMaxIn,
+					maxValue: (rain === "mm") ? rainScaleDefMaxmm : rainScaleDefMaxIn,
 					value: 0.0001,
 					title: props.controller.lang.rain_title,
 
 					displayUnit: rain,
-					lcdDecimals: (rain === UNITS.Rain.MM) ? 1 : 2,
-					scaleDecimals: (rain === UNITS.Rain.MM) ? 1 : (rainScaleDefMaxIn < 1 ? 2 : 1),
-					labelNumberFormat: (rain === UNITS.Rain.MM)
+					lcdDecimals: (rain === "mm") ? 1 : 2,
+					scaleDecimals: (rain === "mm") ? 1 : (rainScaleDefMaxIn < 1 ? 2 : 1),
+					labelNumberFormat: (rain === "mm")
 						? steelseries.LabelNumberFormat
 						: steelseries.LabelNumberFormat.FRACTIONAL,
 					sections: rainUseGradientColours
-						? GaugeUtils.createRainfallGradient(rain === UNITS.Rain.MM)
+						? createRainfallGradient(rain === "mm")
 						: null,
 					grandient: rainUseSectionColours
-						? GaugeUtils.createRainfallSections(rain === UNITS.Rain.MM)
+						? createRainfallSections(rain === "mm")
 						: []
 					
 					//popUpTxt: '',
@@ -68,7 +66,7 @@ class RainGauge extends Component<Props, State> {
 			};
 
 			this.style = this.props.controller.gaugeConfig.showGaugeShadow
-				? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
+				? gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
 				: {};
 
 			this.update = this.update.bind(this);
@@ -83,37 +81,37 @@ class RainGauge extends Component<Props, State> {
 		}
 	}
 
-	async update({ rfall, rainunit }: DataParamDef) {
+	async update({ rfall, rainunit }: RtData) {
 		let newState: any = {};
 
 		if(rainunit !== this.state.displayUnit) {
 			let { rainScaleDefMaxIn, rainUseGradientColours, rainUseSectionColours } = this.props.controller.gaugeConfig;
 			newState.displayUnit = rainunit;
-			newState.lcdDecimals = (rainunit === UNITS.Rain.MM) ? 1 : 2,
-			newState.scaleDecimals = (rainunit === UNITS.Rain.MM) ? 1 : (rainScaleDefMaxIn < 1 ? 2 : 1),
-			newState.labelNumberFormat = (rainunit === UNITS.Rain.MM)
+			newState.lcdDecimals = (rainunit === "mm") ? 1 : 2,
+			newState.scaleDecimals = (rainunit === "mm") ? 1 : (rainScaleDefMaxIn < 1 ? 2 : 1),
+			newState.labelNumberFormat = (rainunit === "mm")
 				? steelseries.LabelNumberFormat
 				: steelseries.LabelNumberFormat.FRACTIONAL,
 			newState.sections = rainUseGradientColours
-				? GaugeUtils.createRainfallGradient(rainunit === UNITS.Rain.MM)
+				? createRainfallGradient(rainunit === "mm")
 				: null,
 			newState.grandient = rainUseSectionColours
-				? GaugeUtils.createRainfallSections(rainunit === UNITS.Rain.MM)
+				? createRainfallSections(rainunit === "mm")
 				: []
 		}
 
-		newState.value = extractDecimal(rfall);
-		if (rainunit === UNITS.Rain.MM) { // 10, 20, 30...
-			newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value, 10), this.props.controller.gaugeConfig.rainScaleDefMaxmm);
+		newState.value = rfall;
+		if (rainunit === "mm") { // 10, 20, 30...
+			newState.maxValue = Math.max(nextHighest(newState.value, 10), this.props.controller.gaugeConfig.rainScaleDefMaxmm);
 		}
 		else {
 			// inches 0.5, 1.0, 2.0, 3.0 ... 10.0, 12.0, 14.0
 			if (newState.value <= 1) {
-				newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value, 0.5), this.props.controller.gaugeConfig.rainScaleDefMaxIn);
+				newState.maxValue = Math.max(nextHighest(newState.value, 0.5), this.props.controller.gaugeConfig.rainScaleDefMaxIn);
 			} else if (newState.value <= 6) {
-				newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value, 1), this.props.controller.gaugeConfig.rainScaleDefMaxIn);
+				newState.maxValue = Math.max(nextHighest(newState.value, 1), this.props.controller.gaugeConfig.rainScaleDefMaxIn);
 			} else {
-				newState.maxValue = Math.max(GaugeUtils.nextHighest(newState.value, 2), this.props.controller.gaugeConfig.rainScaleDefMaxIn);
+				newState.maxValue = Math.max(nextHighest(newState.value, 2), this.props.controller.gaugeConfig.rainScaleDefMaxIn);
 			}
 			newState.scaleDecimals = newState.maxValue < 1 ? 2 : 1;
 		}
@@ -154,8 +152,8 @@ class RainGauge extends Component<Props, State> {
 					style={this.style}
 				></canvas>
 				<div>
-					<button onClick={() => this.props.controller.changeUnits({ rain: UNITS.Rain.MM})}>{UNITS.Rain.MM}</button>
-					<button onClick={() => this.props.controller.changeUnits({ rain: UNITS.Rain.IN})}>{UNITS.Rain.IN}</button>
+					<button onClick={() => this.props.controller.changeUnits({ rain: "mm"})}> mm </button>
+					<button onClick={() => this.props.controller.changeUnits({ rain: "in"})}> in </button>
 				</div>
 			</div>
 		);
@@ -173,7 +171,7 @@ interface State {
 		value: number,
 		maxValue: number,
 
-		displayUnit: string,
+		displayUnit: RainUnit,
 		lcdDecimals: number,
 		scaleDecimals: number,
 		labelNumberFormat: steelseries.LabelNumberFormat,
@@ -183,10 +181,5 @@ interface State {
 		//popUpTxt?: string,
 		//graph?: string
 }
-
-type DataParamDef = {
-	rfall: any,
-	rainunit: RainUnit
-};
 
 export default RainGauge;

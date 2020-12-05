@@ -1,13 +1,12 @@
 import React, { Component } from 'react';
-import GaugeUtils from './gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
 import Cookies from 'universal-cookie/es6';
-import { UNITS } from '../controller/defaults';
 import { DewTemp } from './data-types';
-import { extractDecimal } from '../controller/data-utils';
+import { RtData, TempUnit } from '../controller/data-types';
+import { createTempSections, gaugeShadow, getMinTemp, getMaxTemp } from './gauge-utils.js';
 
 const COOKIE_NAME = 'dew-display';
 
@@ -62,15 +61,15 @@ class DewGauge extends Component<Props, State> {
 			value: startVal,
 			low: startVal,
 			high: startVal,
-			minValue: (temp === UNITS.Temp.C)
+			minValue: (temp === "°C")
 				? this.props.controller.gaugeConfig.tempScaleDefMinC
 				: this.props.controller.gaugeConfig.tempScaleDefMinF,
-			maxValue: (temp === UNITS.Temp.C)
+			maxValue: (temp === "°C")
 				? this.props.controller.gaugeConfig.tempScaleDefMaxC
 				: this.props.controller.gaugeConfig.tempScaleDefMaxF,
 			minMeasuredVisible: (sel === DewTemp.WND),
 			maxMeasuredVisible: (sel === DewTemp.HEA),
-			sections: GaugeUtils.createTempSections(temp === UNITS.Temp.C),
+			sections: createTempSections(temp === "°C"),
 			areas: [],
 
 			//popUpTxt: '',
@@ -90,7 +89,7 @@ class DewGauge extends Component<Props, State> {
 		};
 
 		this.style = this.props.controller.gaugeConfig.showGaugeShadow
-			? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
+			? gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
 			: {};
 
 		this.update = this.update.bind(this);
@@ -105,7 +104,7 @@ class DewGauge extends Component<Props, State> {
 		}
 	}
 
-	async update(data: any) {
+	async update(data: RtData) {
 		this._setState(mapLocalData(data));
 	}
 
@@ -123,7 +122,7 @@ class DewGauge extends Component<Props, State> {
 
 		if(data.tempunit !== this.state.displayUnit) {
 			newState.displayUnit = data.tempunit,
-			newState.sections = GaugeUtils.createTempSections(data.tempunit === UNITS.Temp.C)
+			newState.sections = createTempSections(data.tempunit === "°C")
 		}
 
 		if(sel) {
@@ -157,50 +156,50 @@ class DewGauge extends Component<Props, State> {
 			newState.data = data;
 		}
 
-		newState.minValue = data.tempunit === UNITS.Temp.C
+		newState.minValue = data.tempunit === "°C"
 			? this.props.controller.gaugeConfig.tempScaleDefMinC
 			: this.props.controller.gaugeConfig.tempScaleDefMinF;
-		newState.maxValue = data.tempunit === UNITS.Temp.C
+		newState.maxValue = data.tempunit === "°C"
 			? this.props.controller.gaugeConfig.tempScaleDefMaxC
 			: this.props.controller.gaugeConfig.tempScaleDefMaxF;
 		
 		switch (newState.selected) {
 			case DewTemp.DEW: // dew point
-				newState.low = extractDecimal(data.dewpointTL);
-				newState.high = extractDecimal(data.dewpointTH);
-				newState.value = extractDecimal(data.dew);
+				newState.low = data.dewpointTL;
+				newState.high = data.dewpointTH;
+				newState.value = data.dew;
 				newState.areas = [steelseries.Section(newState.low, newState.high, this.props.controller.gaugeConfig.minMaxArea)];
 				break;
 			case DewTemp.APP: // apparent temperature
-				newState.low = extractDecimal(data.apptempTL);
-				newState.high = extractDecimal(data.apptempTH);
-				newState.value = extractDecimal(data.apptemp);
+				newState.low = data.apptempTL;
+				newState.high = data.apptempTH;
+				newState.value = data.apptemp;
 				newState.areas = [steelseries.Section(newState.low, newState.high, this.props.controller.gaugeConfig.minMaxArea)];
 				break;
 			case DewTemp.WND: // wind chill
-				newState.low = extractDecimal(data.wchillTL);
-				newState.high = extractDecimal(data.wchill);
-				newState.value = extractDecimal(data.wchill);
+				newState.low = data.wchillTL;
+				newState.high = data.wchill;
+				newState.value = data.wchill;
 				newState.areas = [];
 				break;
 			case DewTemp.HEA: // heat index
-				newState.low = extractDecimal(data.heatindex);
-				newState.high = extractDecimal(data.heatindexTH);
-				newState.value = extractDecimal(data.heatindex);
+				newState.low = data.heatindex;
+				newState.high = data.heatindexTH;
+				newState.value = data.heatindex;
 				newState.areas = [];
 				break;
 			case DewTemp.HUM: // humidex
-				newState.low = extractDecimal(data.humidex);
-				newState.high = extractDecimal(data.humidex);
-				newState.value = extractDecimal(data.humidex);
+				newState.low = data.humidex;
+				newState.high = data.humidex;
+				newState.value = data.humidex;
 				newState.areas = [];
 				break;
 		}
 
 		// auto scale the ranges
-		let lowScale = GaugeUtils.getMinTemp(newState.minValue, data),
-				highScale = GaugeUtils.getMaxTemp(newState.maxValue, data),
-				scaleStep = data.tempunit[1] === 'C' ? 10 : 20;
+		let lowScale = getMinTemp(newState.minValue, data),
+				highScale = getMaxTemp(newState.maxValue, data),
+				scaleStep = data.tempunit === "°C" ? 10 : 20;
 		while (lowScale < newState.minValue) {
 			newState.minValue -= scaleStep;
 			if (highScale <= newState.maxValue - scaleStep) {
@@ -266,8 +265,8 @@ class DewGauge extends Component<Props, State> {
 					<button onClick={() => this.showTemp(DewTemp.HUM)}>Hum</button>
 				</div>
 				<div>
-					<button onClick={() => this.props.controller.changeUnits({ temp: UNITS.Temp.C})}>{UNITS.Temp.C}</button>
-					<button onClick={() => this.props.controller.changeUnits({ temp: UNITS.Temp.F})}>{UNITS.Temp.F}</button>
+					<button onClick={() => this.props.controller.changeUnits({ temp: "°C"})}> °C </button>
+					<button onClick={() => this.props.controller.changeUnits({ temp: "°F"})}> °F </button>
 				</div>
 				
 			</div>
@@ -284,7 +283,7 @@ interface State {
 	data?: LocalDataDef,
 
 	title: string,
-	displayUnit: string,
+	displayUnit: TempUnit,
 	selected: DewTemp,
 	
 	minValue: number,
@@ -304,15 +303,15 @@ interface State {
 
 
 interface LocalDataDef {
-	tempunit: string, tempTL: any, tempTH: any
-	dew: any, dewpointTL: any, dewpointTH: any,
-	apptemp: any, apptempTL: any, apptempTH: any,
-	wchill: any, wchillTL: any,
-	heatindex: any, heatindexTH: any,
-	humidex: any
+	tempunit: TempUnit, tempTL: number, tempTH: number
+	dew: number, dewpointTL: number, dewpointTH: number,
+	apptemp: number, apptempTL: number, apptempTH: number,
+	wchill: number, wchillTL: number,
+	heatindex: number, heatindexTH: number,
+	humidex: number
 }
 
-function mapLocalData(data: any) {
+function mapLocalData(data: RtData) {
 	let localdata: LocalDataDef = {
 		tempunit: data.tempunit,
 		tempTL: data.tempTL,

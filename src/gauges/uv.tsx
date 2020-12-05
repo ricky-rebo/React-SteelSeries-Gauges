@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
-import GaugeUtils from './gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
-import { extractDecimal } from '../controller/data-utils';
+import { gaugeShadow, nextHighest } from './gauge-utils.js';
+import { RtData } from '../controller/data-types.js';
 
 //TODO docs
 class UVGauge extends Component<Props, State> {
@@ -61,7 +61,7 @@ class UVGauge extends Component<Props, State> {
 		};
 
 		this.style = this.props.controller.gaugeConfig.showGaugeShadow
-			? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
+			? gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
 			: {};
 
 		this.update = this.update.bind(this);
@@ -76,13 +76,13 @@ class UVGauge extends Component<Props, State> {
 		}
 	}
 
-	async update({ UV }: DataParamDef) {
+	async update({ UV }: RtData) {
 		let newState: any = {};
 
-		newState.value = extractDecimal(UV);
+		newState.value = UV;
 	
 		let indx: number;
-		if (+newState.value === 0) 			indx = 0;
+		if (newState.value === 0) 			indx = 0;
 		else if (newState.value < 2.5) 	indx = 1;
 		else if (newState.value < 5.5) 	indx = 2;
 		else if (newState.value < 7.5) 	indx = 3;
@@ -90,7 +90,7 @@ class UVGauge extends Component<Props, State> {
 		else 														indx = 5;
 
 		newState.maxValue = Math.max(
-			GaugeUtils.nextHighest(newState.value, 2),
+			nextHighest(newState.value, 2),
 			this.props.controller.gaugeConfig.uvScaleDefMax
 		);
 
@@ -140,10 +140,6 @@ interface State {
 
 	//popUpTxt: string,
 	//graph: string
-}
-
-type DataParamDef = {
-	UV: any
 }
 
 export default UVGauge;

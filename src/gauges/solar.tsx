@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
-import GaugeUtils from './gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
-import { extractInteger } from '../controller/data-utils';
+import { ERR_VAL } from '../controller/data-utils';
+import { gaugeShadow, nextHighest } from './gauge-utils.js';
+import { RtData } from '../controller/data-types.js';
 
 //TODO docs
 class SolarGauge extends Component<Props, State> {
@@ -24,12 +25,6 @@ class SolarGauge extends Component<Props, State> {
 			value:  0.0001,
 			maxValue: this.props.controller.gaugeConfig.solarGaugeScaleMax,
 			maxToday: 0,
-			sections: [
-				steelseries.Section(0, 600, 'rgba(40,149,0,0.3)'),
-				steelseries.Section(600, 800, 'rgba(248,89,0,0.3)'),
-				steelseries.Section(800, 1000, 'rgba(216,0,29,0.3)'),
-				steelseries.Section(1000, 1800, 'rgba(107,73,200,0.3)')
-			],
 			area: [],
 			ledState : false,
 
@@ -40,7 +35,12 @@ class SolarGauge extends Component<Props, State> {
 		this.params = {
 			...this.props.controller.commonParams,
 			size: Math.ceil(this.props.size * this.props.controller.gaugeConfig.gaugeScaling),
-			section: this.state.sections,
+			section: [
+				steelseries.Section(0, 600, 'rgba(40,149,0,0.3)'),
+				steelseries.Section(600, 800, 'rgba(248,89,0,0.3)'),
+				steelseries.Section(800, 1000, 'rgba(216,0,29,0.3)'),
+				steelseries.Section(1000, 1800, 'rgba(107,73,200,0.3)')
+			],
 			maxValue: this.state.maxValue,
 			titleString: this.props.controller.lang.solar_title,
 			niceScale: false,
@@ -53,7 +53,7 @@ class SolarGauge extends Component<Props, State> {
 		};
 
 		this.style = this.props.controller.gaugeConfig.showGaugeShadow
-			? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
+			? gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
 			: {};
 
 		this.update = this.update.bind(this);
@@ -68,19 +68,19 @@ class SolarGauge extends Component<Props, State> {
 		}
 	}
 
-	async update({ SolarRad, SolarTM, CurrentSolarMax } : DataParamDef) {
+	async update({ SolarRad, SolarTM, CurrentSolarMax } : RtData) {
 		let newState: any = {};
 
-		newState.value = extractInteger(SolarRad);
-		newState.maxToday = extractInteger(SolarTM);
-		newState.currMaxValue = extractInteger(CurrentSolarMax);
+		newState.value = SolarRad;
+		newState.maxToday = SolarTM;
+		newState.currMaxValue = CurrentSolarMax;
 
 		newState.maxValue = Math.max(newState.value, newState.currMaxValue, newState.maxToday, this.props.controller.gaugeConfig.solarGaugeScaleMax);
-		newState.maxValue = GaugeUtils.nextHighest(newState.maxValue, 100);
+		newState.maxValue = nextHighest(newState.maxValue, 100);
 
 
 		let { sunshineThresholdPct, sunshineThreshold } = this.props.controller.gaugeConfig;
-		if(CurrentSolarMax !== 'N/A'){
+		if(CurrentSolarMax !== ERR_VAL){
 			newState.area=[
 				// Sunshine threshold
 				steelseries.Section(
@@ -145,18 +145,11 @@ interface Props {
 
 interface State {
 	value: number,
-	sections: any[],
 	maxValue: number,
 	maxToday: number,
 	area: [],
 
 	ledState: boolean,
-}
-
-type DataParamDef = { 
-	SolarRad: any,
-	SolarTM: any,
-	CurrentSolarMax: any
 }
 
 export default SolarGauge;

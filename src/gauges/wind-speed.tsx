@@ -1,11 +1,10 @@
 import React, { Component } from 'react';
-import GaugeUtils from './gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
-import { UNITS } from '../controller/defaults';
-import { extractDecimal } from '../controller/data-utils';
+import { gaugeShadow, nextHighest } from './gauge-utils.js';
+import { RtData, WindUnit } from '../controller/data-types.js';
 
 //TODO docs
 class WindSpeedGauge extends Component<Props, State> {
@@ -24,10 +23,10 @@ class WindSpeedGauge extends Component<Props, State> {
 		let { wind } = props.controller.getDisplayUnits();
 		let maxVal: number;
 		switch (wind) {
-			case UNITS.Wind.MPH: maxVal = props.controller.gaugeConfig.windScaleDefMaxMph; break;
-			case UNITS.Wind.Knots: maxVal = props.controller.gaugeConfig.windScaleDefMaxKts; break;
-			case UNITS.Wind.KM_H: maxVal = props.controller.gaugeConfig.windScaleDefMaxKmh; break;
-			case UNITS.Wind.M_S: 	maxVal = props.controller.gaugeConfig.windScaleDefMaxMs; break;
+			case "mph": maxVal = props.controller.gaugeConfig.windScaleDefMaxMph; break;
+			case "kts": maxVal = props.controller.gaugeConfig.windScaleDefMaxKts; break;
+			case "km/h": maxVal = props.controller.gaugeConfig.windScaleDefMaxKmh; break;
+			case "m/s": 	maxVal = props.controller.gaugeConfig.windScaleDefMaxMs; break;
 			default: maxVal = 0.0001;
 		}
 		this.state = {
@@ -51,7 +50,7 @@ class WindSpeedGauge extends Component<Props, State> {
 		};
 
 		this.style = this.props.controller.gaugeConfig.showGaugeShadow
-			? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
+			? gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
 			: {};
 
 		this.update = this.update.bind(this);
@@ -66,38 +65,37 @@ class WindSpeedGauge extends Component<Props, State> {
 		}
 	}
 
-	async update({ wlatest, wgustTM, wspeed, wgust, windunit }: DataParamDef) {
+	async update({ wlatest, wgustTM, wspeed, wgust, windunit }: RtData) {
 		let newState: any = {};
 
 		if(windunit !== this.state.displayUnit) {
 			newState.displayUnit = windunit;
 		}
 
-		newState.value = extractDecimal(wlatest);
-		newState.maxGustToday = extractDecimal(wgustTM);
+		newState.value = wlatest;
+		newState.maxGustToday = wgustTM;
 
-		let average = extractDecimal(wspeed);
-		let gust = extractDecimal(wgust);
+		let average = wspeed, gust = wgust;
 		
 		//let maxAvgToday = extractDecimal(data.windTM);
 
 		switch (windunit) {
-			case UNITS.Wind.MPH:
-			case UNITS.Wind.Knots:
+			case "mph":
+			case "kts":
 				newState.maxValue = Math.max(
-					GaugeUtils.nextHighest(newState.maxGustToday, 10),
+					nextHighest(newState.maxGustToday, 10),
 					this.props.controller.gaugeConfig.windScaleDefMaxMph
 				);
 				break;
-			case UNITS.Wind.M_S:
+			case "m/s":
 				newState.maxValue = Math.max(
-					GaugeUtils.nextHighest(newState.maxGustToday, 5),
+					nextHighest(newState.maxGustToday, 5),
 					this.props.controller.gaugeConfig.windScaleDefMaxMs
 				);
 				break;
 			default:
 				newState.maxValue = Math.max(
-					GaugeUtils.nextHighest(newState.maxGustToday, 20),
+					nextHighest(newState.maxGustToday, 20),
 					this.props.controller.gaugeConfig.windScaleDefMaxKmh
 				);
 		}
@@ -136,10 +134,10 @@ class WindSpeedGauge extends Component<Props, State> {
 					style={this.style}
 				></canvas>
 				<div>
-					<button onClick={() => this.props.controller.changeUnits({ wind: UNITS.Wind.KM_H })}>{UNITS.Wind.KM_H}</button>
-					<button onClick={() => this.props.controller.changeUnits({ wind: UNITS.Wind.Knots })}>{UNITS.Wind.Knots}</button>
-					<button onClick={() => this.props.controller.changeUnits({ wind: UNITS.Wind.MPH })}>{UNITS.Wind.MPH}</button>
-					<button onClick={() => this.props.controller.changeUnits({ wind: UNITS.Wind.M_S })}>{UNITS.Wind.M_S}</button>
+					<button onClick={() => this.props.controller.changeUnits({ wind: "km/h" })}> km/h </button>
+					<button onClick={() => this.props.controller.changeUnits({ wind: "kts" })}> kts </button>
+					<button onClick={() => this.props.controller.changeUnits({ wind: "m/s" })}> m/s </button>
+					<button onClick={() => this.props.controller.changeUnits({ wind: "mph" })}> mph </button>
 				</div>
 			</div>
 		);
@@ -156,18 +154,10 @@ interface State {
 	area: [],
 	maxValue: number,
 	maxGustToday: number,
-	displayUnit: string
+	displayUnit: WindUnit
 
 	//popUpTxt: string,
 	//graph: string
 }
-
-type DataParamDef = {
-	wlatest: any,
-	wgustTM: any,
-	wspeed: any,
-	wgust: any,
-	windunit: string
-};
 
 export default WindSpeedGauge;

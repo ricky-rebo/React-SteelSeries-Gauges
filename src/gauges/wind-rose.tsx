@@ -1,13 +1,12 @@
 import React, { Component } from 'react';
-import GaugeUtils from './gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
 // @ts-ignore
 import RGraph from '../libs/RGraph.rose.js';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
-import { UNITS } from '../controller/defaults';
-import { extractDecimal, getWindrunUnits } from '../controller/data-utils';
+import { gaugeShadow } from './gauge-utils.js';
+import { RtData, WindrunUnit } from '../controller/data-types.js';
 
 function createCanvas(size: number) {
 	let canvas = document.createElement('canvas');
@@ -70,7 +69,7 @@ class WindRoseGauge extends Component<Props, State> {
 			titleString: props.controller.lang.windrose
 		}
 		this.gaugeParams.style = props.controller.gaugeConfig.showGaugeShadow
-			? GaugeUtils.gaugeShadow(this.gaugeParams.size, props.controller.gaugeConfig.shadowColour)
+			? gaugeShadow(this.gaugeParams.size, props.controller.gaugeConfig.shadowColour)
 			: {}
 
 		
@@ -160,17 +159,20 @@ class WindRoseGauge extends Component<Props, State> {
 		}
 	}
 
-	async update({ WindRoseData, windrun, windunit }: DataParamDef) {
-		let newState: any = {
-			WindRoseData: WindRoseData,
-			odoValue: windrun
-		}
+	async update({ WindRoseData, windrun }: RtData) {
+		if(WindRoseData) {
+			let newState: any = {
+				WindRoseData: WindRoseData,
+				odoValue: windrun
+			}
 
-		if(this.state.odoUnit !== getWindrunUnits(windunit)) {
-			newState.odoUnit = getWindrunUnits(windunit);
-		}
+			let { windrun: windrunUnit } = this.props.controller.getDisplayUnits();
+			if(this.state.odoUnit !== windrunUnit) {
+				newState.odoUnit = windrunUnit;
+			}
 
-		this.setState(newState);
+			this.setState(newState);
+		}
 	}
 
 	componentDidUpdate() {
@@ -217,7 +219,7 @@ class WindRoseGauge extends Component<Props, State> {
 			if (this.showOdo) {
 				//FIXME TweenJS animation broken
 				//this.odoGauge.setValueAnimated(extractDecimal(this.state.windrun));
-				this.odoGauge.setValue(extractDecimal(this.state.odoValue));
+				this.odoGauge.setValue(this.state.odoValue);
 			}
 		}
 	}
@@ -241,10 +243,10 @@ class WindRoseGauge extends Component<Props, State> {
 						: ''
 				}
 				<div>
-					<button onClick={() => this.props.controller.changeUnits({ wind: UNITS.Wind.KM_H })}>{UNITS.Wind.KM_H}</button>
-					<button onClick={() => this.props.controller.changeUnits({ wind: UNITS.Wind.Knots })}>{UNITS.Wind.Knots}</button>
-					<button onClick={() => this.props.controller.changeUnits({ wind: UNITS.Wind.MPH })}>{UNITS.Wind.MPH}</button>
-					<button onClick={() => this.props.controller.changeUnits({ wind: UNITS.Wind.M_S })}>{UNITS.Wind.M_S}</button>
+					<button onClick={() => this.props.controller.changeUnits({ wind: "km/h" })}> km/h </button>
+					<button onClick={() => this.props.controller.changeUnits({ wind: "kts" })}> kts </button>
+					<button onClick={() => this.props.controller.changeUnits({ wind: "mph" })}> mph </button>
+					<button onClick={() => this.props.controller.changeUnits({ wind: "m/s" })}> m/s </button>
 				</div>
 
 				<div style={{ display: 'none' }}>
@@ -317,15 +319,9 @@ interface Props {
 }
 
 interface State {
-	WindRoseData: any[],
+	WindRoseData: number[],
 	odoValue: number,
-	odoUnit: string
+	odoUnit: WindrunUnit
 }
-
-type DataParamDef = {
-	WindRoseData: any[];
-	windrun: any;
-	windunit: string
-};
 
 export default WindRoseGauge;

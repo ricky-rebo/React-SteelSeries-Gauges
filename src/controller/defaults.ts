@@ -1,4 +1,4 @@
-import { CloudUnit, ControllerConfig, GaugeConfig, PressUnit, RainUnit, StatusType, TempUnit, WindrunUnit, WindUnit, WProgram } from "./data-types";
+import { ControllerConfig, DisplayUnits, GaugeConfig, StatusType, WProgram } from "./data-types";
 // @ts-ignore
 import steelseries from '../libs/steelseries';
 import { DewTemp } from "../gauges/data-types";
@@ -95,7 +95,7 @@ export const GAUGE_CONFIG: GaugeConfig = {
   cloudScaleDefMaxm     : 1000,
 }
 
-type UnitsType = {
+/*type UnitsType = {
   Temp: { [unitName: string]: TempUnit },
   Rain: { [unitName: string]: RainUnit },
   Press: { [unitName: string]: PressUnit },
@@ -133,15 +133,15 @@ export const UNITS: UnitsType = {
     M: 'm',
     FT: 'ft'
   }
-}
+}*/
 
-export const DISPLAY_UNITS = {
-  temp   : UNITS.Temp.C,
-  rain   : UNITS.Rain.MM,
-  press  : UNITS.Press.HPA,
-  wind   : UNITS.Wind.KM_H,
-  windrun: UNITS.Windrun.KM,
-  cloud  : UNITS.Cloud.M
+export const DISPLAY_UNITS: DisplayUnits = {
+  temp   : "°C",
+  rain   : "mm",
+  press  : "hPa",
+  wind   : "km/h",
+  windrun: "km",
+  cloud  : "m"
 }
 
 export const Status = {

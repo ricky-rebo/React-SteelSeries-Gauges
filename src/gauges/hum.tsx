@@ -1,12 +1,12 @@
 import React, { Component } from 'react';
-import GaugeUtils from './gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
 import Cookies, { Cookie } from 'universal-cookie/es6';
 import { InOutTemp } from './data-types';
-import { extractDecimal } from '../controller/data-utils';
+import { gaugeShadow } from './gauge-utils.js';
+import { RtData } from '../controller/data-types.js';
 
 const COOKIE_NAME = 'hum-display';
 
@@ -63,7 +63,7 @@ class HumGauge extends Component<Props, State> {
 		};
 
 		this.style = this.props.controller.gaugeConfig.showGaugeShadow
-			? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
+			? gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
 			: {};
 
 		this.update = this.update.bind(this);
@@ -78,7 +78,7 @@ class HumGauge extends Component<Props, State> {
 		}
 	}
 
-	async update(data: any) {
+	async update(data: RtData) {
 		this._setState(mapLocalData(data));
 	}
 
@@ -108,28 +108,17 @@ class HumGauge extends Component<Props, State> {
 			newState.data = data;
 		}
 
+		let { minMaxArea } = this.props.controller.gaugeConfig;
 		if(newState.selected == InOutTemp.OUT) {
-			newState.value = extractDecimal(data.hum);
+			newState.value = data.hum;
 		
-			newState.areas = [
-				steelseries.Section(
-					extractDecimal(data.humTL), 
-					extractDecimal(data.humTH), 
-					this.props.controller.gaugeConfig.minMaxArea
-				)
-			];
+			newState.areas = [steelseries.Section(data.humTL, data.humTH, minMaxArea)];
 		}
 		else {
-			newState.value = extractDecimal(data.inhum);
+			newState.value = data.inhum;
 			if (data.inhumTL && data.inhumTH) {
 				// Indoor - and Max/Min values supplied
-				newState.areas=[
-					steelseries.Section(
-						extractDecimal(data.inhumTL), 
-						extractDecimal(data.inhumTH), 
-						this.props.controller.gaugeConfig.minMaxArea
-					)
-				];
+				newState.areas=[steelseries.Section(data.inhumTL, data.inhumTH, minMaxArea)];
 			}
 			else {
 				// Indoor - no Max/Min values supplied
@@ -188,15 +177,15 @@ interface State {
 }
 
 interface LocalDataDef {
-	hum: any, 
-	humTL: any,
-	humTH: any,
-	inhum: any,
-	inhumTL: any,
-	inhumTH: any
+	hum: number, 
+	humTL: number,
+	humTH: number,
+	inhum: number,
+	inhumTL?: number,
+	inhumTH?: number
 }
 
-function mapLocalData(data: any) {
+function mapLocalData(data: RtData) {
 	let locData: LocalDataDef = {
 		hum			: data.hum,
 		humTL		: data.humTL,

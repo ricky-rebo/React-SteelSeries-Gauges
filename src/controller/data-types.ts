@@ -349,7 +349,10 @@ export interface RtData {
 
 	version: string,
 	build: string,
-	ver: number
+	ver: number,
+
+	statusTimerStart?: boolean,
+	statusTimerReset?: number
 }
 
 export type Raw<T> = {

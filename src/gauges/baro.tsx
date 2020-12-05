@@ -1,11 +1,10 @@
 import React, { Component } from 'react';
-import GaugeUtils from './gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
-import { UNITS } from '../controller/defaults';
-import { extractDecimal } from '../controller/data-utils';
+import { PressUnit, RtData, WProgram } from '../controller/data-types';
+import { baroTrend, gaugeShadow, nextHighest, nextLowest } from './gauge-utils.js';
 
 //TODO docs
 class BaroGauge extends Component<Props, State> {
@@ -31,9 +30,9 @@ class BaroGauge extends Component<Props, State> {
 				trend: steelseries.TrendState.OFF,
 
 				displayUnit: press,
-				lcdDecimals: (press === UNITS.Press.HPA || press === UNITS.Press.MB) ? 1 : 2,
-				scaleDecimals: (press === UNITS.Press.HPA || press === UNITS.Press.MB) ? 0 : 1,
-				labelNumberFormat: (press === UNITS.Press.HPA || press === UNITS.Press.MB)
+				lcdDecimals: (press === "hPa" || press === "mb") ? 1 : 2,
+				scaleDecimals: (press === "hPa" || press === "mb") ? 0 : 1,
+				labelNumberFormat: (press === "hPa" || press === "mb")
 					? props.controller.gaugeConfig.labelFormat
 					: steelseries.LabelNumberFormat.FRACTIONAL
 			}
@@ -56,7 +55,7 @@ class BaroGauge extends Component<Props, State> {
 			};
 
 			this.style = this.props.controller.gaugeConfig.showGaugeShadow
-				? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
+				? gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
 				: {};
 
 			this.update = this.update.bind(this);
@@ -71,46 +70,46 @@ class BaroGauge extends Component<Props, State> {
 			}
 		}
 
-		async update({press, pressL, pressH, pressTL, pressTH, presstrendval, pressunit}: DataParamsDef) {
+		async update({press, pressL, pressH, pressTL, pressTH, presstrendval, pressunit}: RtData) {
 			let newState: any = {};
 
 			if(pressunit !== this.state.displayUnit) {
 				newState.displayUnit = pressunit;
-				newState.lcdDecimals = (pressunit === UNITS.Press.HPA || pressunit === UNITS.Press.MB) ? 1 : 2,
-				newState.scaleDecimals = (pressunit === UNITS.Press.HPA || pressunit === UNITS.Press.MB) ? 0 : 1,
-				newState.labelNumberFormat = (pressunit === UNITS.Press.HPA || pressunit === UNITS.Press.MB)
+				newState.lcdDecimals = (pressunit === "hPa" || pressunit === "mb") ? 1 : 2,
+				newState.scaleDecimals = (pressunit === "hPa" || pressunit === "mb") ? 0 : 1,
+				newState.labelNumberFormat = (pressunit === "hPa" || pressunit === "mb")
 					? this.props.controller.gaugeConfig.labelFormat
 					: steelseries.LabelNumberFormat.FRACTIONAL
 			}
 
-			newState.value = extractDecimal(press)
-			let low = extractDecimal(pressL),
-					high = extractDecimal(pressH),
-					todayLow = extractDecimal(pressTL),
-					todayHigh = extractDecimal(pressTH);
+			newState.value = press
+			let low = pressL,
+					high = pressH,
+					todayLow = pressTL,
+					todayHigh = pressTH;
 
 			//let dps: number;
 			switch(pressunit) {
-				case UNITS.Press.HPA:
-				case UNITS.Press.MB:
+				case "hPa":
+				case "mb":
 					//  default min range 990-1030 - steps of 10 hPa
 					let { baroScaleDefMinhPa, baroScaleDefMaxhPa } = this.props.controller.gaugeConfig;
-					newState.minValue = Math.min(GaugeUtils.nextLowest(low - 2, 10), baroScaleDefMinhPa);
-					newState.maxValue = Math.max(GaugeUtils.nextHighest(high + 2, 10), baroScaleDefMaxhPa);
+					newState.minValue = Math.min(nextLowest(low - 2, 10), baroScaleDefMinhPa);
+					newState.maxValue = Math.max(nextHighest(high + 2, 10), baroScaleDefMaxhPa);
 					//dps = 1; // 1 decimal place
 					break;
-				case UNITS.Press.KPA:
+				case "kPa":
 					//  default min range 99-105 - steps of 1 kPa
 					let { baroScaleDefMinkPa, baroScaleDefMaxkPa } = this.props.controller.gaugeConfig;
-					newState.minValue = Math.min(GaugeUtils.nextLowest(low - 0.2, 1), baroScaleDefMinkPa);
-					newState.maxValue = Math.max(GaugeUtils.nextHighest(high + 0.2, 1), baroScaleDefMaxkPa);
+					newState.minValue = Math.min(nextLowest(low - 0.2, 1), baroScaleDefMinkPa);
+					newState.maxValue = Math.max(nextHighest(high + 0.2, 1), baroScaleDefMaxkPa);
 					//dps = 2;
 					break;
-				case UNITS.Press.INHG:
+				case "inHg":
 					// inHg: default min range 29.5-30.5 - steps of 0.5 inHg
 					let { baroScaleDefMininHg, baroScaleDefMaxinHg } = this.props.controller.gaugeConfig;
-					newState.minValue = Math.min(GaugeUtils.nextLowest(low - 0.1, 0.5), baroScaleDefMininHg);
-					newState.maxValue = Math.max(GaugeUtils.nextHighest(high + 0.1, 0.5), baroScaleDefMaxinHg);
+					newState.minValue = Math.min(nextLowest(low - 0.1, 0.5), baroScaleDefMininHg);
+					newState.maxValue = Math.max(nextHighest(high + 0.1, 0.5), baroScaleDefMaxinHg);
 					//dps = 3;
 			}
 			/*let trendValRnd = trendVal.toFixed(dps),
@@ -136,10 +135,10 @@ class BaroGauge extends Component<Props, State> {
 
 			if (this.params.trendVisible) {
 				// Convert the WD change over 3 hours to an hourly rate
-				let trendVal = extractDecimal(presstrendval) / (this.props.controller.controllerConfig.weatherProgram === 2 ? 3 : 1);
+				let trendVal = presstrendval / (this.props.controller.controllerConfig.weatherProgram === WProgram.WHEATHER_DISPLAY ? 3 : 1);
 				
 				// Use the baroTrend rather than simple arithmetic test - steady is more/less than zero!
-				newState.trend = GaugeUtils.baroTrend(trendVal, pressunit, false);
+				newState.trend = baroTrend(trendVal, pressunit, false);
 			}
 
 			this.setState(newState);
@@ -183,24 +182,14 @@ class BaroGauge extends Component<Props, State> {
 							style={this.style}
 					></canvas>
 					<div>
-						<button onClick={() => this.props.controller.changeUnits({ press: UNITS.Press.HPA})}>{UNITS.Press.HPA}</button>
-						<button onClick={() => this.props.controller.changeUnits({ press: UNITS.Press.KPA})}>{UNITS.Press.KPA}</button>
-						<button onClick={() => this.props.controller.changeUnits({ press: UNITS.Press.INHG})}>{UNITS.Press.INHG}</button>
-						<button onClick={() => this.props.controller.changeUnits({ press: UNITS.Press.MB})}>{UNITS.Press.MB}</button>
+						<button onClick={() => this.props.controller.changeUnits({ press: "hPa"})}>hPa</button>
+						<button onClick={() => this.props.controller.changeUnits({ press: "kPa"})}>kPa</button>
+						<button onClick={() => this.props.controller.changeUnits({ press: "inHg"})}>inHg</button>
+						<button onClick={() => this.props.controller.changeUnits({ press: "mb"})}>mb</button>
 					</div>
 					
 				</div>
 		}
-}
-
-type DataParamsDef = {
-	press: any,
-	pressL: any,
-	pressH: any,
-	pressTL: any,
-	pressTH: any,
-	presstrendval: any,
-	pressunit: string
 }
 
 interface Props {
@@ -214,9 +203,9 @@ interface State {
 	maxValue: number,
 	sections: { start: number, stop: number, color: any}[],
 	areas: { start: number, stop: number, color: any}[],
-	trend: any,
+	trend: steelseries.TrendState,
 
-	displayUnit: string,
+	displayUnit: PressUnit,
 	lcdDecimals: number,
 	scaleDecimals: number,
 	labelNumberFormat: steelseries.LabelNumberFormat

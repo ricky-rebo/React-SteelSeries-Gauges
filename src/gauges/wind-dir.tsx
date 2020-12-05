@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
-import GaugeUtils from './gauge-utils';
 // @ts-ignore
 import steelseries from '../libs/steelseries.js';
 import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
-import { extractInteger, extractDecimal } from '../controller/data-utils';
+import { gaugeShadow, gradient } from './gauge-utils.js';
+import { RtData } from '../controller/data-types.js';
 
 //TODO docs
 class WindDirGauge extends Component<Props, State> {
@@ -28,26 +28,26 @@ class WindDirGauge extends Component<Props, State> {
 			section:[]
 		};
 
-			this.params = {
-				...this.props.controller.commonParams,
-				size: Math.ceil(this.props.size * this.props.controller.gaugeConfig.gaugeScaling),
-				lcdtitleStrings: [this.props.controller.lang.latest_web, this.props.controller.lang.tenminavg_web],
-				pointerTypeLatest: this.props.controller.gaugeConfig.pointer, 
-				pointerTypeAverage:this.props.controller.gaugeConfig.dirAvgPointer,
-				pointerColorAverage:this.props.controller.gaugeConfig.dirAvgPointerColour,
-				degreeScale: true,
-				pointSymbols: this.props.controller.lang.compass,
-				roseVisible: false,
-				useColorLabels: false, 
-			};
+		this.params = {
+			...this.props.controller.commonParams,
+			size: Math.ceil(this.props.size * this.props.controller.gaugeConfig.gaugeScaling),
+			lcdtitleStrings: [this.props.controller.lang.latest_web, this.props.controller.lang.tenminavg_web],
+			pointerTypeLatest: this.props.controller.gaugeConfig.pointer, 
+			pointerTypeAverage:this.props.controller.gaugeConfig.dirAvgPointer,
+			pointerColorAverage:this.props.controller.gaugeConfig.dirAvgPointerColour,
+			degreeScale: true,
+			pointSymbols: this.props.controller.lang.compass,
+			roseVisible: false,
+			useColorLabels: false, 
+		};
 
-			this.style = this.props.controller.gaugeConfig.showGaugeShadow
-				? GaugeUtils.gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
-				: {};
+		this.style = this.props.controller.gaugeConfig.showGaugeShadow
+			? gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
+			: {};
 
-			this.update = this.update.bind(this);
+		this.update = this.update.bind(this);
 
-			this.props.controller.subscribe(WindDirGauge.NAME, this.update);
+		this.props.controller.subscribe(WindDirGauge.NAME, this.update);
 	}
 
 	componentDidMount() {
@@ -58,36 +58,36 @@ class WindDirGauge extends Component<Props, State> {
 		}
 	}
 
-	async update({ bearing, avgbearing, BearingRangeFrom10, BearingRangeTo10, wspeed, wgust, windunit, WindRoseData }: DataParamDef) {
+	async update({ bearing, avgbearing, BearingRangeFrom10, BearingRangeTo10, wspeed, wgust, windunit, WindRoseData }: RtData) {
 		let newState: any = {};
 
-		newState.valueLatest = extractInteger(bearing);
-		newState.valueAverage = extractInteger(avgbearing);
-		let bearingFrom = extractInteger(BearingRangeFrom10);
-		let bearingTo = extractInteger(BearingRangeTo10);
+		newState.valueLatest = bearing;
+		newState.valueAverage = avgbearing;
+		let bearingFrom = BearingRangeFrom10;
+		let bearingTo = BearingRangeTo10;
 
 		if(newState.valueAverage === 0) {
 			newState.valueLatest = 0;
 		}
 
 		if(this.props.controller.gaugeConfig.showWindVariation) {
-			let windSpd = extractDecimal(wspeed);
-			let windGst = extractDecimal(wgust);
+			let windSpd = wspeed;
+			let windGst = wgust;
 			let avgKnots: number, gstKnots: number;
-			switch(windunit.toLowerCase()){
-				case 'mph':
+			switch(windunit){
+				case "mph":
 					avgKnots = 0.868976242 * windSpd;
 					gstKnots = 0.868976242 * windGst;
 					break;
-				case 'kts':
+				case "kts":
 					avgKnots = windSpd;
 					gstKnots = windGst;
 					break;
-				case 'm/s':
+				case "m/s":
 					avgKnots = 1.94384449 * windSpd;
 					gstKnots = 1.94384449 * windGst;
 					break;
-				case 'km/h':
+				case "km/h":
 					avgKnots = 0.539956803 * windSpd;
 					gstKnots = 0.539956803 * windGst;
 					break;
@@ -166,7 +166,7 @@ class WindDirGauge extends Component<Props, State> {
 					roseAreas[i] = steelseries.Section(
 						i*roseSectionAngle - roseSectionAngle/2,
 						(i+1) * roseSectionAngle - roseSectionAngle/2,
-						`rgba(${GaugeUtils.gradient('2020D0', 'D04040', WindRoseData[i] / roseMax)},${(WindRoseData[i] / roseMax).toFixed(2)})`
+						`rgba(${gradient('2020D0', 'D04040', WindRoseData[i] / roseMax)},${(WindRoseData[i] / roseMax).toFixed(2)})`
 					);
 				}
 			}
@@ -213,16 +213,5 @@ interface State {
 	section:[],
 	area:[],
 }
-
-type DataParamDef = { 
-	bearing: any,
-	avgbearing: any,
-	BearingRangeFrom10: any,
-	BearingRangeTo10: any,
-	wspeed: any,
-	wgust: any,
-	windunit: string,
-	WindRoseData: any[]
-};
 
 export default WindDirGauge;

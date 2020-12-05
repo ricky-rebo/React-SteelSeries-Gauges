@@ -19,7 +19,6 @@ import WindSpeedGauge from './gauges/wind-speed';
 import WindRoseGauge from './gauges/wind-rose';
 
 import { WProgram } from './controller/data-types';
-import { UNITS } from './controller/defaults';
 
 // @ts-ignore
 import LANG from './controller/language.js';
@@ -62,4 +61,4 @@ const Type = {
   DewDisplay: {...DewTemp}
 }
 
-export { ExampleComponent, Gauge, GaugeSize, GaugesController, Type, LANG as Lang, UNITS as Units};
+export { ExampleComponent, Gauge, GaugeSize, GaugesController, Type, LANG as Lang};
