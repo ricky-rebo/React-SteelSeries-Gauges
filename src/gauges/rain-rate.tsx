@@ -1,12 +1,10 @@
 import React, { Component } from 'react';
-
 // @ts-ignore
-import steelseries from '../libs/steelseries.js';
-
-import GaugesController from '../controller/gauges_controller';
+import { Radial, LabelNumberFormat } from "steelseries";
 import styles from '../style/common.css';
 import { createRainRateSections, gaugeShadow, nextHighest } from './gauge-utils.js';
 import { RtData } from '../controller/data-types.js';
+import { Props } from './data-types';
 
 //TODO docs
 class RainRateGauge extends Component<Props, State> {
@@ -15,7 +13,7 @@ class RainRateGauge extends Component<Props, State> {
 		canvasRef: React.RefObject<HTMLCanvasElement>;
 		gauge: any;
 		params: any;
-		style: any;
+		style: React.CSSProperties;
 
 		constructor(props: Props) {
 				super(props);
@@ -35,7 +33,7 @@ class RainRateGauge extends Component<Props, State> {
 					sections: createRainRateSections(rain === "mm"),
 					lcdDecimals: (rain === "mm") ? 1 : 2,
 					scaleDecimals: (rain === "mm") ? 0 : (props.controller.gaugeConfig.rainRateScaleDefMaxIn < 1 ? 2 : 1),
-					labelNumberFormat: (rain === "mm") ? props.controller.gaugeConfig.labelFormat : steelseries.LabelNumberFormat.FRACTIONAL
+					labelNumberFormat: (rain === "mm") ? props.controller.gaugeConfig.labelFormat : LabelNumberFormat.FRACTIONAL
 					
 					//popUpTxt: '',
 					//graph: '',
@@ -67,7 +65,7 @@ class RainRateGauge extends Component<Props, State> {
 
 		componentDidMount() {
 			if(this.canvasRef.current) {
-				this.gauge = new steelseries.Radial(this.canvasRef.current, this.params);
+				this.gauge = new Radial(this.canvasRef.current, this.params);
 				this.gauge.setValue(this.state.value);
 			}
 		}
@@ -81,7 +79,7 @@ class RainRateGauge extends Component<Props, State> {
 				newState.lcdDecimals = (rainunit === "mm") ? 1 : 2;
 				newState.labelNumberFormat = (rainunit === "mm")
 					? this.props.controller.gaugeConfig.labelFormat
-					: steelseries.LabelNumberFormat.FRACTIONAL
+					: LabelNumberFormat.FRACTIONAL
 					
 			}
 
@@ -124,9 +122,7 @@ class RainRateGauge extends Component<Props, State> {
 				this.gauge.setMaxValue(this.state.maxValue);
 			}
 			
-			//FIXME Twwen.js animation in ss lib not working
-			//this.gauge.setValueAnimated(this.state.value);
-			this.gauge.setValue(this.state.value);
+			this.gauge.setValueAnimated(this.state.value);
 
 			this.gauge.setMaxMeasuredValue(this.state.maxMeasured);
 
@@ -150,11 +146,6 @@ class RainRateGauge extends Component<Props, State> {
 				</div>
 			);
 		}
-}
-
-interface Props {
-		controller: GaugesController,
-		size: number
 }
 
 interface State {

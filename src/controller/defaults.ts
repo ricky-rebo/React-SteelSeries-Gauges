@@ -1,6 +1,6 @@
 import { ControllerConfig, DisplayUnits, GaugeConfig, StatusType, WProgram } from "./data-types";
 // @ts-ignore
-import steelseries from '../libs/steelseries';
+import { FrameDesign, BackgroundColor, ForegroundType, PointerType, ColorDef, GaugeType, LcdColor, LedColor, KnobType, KnobStyle, LabelNumberFormat, TickLabelOrientation } from "steelseries";
 import { DewTemp } from "../gauges/data-types";
 
 export const CONTROLLER_CONFIG: ControllerConfig = {
@@ -36,27 +36,27 @@ export const GAUGE_CONFIG: GaugeConfig = {
   digitalFont     : false,
   digitalForecast : false,
 
-  frameDesign          : steelseries.FrameDesign.TILTED_GRAY,
-  background           : steelseries.BackgroundColor.BEIGE,
-  foreground           : steelseries.ForegroundType.TYPE1,
-  pointer              : steelseries.PointerType.TYPE8,
-  pointerColour        : steelseries.ColorDef.RED,
-  dirAvgPointer        : steelseries.PointerType.TYPE8,
-  dirAvgPointerColour  : steelseries.ColorDef.BLUE,
-  gaugeType            : steelseries.GaugeType.TYPE4,
-  lcdColour            : steelseries.LcdColor.STANDARD,
-  knob                 : steelseries.KnobType.STANDARD_KNOB,
-  knobStyle            : steelseries.KnobStyle.SILVER,
-  labelFormat          : steelseries.LabelNumberFormat.STANDARD,
-  tickLabelOrientation : steelseries.TickLabelOrientation.HORIZONTAL, // was .NORMAL up to v1.6.4
+  frameDesign          : FrameDesign.TILTED_GRAY,
+  background           : BackgroundColor.BEIGE,
+  foreground           : ForegroundType.TYPE1,
+  pointer              : PointerType.TYPE8,
+  pointerColor        : ColorDef.RED,
+  dirAvgPointer        : PointerType.TYPE8,
+  dirAvgPointerColor  : ColorDef.BLUE,
+  gaugeType            : GaugeType.TYPE4,
+  lcdColor            : LcdColor.STANDARD,
+  knob                 : KnobType.STANDARD_KNOB,
+  knobStyle            : KnobStyle.SILVER,
+  labelFormat          : LabelNumberFormat.STANDARD,
+  tickLabelOrientation : TickLabelOrientation.HORIZONTAL, // was .NORMAL up to v1.6.4
   
-  tempTrendVisible  : true,
+  showTempTrend  : true,
   showIndoorTempHum : true,
   dewDisplayType    : DewTemp.APP,
 
-  pressureTrendVisible  : true,
-  rainUseSectionColours : false,                                       // Only one of these colour options should be true
-  rainUseGradientColours: false,                                       // Set both to false to use the pointer colour
+  showPressTrend  : true,
+  rainUseSectionColors : false,                                       // Only one of these colour options should be true
+  rainUseGradientColors: false,                                       // Set both to false to use the pointer colour
   
   uvLcdDecimals   : 1,
   showSunshineLed : true,
@@ -95,46 +95,6 @@ export const GAUGE_CONFIG: GaugeConfig = {
   cloudScaleDefMaxm     : 1000,
 }
 
-/*type UnitsType = {
-  Temp: { [unitName: string]: TempUnit },
-  Rain: { [unitName: string]: RainUnit },
-  Press: { [unitName: string]: PressUnit },
-  Wind: { [unitName: string]: WindUnit },
-  Windrun: { [unitName: string]: WindrunUnit },
-  Cloud: { [unitName: string]: CloudUnit }
-}
-export const UNITS: UnitsType = {
-  Temp: {
-    C: '°C',
-    F: '°F'
-  },
-  Rain: {
-    MM: 'mm',
-    IN: 'in'
-  },
-  Press: {
-    HPA: 'hPa',
-    INHG: 'inHg',
-    MB: 'mb',
-    KPA: 'kPa'
-  },
-  Wind: {
-    KM_H: 'km/h',
-    M_S: 'm/s',
-    MPH: 'mph',
-    Knots: 'kts'
-  },
-  Windrun: {
-    KM: 'km',
-    Miles: 'miles',
-    N_Miles: 'n.miles'
-  },
-  Cloud: {
-    M: 'm',
-    FT: 'ft'
-  }
-}*/
-
 export const DISPLAY_UNITS: DisplayUnits = {
   temp   : "°C",
   rain   : "mm",
@@ -150,13 +110,13 @@ export const Status = {
   },
   OK: {
     type: StatusType.OK,
-    ledColor: steelseries.LedColor.GREEN_LED,
+    ledColor: LedColor.GREEN_LED,
     ledState: true
 
   },
   StationOffline: {
     type: StatusType.STATION_OFFLINE,
-    ledColor: steelseries.LedColor.RED_LED,
+    ledColor: LedColor.RED_LED,
     ledBlink: true,
     ledTitle: '',
 
@@ -164,7 +124,7 @@ export const Status = {
   },
   SensorContactLost: {
     type: StatusType.SENSOR_CONTACT_LOST,
-    ledColor: steelseries.LedColor.RED_LED,
+    ledColor: LedColor.RED_LED,
     ledBlink: true,
     ledTitle: '',
 
@@ -172,7 +132,7 @@ export const Status = {
   },
   GaugesTimeout: {
     type: StatusType.TIMEOUT,
-    ledColor: steelseries.LedColor.RED_LED,
+    ledColor: LedColor.RED_LED,
     ledBlink: true,
     ledTitle: '',
 
@@ -183,7 +143,7 @@ export const Status = {
   },
   Error: {
     type: StatusType.ERROR,
-    ledColor: steelseries.LedColor.RED_LED,
+    ledColor: LedColor.RED_LED,
     ledState: false,
     ledTitle: '',
 
@@ -191,7 +151,7 @@ export const Status = {
   },
   FatalError: {
     type: StatusType.FATAL_ERROR,
-    ledColor: steelseries.LedColor.RED_LED,
+    ledColor: LedColor.RED_LED,
     ledState: false,
     ledTitle: '',
 

@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 // @ts-ignore
-import steelseries from '../libs/steelseries.js';
-import GaugesController from '../controller/gauges_controller';
+import { Radial, Section } from "steelseries";
 import styles from '../style/common.css';
 import { gaugeShadow, nextHighest } from './gauge-utils.js';
 import { RtData, WindUnit } from '../controller/data-types.js';
+import { Props } from './data-types';
 
 //TODO docs
 class WindSpeedGauge extends Component<Props, State> {
@@ -13,7 +13,7 @@ class WindSpeedGauge extends Component<Props, State> {
 	canvasRef: React.RefObject<HTMLCanvasElement>;
 	gauge: any;
 	params: any;
-	style: any;
+	style: React.CSSProperties;
 
 	constructor(props: Props) {
 		super(props);
@@ -60,7 +60,7 @@ class WindSpeedGauge extends Component<Props, State> {
 
 	componentDidMount() {
 		if(this.canvasRef.current) {
-			this.gauge = new steelseries.Radial(this.canvasRef.current, this.params);
+			this.gauge = new Radial(this.canvasRef.current, this.params);
 			this.gauge.setValue(this.state.value);
 		}
 	}
@@ -101,8 +101,8 @@ class WindSpeedGauge extends Component<Props, State> {
 		}
 
 		newState.area=[
-			steelseries.Section(0, average, this.props.controller.gaugeConfig.windAvgArea),
-			steelseries.Section(average, gust, this.props.controller.gaugeConfig.minMaxArea)
+			Section(0, average, this.props.controller.gaugeConfig.windAvgArea),
+			Section(average, gust, this.props.controller.gaugeConfig.minMaxArea)
 		];
 
 		this.setState(newState);
@@ -115,13 +115,12 @@ class WindSpeedGauge extends Component<Props, State> {
 
 		if(this.gauge.getMaxValue() !== this.state.maxValue) {
 				this.gauge.setMaxValue(this.state.maxValue)
+				this.gauge.setValue(this.gauge.getMinValue());
 		}
 	
 		this.gauge.setArea(this.state.area);
 		this.gauge.setMaxMeasuredValue(this.state.maxGustToday)
-		//FIXME setValueAnimated() from steelseries lib not working!
-		//this.gauge.setValueAnimated(this.state.value);
-		this.gauge.setValue(this.state.value);
+		this.gauge.setValueAnimated(this.state.value);
 	}
 
 	render() {
@@ -142,11 +141,6 @@ class WindSpeedGauge extends Component<Props, State> {
 			</div>
 		);
 	}
-}
-
-interface Props {
-		controller: GaugesController,
-		size: number
 }
 
 interface State {

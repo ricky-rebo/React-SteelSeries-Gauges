@@ -1,10 +1,9 @@
 import React, { Component } from 'react';
 // @ts-ignore
-import steelseries from '../libs/steelseries.js';
-import GaugesController from '../controller/gauges_controller';
+import { Radial, Section } from "steelseries";
 import styles from '../style/common.css';
 import Cookies, { Cookie } from 'universal-cookie/es6';
-import { InOutTemp } from './data-types';
+import { InOutTemp, Props } from './data-types';
 import { gaugeShadow } from './gauge-utils.js';
 import { RtData } from '../controller/data-types.js';
 
@@ -17,7 +16,7 @@ class HumGauge extends Component<Props, State> {
 	canvasRef: React.RefObject<HTMLCanvasElement>;
 	gauge: any;
 	params: any;
-	style: any;
+	style: React.CSSProperties;
 	cookies: Cookie;
 
 	constructor(props: Props) {
@@ -26,7 +25,7 @@ class HumGauge extends Component<Props, State> {
 		this.canvasRef = React.createRef();
 
 		let tempType = InOutTemp.OUT;
-		if(props.controller.controllerConfig.useCookies && props.controller.gaugeConfig.showIndoorTempHum) {
+		if(props.controller.config.useCookies && props.controller.gaugeConfig.showIndoorTempHum) {
 			this.cookies = new Cookies();
 			let sel = this.cookies.get(COOKIE_NAME);
 			if(sel) tempType = sel;
@@ -51,9 +50,9 @@ class HumGauge extends Component<Props, State> {
 			...this.props.controller.commonParams,
 			size: Math.ceil(this.props.size * this.props.controller.gaugeConfig.gaugeScaling),
 			section: [
-				steelseries.Section(0, 20, 'rgba(255,255,0,0.3)'),
-				steelseries.Section(20, 80, 'rgba(0,255,0,0.3)'),
-				steelseries.Section(80, 100, 'rgba(255,0,0,0.3)')
+				Section(0, 20, 'rgba(255,255,0,0.3)'),
+				Section(20, 80, 'rgba(0,255,0,0.3)'),
+				Section(80, 100, 'rgba(255,0,0,0.3)')
 			],
 			area: [],
 			maxValue: 100,
@@ -73,7 +72,7 @@ class HumGauge extends Component<Props, State> {
 
 	componentDidMount() {
 		if(this.canvasRef.current) {
-			this.gauge = new steelseries.Radial(this.canvasRef.current, this.params);
+			this.gauge = new Radial(this.canvasRef.current, this.params);
 			this.gauge.setValue(this.state.value);
 		}
 	}
@@ -86,7 +85,7 @@ class HumGauge extends Component<Props, State> {
 		if(this.state.data) {
 			this._setState(this.state.data, sel);
 
-			if(this.props.controller.controllerConfig.useCookies && this.cookies)
+			if(this.props.controller.config.useCookies && this.cookies)
 				this.cookies.set(COOKIE_NAME, sel);
 		}
 	}
@@ -112,13 +111,13 @@ class HumGauge extends Component<Props, State> {
 		if(newState.selected == InOutTemp.OUT) {
 			newState.value = data.hum;
 		
-			newState.areas = [steelseries.Section(data.humTL, data.humTH, minMaxArea)];
+			newState.areas = [Section(data.humTL, data.humTH, minMaxArea)];
 		}
 		else {
 			newState.value = data.inhum;
 			if (data.inhumTL && data.inhumTH) {
 				// Indoor - and Max/Min values supplied
-				newState.areas=[steelseries.Section(data.inhumTL, data.inhumTH, minMaxArea)];
+				newState.areas=[Section(data.inhumTL, data.inhumTH, minMaxArea)];
 			}
 			else {
 				// Indoor - no Max/Min values supplied
@@ -135,9 +134,7 @@ class HumGauge extends Component<Props, State> {
 		}
 
 		this.gauge.setArea(this.state.areas);
-		//FIXME setValueAnimated() from steelseries lib not working!
-		//this.gauge.setValueAnimated(this.state.value);
-		this.gauge.setValue(this.state.value);
+		this.gauge.setValueAnimated(this.state.value);
 	}
 
 	render() {
@@ -156,11 +153,6 @@ class HumGauge extends Component<Props, State> {
 			</div>
 		);
 	}
-}
-
-interface Props {
-	controller: GaugesController,
-	size: number
 }
 
 interface State {

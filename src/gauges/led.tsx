@@ -1,7 +1,10 @@
 import React, { Component } from 'react';
 import GaugesController from '../controller/gauges_controller';
 // @ts-ignore
-import steelseries from '../libs/steelseries';
+import { Led, LedColor } from "steelseries";
+// @ts-ignore
+import { RtData } from '../controller/data-types';
+//import steelseries from '../libs/steelseries';
 
 //TODO docs
 class LedGauge extends Component<Props, State> {
@@ -19,7 +22,7 @@ class LedGauge extends Component<Props, State> {
 
 		this.state = {
 			title: '',
-			color: steelseries.LedColor.GREEN_LED,
+			color: LedColor.GREEN_LED,
 			isOn: false,
 			blink: false
 		}
@@ -31,17 +34,17 @@ class LedGauge extends Component<Props, State> {
 
 		this.dataUpdate = this.dataUpdate.bind(this);
 		this.statusUpdate = this.statusUpdate.bind(this);
-		props.controller.subscribe(LedGauge.NAME, this.dataUpdate, null, this.statusUpdate);
+		props.controller.subscribe(LedGauge.NAME, this.dataUpdate, this.statusUpdate);
 	}
 
 	componentDidMount() {
 		if(this.canvasRef.current) {
-			this.gauge = new steelseries.Led(this.canvasRef.current, this.params);
+			this.gauge = new Led(this.canvasRef.current, this.params);
 		}
 	}
 
-	async dataUpdate({ ledTitle }: any) {
-		if(ledTitle !== undefined)
+	async dataUpdate({ ledTitle }: RtData) {
+		if(ledTitle)
 			this.setState({ title: ledTitle });
 	}
 

@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 // @ts-ignore
-import steelseries from '../libs/steelseries.js';
-import GaugesController from '../controller/gauges_controller';
+import { WindDirection, Section } from "steelseries";
 import styles from '../style/common.css';
 import { gaugeShadow, gradient } from './gauge-utils.js';
 import { RtData } from '../controller/data-types.js';
+import { Props } from './data-types';
 
 //TODO docs
 class WindDirGauge extends Component<Props, State> {
@@ -13,7 +13,7 @@ class WindDirGauge extends Component<Props, State> {
 	canvasRef: React.RefObject<HTMLCanvasElement>;
 	gauge: any;
 	params: any;
-	style: any;
+	style: React.CSSProperties;
 
 	constructor(props: Props) {
 		super(props);
@@ -34,7 +34,7 @@ class WindDirGauge extends Component<Props, State> {
 			lcdtitleStrings: [this.props.controller.lang.latest_web, this.props.controller.lang.tenminavg_web],
 			pointerTypeLatest: this.props.controller.gaugeConfig.pointer, 
 			pointerTypeAverage:this.props.controller.gaugeConfig.dirAvgPointer,
-			pointerColorAverage:this.props.controller.gaugeConfig.dirAvgPointerColour,
+			pointerColorAverage:this.props.controller.gaugeConfig.dirAvgPointerColor,
 			degreeScale: true,
 			pointSymbols: this.props.controller.lang.compass,
 			roseVisible: false,
@@ -52,7 +52,7 @@ class WindDirGauge extends Component<Props, State> {
 
 	componentDidMount() {
 		if(this.canvasRef.current) {
-			this.gauge = new steelseries.WindDirection(this.canvasRef.current, this.params);
+			this.gauge = new WindDirection(this.canvasRef.current, this.params);
 			this.gauge.setValueAverage(this.state.valueAverage);
 			this.gauge.setValueLatest(this.state.valueLatest)
 		}
@@ -110,17 +110,17 @@ class WindDirGauge extends Component<Props, State> {
 				//FIXME code redundancy?
 				if(avgKnots < 3) { // Europe uses 3kts, USA 6kts as the threshold
 					if(this.props.controller.gaugeConfig.showRoseOnDirGauge) {
-						newState.section = [steelseries.Section(bearingFrom, bearingTo, this.props.controller.gaugeConfig.windVariationSector)];
+						newState.section = [Section(bearingFrom, bearingTo, this.props.controller.gaugeConfig.windVariationSector)];
 					}
 					else {
-						newState.area = [steelseries.Section(bearingFrom, bearingTo, this.props.controller.gaugeConfig.minMaxArea)];
+						newState.area = [Section(bearingFrom, bearingTo, this.props.controller.gaugeConfig.minMaxArea)];
 					}
 				}
 				else if (this.props.controller.gaugeConfig.showRoseOnDirGauge) {
-					newState.section = [steelseries.Section(bearingFrom, bearingTo, this.props.controller.gaugeConfig.windVariationSector)];
+					newState.section = [Section(bearingFrom, bearingTo, this.props.controller.gaugeConfig.windVariationSector)];
 				}
 				else {
-					newState.area = [steelseries.Section(bearingFrom, bearingTo, this.props.controller.gaugeConfig.minMaxArea)];
+					newState.area = [Section(bearingFrom, bearingTo, this.props.controller.gaugeConfig.minMaxArea)];
 				}
 
 				let range = (bearingTo < bearingFrom ? (360 + bearingTo) : bearingTo) - (bearingFrom);
@@ -163,7 +163,7 @@ class WindDirGauge extends Component<Props, State> {
 			if(roseMax > 0) {
 				// Find relative value for each point, and create a gauge area for it
 				for(let i = 0; i < rosepoints; i++) {
-					roseAreas[i] = steelseries.Section(
+					roseAreas[i] = Section(
 						i*roseSectionAngle - roseSectionAngle/2,
 						(i+1) * roseSectionAngle - roseSectionAngle/2,
 						`rgba(${gradient('2020D0', 'D04040', WindRoseData[i] / roseMax)},${(WindRoseData[i] / roseMax).toFixed(2)})`
@@ -178,13 +178,12 @@ class WindDirGauge extends Component<Props, State> {
 
 	componentDidUpdate() {
 		this.gauge.setArea(this.state.area);
-		this.gauge.setSection(this.state.section)
+		if(this.props.controller.gaugeConfig.showRoseOnDirGauge) {
+			this.gauge.setSection(this.state.section);
+		}
 
-		//FIXME setValueAnimated() from steelseries lib not working!
-		//this.gauge.setValueLatestAnimated(this.state.valueLatest);
-		//this.gauge.setValueAverageAnimated(this.state.valueAverage);
-		this.gauge.setValueLatest(this.state.valueLatest);
-		this.gauge.setValueAverage(this.state.valueAverage);
+		this.gauge.setValueAnimatedLatest(this.state.valueLatest);
+		this.gauge.setValueAnimatedAverage(this.state.valueAverage);
 	}
 
 	render() {
@@ -199,11 +198,6 @@ class WindDirGauge extends Component<Props, State> {
 			</div>
 		);
 	}
-}
-
-interface Props {
-		controller: GaugesController,
-		size: number
 }
 
 interface State {

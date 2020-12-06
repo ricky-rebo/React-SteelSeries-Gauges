@@ -1,10 +1,9 @@
 import React, { Component } from 'react';
 // @ts-ignore
-import steelseries from '../libs/steelseries.js';
-import GaugesController from '../controller/gauges_controller';
+import { Radial, Section } from "steelseries";
 import styles from '../style/common.css';
 import Cookies from 'universal-cookie/es6';
-import { DewTemp } from './data-types';
+import { DewTemp, Props } from './data-types';
 import { RtData, TempUnit } from '../controller/data-types';
 import { createTempSections, gaugeShadow, getMinTemp, getMaxTemp } from './gauge-utils.js';
 
@@ -17,7 +16,7 @@ class DewGauge extends Component<Props, State> {
 	canvasRef: React.RefObject<HTMLCanvasElement>;
 	gauge: any;
 	params: any;
-	style: any;
+	style: React.CSSProperties;
 	cookies: Cookies;
 
 	constructor(props: Props) {
@@ -26,7 +25,7 @@ class DewGauge extends Component<Props, State> {
 		this.canvasRef = React.createRef();
 
 		let sel: DewTemp;
-		if(props.controller.controllerConfig.useCookies) {
+		if(props.controller.config.useCookies) {
 			this.cookies = new Cookies();
 
 			sel = this.cookies.get(COOKIE_NAME);
@@ -99,7 +98,7 @@ class DewGauge extends Component<Props, State> {
 
 	componentDidMount() {
 		if(this.canvasRef.current) {
-			this.gauge = new steelseries.Radial(this.canvasRef.current, this.params);
+			this.gauge = new Radial(this.canvasRef.current, this.params);
 			this.gauge.setValue(this.state.value);
 		}
 	}
@@ -112,7 +111,7 @@ class DewGauge extends Component<Props, State> {
 		if(this.state.data) {
 			this._setState(this.state.data, sel);
 
-			if(this.props.controller.controllerConfig.useCookies && this.cookies)
+			if(this.props.controller.config.useCookies && this.cookies)
 				this.cookies.set(COOKIE_NAME, sel);
 		}
 	}
@@ -168,13 +167,13 @@ class DewGauge extends Component<Props, State> {
 				newState.low = data.dewpointTL;
 				newState.high = data.dewpointTH;
 				newState.value = data.dew;
-				newState.areas = [steelseries.Section(newState.low, newState.high, this.props.controller.gaugeConfig.minMaxArea)];
+				newState.areas = [Section(newState.low, newState.high, this.props.controller.gaugeConfig.minMaxArea)];
 				break;
 			case DewTemp.APP: // apparent temperature
 				newState.low = data.apptempTL;
 				newState.high = data.apptempTH;
 				newState.value = data.apptemp;
-				newState.areas = [steelseries.Section(newState.low, newState.high, this.props.controller.gaugeConfig.minMaxArea)];
+				newState.areas = [Section(newState.low, newState.high, this.props.controller.gaugeConfig.minMaxArea)];
 				break;
 			case DewTemp.WND: // wind chill
 				newState.low = data.wchillTL;
@@ -239,9 +238,7 @@ class DewGauge extends Component<Props, State> {
 		this.gauge.setMinMeasuredValue(this.state.low);
 		this.gauge.setMaxMeasuredValue(this.state.high);
 		this.gauge.setArea(this.state.areas);
-		//FIXME Tween.js anmation in steelseries lib not workig 
-		//this.gauge.setValueAnimated(this.state.value);
-		this.gauge.setValue(this.state.value);
+		this.gauge.setValueAnimated(this.state.value);
 
 		//TODO set popup text
 	}
@@ -272,11 +269,6 @@ class DewGauge extends Component<Props, State> {
 			</div>
 		);
 	}
-}
-
-interface Props {
-	controller: GaugesController,
-	size: number
 }
 
 interface State {

@@ -1,17 +1,12 @@
-// @ts-ignore
-import steelseries from '../libs/steelseries';
-// @ts-ignore
-import LANG from './language';
-
 import LedGauge from '../gauges/led';
 import StatusScrollerGauge from '../gauges/status-scroller';
 import StatusTimerGauge from '../gauges/status-timer';
-
-// @ts-ignore
-import { ControllerConfig, CustomConfig, DisplayUnits, GaugeConfig, RawData, RtData, StatusType, WProgram } from './data-types';
-import { CONTROLLER_CONFIG, GAUGE_CONFIG, DISPLAY_UNITS, Status } from './defaults';
 import CloudBaseGauge from '../gauges/cloudbase';
+
 import Cookies from 'universal-cookie/es6';
+
+import { ControllerConfig, CustomConfig, DisplayUnits, GaugeConfig, Lang, RawData, RtData, StatusType, WProgram } from './data-types';
+import { CONTROLLER_CONFIG, GAUGE_CONFIG, DISPLAY_UNITS, Status } from './defaults';
 import { calcCloudbase, convBaroData, convCloudBaseData, convRainData, convTempData, convWindData, ERR_VAL, getWindrunUnits, isStationOffline, parseLastRain, parseRawData } from './data-utils';
 
 const ERR_RT_RETRY = 5;
@@ -19,8 +14,8 @@ const COOKIE_NAME = 'units';
 
 export default class GaugesController {
 	min_rt_ver: number;
-	lang: any;
-	controllerConfig: ControllerConfig;
+	lang: Lang;
+	config: ControllerConfig;
 	gaugeConfig: GaugeConfig;
 	commonParams: any;
 
@@ -31,7 +26,6 @@ export default class GaugesController {
 
 	gauges: string[] = [];
 	dataUpdate: any[] = [];
-	unitsUpdate: any[] = [];
 	statusUpdate: any[] = [];
 	
 	firstRun: any = true;
@@ -39,11 +33,11 @@ export default class GaugesController {
 	cookies: Cookies;
 	rtDownLoadTimer: NodeJS.Timeout;
 
-	constructor(lang: LANG, config: CustomConfig) {
-		this.controllerConfig = setControllerConfig(config);
+	constructor(lang: Lang, config: CustomConfig) {
+		this.config = setControllerConfig(config);
 		this.gaugeConfig = setGaugeConfigs(config);
 
-		if(this.controllerConfig.useCookies) {
+		if(this.config.useCookies) {
 			this.cookies = new Cookies();
 			let units = this.cookies.get(COOKIE_NAME);
 			if(units) {
@@ -59,8 +53,8 @@ export default class GaugesController {
 		}
 
 		//dashboard mode used only by Cumulus MX!
-		if(this.controllerConfig.weatherProgram !== WProgram.CUMULUS)
-			this.controllerConfig.dashboardMode = false;
+		if(this.config.weatherProgram !== WProgram.CUMULUS)
+			this.config.dashboardMode = false;
 
 		this.lang = lang;
 
@@ -76,10 +70,10 @@ export default class GaugesController {
 				backgroundColor        : this.gaugeConfig.background,
 				foregroundType         : this.gaugeConfig.foreground,
 				pointerType            : this.gaugeConfig.pointer,
-				pointerColor           : this.gaugeConfig.pointerColour,
+				pointerColor           : this.gaugeConfig.pointerColor,
 				knobType               : this.gaugeConfig.knob,
 				knobStyle              : this.gaugeConfig.knobStyle,
-				lcdColor               : this.gaugeConfig.lcdColour,
+				lcdColor               : this.gaugeConfig.lcdColor,
 				lcdDecimals            : 1,
 				digitalFont            : this.gaugeConfig.digitalFont,
 				tickLabelOrientation   : this.gaugeConfig.tickLabelOrientation,
@@ -92,14 +86,11 @@ export default class GaugesController {
 		this._checkRtErr = this._checkRtErr.bind(this);
 	}
 
-	subscribe = (gaugeName: string, dataUpdFunct: any, unitsUpdFunct?: any, statusUpdFunct?: any) => {
+	subscribe = (gaugeName: string, dataUpdFunct: any, statusUpdFunct?: any) => {
 		this.gauges = this.gauges.concat(gaugeName);
 		
 		if(dataUpdFunct !== null)
 			this.dataUpdate = this.dataUpdate.concat(dataUpdFunct);
-
-		if(unitsUpdFunct !== null && unitsUpdFunct !== undefined)
-			this.unitsUpdate = this.unitsUpdate.concat(unitsUpdFunct);
 		
 		if(statusUpdFunct !== null && statusUpdFunct !== undefined)
 			this.statusUpdate = this.statusUpdate.concat(statusUpdFunct);
@@ -117,9 +108,10 @@ export default class GaugesController {
 			throw "Timer Gauge needed to start SteelSeries Wheather Gauges controller";
 		}
 
-		switch(this.controllerConfig.weatherProgram) {
+		switch(this.config.weatherProgram) {
 			case WProgram.CUMULUS:
 				this.min_rt_ver = 12;
+				this.config.showPopupGraphs = false; //FIXME no graphs support for now :/
 				break;
 			case WProgram.WHEATHER_DISPLAY:
 				this.min_rt_ver = 12; //FIXME set to 14
@@ -128,13 +120,15 @@ export default class GaugesController {
 				this.min_rt_ver = 11;
 				//FIXME throw error if rose is present? + eventually disable showRoseOnDirGauge?
 				//FIXME throw error if cloudbase gauge is present? why?
+				this.config.showPopupGraphs = false; //FIXME no graphs support for now :/
 				break;
 			case WProgram.WHEATHER_CAT:
 				this.min_rt_ver = 14;
+				this.config.showPopupGraphs = false; //FIXME no graphs support for now :/
 				break;
 			case WProgram.METEO_BRIDGE:
 				this.min_rt_ver = 10;
-				this.controllerConfig.showPopupGraphs = false;        // config.tipImgs - no Meteobridge images available
+				this.config.showPopupGraphs = false;        // config.tipImgs - no Meteobridge images available
 				this.gaugeConfig.showWindVariation = false;      // no wind variation data from MB
 				//FIXME throw error if rose is present? + eventually disable showRoseOnDirGauge?
 				//FIXME throw error if cloudbase gauge is present? why?
@@ -145,13 +139,14 @@ export default class GaugesController {
 				this.gaugeConfig.showWindVariation = false;   // no wind variation from WView
 				//FIXME throw error if rose is present? + eventually disable showRoseOnDirGauge?
 				//FIXME throw error if cloudbase gauge is present? why?
+				this.config.showPopupGraphs = false; //FIXME no graphs support for now :/
 				break;
 			case WProgram.WEE_WX:
 				this.min_rt_ver = 14;
 				break;
 			case WProgram.WLCOM:
 				this.min_rt_ver = 10;
-				this.controllerConfig.showPopupGraphs = false;        // config.tipImgs - no WL images available
+				this.config.showPopupGraphs = false;        // config.tipImgs - no WL images available
 				this.gaugeConfig.showWindVariation = false;      // no wind variation data from WL
 				//FIXME throw error if rose is present? + eventually disable showRoseOnDirGauge?
 				//FIXME throw error if cloudbase gauge is present? why?
@@ -162,12 +157,12 @@ export default class GaugesController {
 
 		//TODO get user sets units from cookie
 
-		if(!this.controllerConfig.dashboardMode) {
+		if(!this.config.dashboardMode) {
 			this._getRealTime();
 
 			//TODO override page update if url param present and valid
-			if(this.controllerConfig.pageUpdateLimit > 0) {
-				setTimeout(() => this._updateStatus(Status.GaugesTimeout), this.controllerConfig.pageUpdateLimit * 60 * 1000);
+			if(this.config.pageUpdateLimit > 0) {
+				setTimeout(() => this._updateStatus(Status.GaugesTimeout), this.config.pageUpdateLimit * 60 * 1000);
 			}
 		}
 
@@ -226,7 +221,7 @@ export default class GaugesController {
 			this.displayUnits = units;
 			this._updateUnits(units);
 
-			if(this.controllerConfig.useCookies) {
+			if(this.config.useCookies) {
 				let expireDate = new Date();
 				expireDate.setFullYear(expireDate.getFullYear() + 1);
 				this.cookies.set('units', units, { path: '/', expires: expireDate })
@@ -237,7 +232,7 @@ export default class GaugesController {
 	getDisplayUnits = () => (this.displayUnits);
 
 	_getRealTime = () => {
-		fetch(this.controllerConfig.realTimeUrl, { method: 'get', signal: this.fetchController.signal })
+		fetch(this.config.realTimeUrl, { method: 'get', signal: this.fetchController.signal })
 		.then(res => res.json())
 		.then(this._checkRtRes, this._checkRtErr);
 	}
@@ -245,7 +240,7 @@ export default class GaugesController {
 	_checkRtRes(dataObj: any) {
 		let delay: number;
 		if(this._processData(dataObj))
-			delay = this.controllerConfig.realtimeInterval;
+			delay = this.config.realtimeInterval;
 		else 
 			delay = ERR_RT_RETRY;
 		
@@ -262,13 +257,13 @@ export default class GaugesController {
 		}
 	}
 
-	_processData = (/*rawdata: RawData*/rawData: any) => {
+	_processData = (rawData: RawData) => {
 		if(rawData.ver && +rawData.ver >= this.min_rt_ver) {
 			
 			let data = parseRawData(rawData);
 			
 			// *** CHECK IF STATION IS OFFLINE ***
-			let stationOffMsg = isStationOffline(data, this.controllerConfig.stationTimeout, this.lang);
+			let stationOffMsg = isStationOffline(data, this.config.stationTimeout, this.lang);
 			if(stationOffMsg !== null) {
 				this._updateStatus(Status.StationOffline);
 				data.forecast = stationOffMsg;
@@ -278,6 +273,10 @@ export default class GaugesController {
 			} 
 			else if(this.status.type !== 'OK') {
 				this._updateStatus(Status.OK);
+			}
+
+			if(this.status.type === 'OK') {
+				data.ledTitle = `${this.lang.led_title_ok}. ${this.lang.StatusLastUpdate}: ${data.date}`;
 			}
 
 
@@ -307,7 +306,7 @@ export default class GaugesController {
 				//TODO get user pref units from cookie
 
 				let units = undefined;;
-				if(this.controllerConfig.useCookies && this.cookies) {
+				if(this.config.useCookies && this.cookies) {
 					units = this.cookies.get('units');
 				}
 
@@ -321,7 +320,7 @@ export default class GaugesController {
 						cloud: data.cloudbaseunit
 					};
 
-					if(this.controllerConfig.useCookies && this.cookies) {
+					if(this.config.useCookies && this.cookies) {
 						let expireDate = new Date();
 						expireDate.setFullYear(expireDate.getFullYear() + 1);
 						this.cookies.set('units', units, { path: '/', expires: expireDate })
@@ -360,7 +359,7 @@ export default class GaugesController {
 				
 			}
 
-			data.statusTimerReset = this.controllerConfig.realtimeInterval;
+			data.statusTimerReset = this.config.realtimeInterval;
 
 			//TODO remove
 			console.log(data);
@@ -370,8 +369,8 @@ export default class GaugesController {
 			return true;
 		}
 		else {
-			if(rawData.ver < this.min_rt_ver)
-				this._updateStatus(Status.FatalError, `Your ${this.controllerConfig.realTimeUrl.substr(this.controllerConfig.realTimeUrl.lastIndexOf('/') + 1)} file template needs updating!`);
+			if(rawData.ver && +rawData.ver < this.min_rt_ver)
+				this._updateStatus(Status.FatalError, `Your ${this.config.realTimeUrl.substr(this.config.realTimeUrl.lastIndexOf('/') + 1)} file template needs updating!`);
 			else
 				this._updateStatus(Status.Error, this.lang.realtimeCorrupt);
 			return false;
@@ -455,7 +454,7 @@ const setGaugeConfigs = (conf: CustomConfig) => {
 		minMaxArea          : conf.minMaxArea ? conf.minMaxArea : def.minMaxArea,
 		windAvgArea         : conf.windAvgArea ? conf.windAvgArea : def.windAvgArea,
 		windVariationSector : conf.windVariationSector ? conf.windVariationSector : def.windVariationSector,
-		shadowColour        : conf.shadowColour ? conf.shadowColour : def.shadowColour,
+		shadowColour        : conf.shadowColor ? conf.shadowColor : def.shadowColour,
 
 		gaugeScaling       : conf.gaugeScaling ? conf.gaugeScaling : def.gaugeScaling,
 		gaugeMobileScaling : conf.gaugeMobileScaling ? conf.gaugeMobileScaling : def.gaugeMobileScaling,
@@ -468,23 +467,23 @@ const setGaugeConfigs = (conf: CustomConfig) => {
 		background           : conf.background ? conf.background : def.background,
 		foreground           : conf.foreground ? conf.foreground : def.foreground,
 		pointer              : conf.pointer ? conf.pointer : def.pointer,
-		pointerColour        : conf.pointerColour ? conf.pointerColour : def.pointerColour,
+		pointerColor        : conf.pointerColor ? conf.pointerColor : def.pointerColor,
 		dirAvgPointer        : conf.dirAvgPointer ? conf.dirAvgPointer : def.dirAvgPointer,
-		dirAvgPointerColour  : conf.dirAvgPointerColour ? conf.dirAvgPointerColour : def.dirAvgPointerColour,
+		dirAvgPointerColor  : conf.dirAvgPointerColor ? conf.dirAvgPointerColor : def.dirAvgPointerColor,
 		gaugeType            : conf.gaugeType ? conf.gaugeType : def.gaugeType,
-		lcdColour            : conf.lcdColour ? conf.lcdColour : def.lcdColour,
+		lcdColor            : conf.lcdColor ? conf.lcdColor : def.lcdColor,
 		knob                 : conf.knob ? conf.knob : def.knob,
 		knobStyle            : conf.knobStyle ? conf.knobStyle : def.knobStyle,
 		labelFormat          : conf.labelFormat ? conf.labelFormat : def.labelFormat,
 		tickLabelOrientation : conf.tickLabelOrientation ? conf.tickLabelOrientation : def.tickLabelOrientation,
 
-		tempTrendVisible      : (conf.tempTrendVisible !== undefined) ? conf.tempTrendVisible : def.tempTrendVisible,
+		showTempTrend      : (conf.showTempTrend !== undefined) ? conf.showTempTrend : def.showTempTrend,
 		showIndoorTempHum : (conf.showIndoorTempHum !== undefined) ? conf.showIndoorTempHum : def.showIndoorTempHum,
 		dewDisplayType    : conf.dewDisplayType ? conf.dewDisplayType : def.dewDisplayType ,
 
-		pressureTrendVisible   : (conf.pressureTrendVisible !== undefined) ? conf.pressureTrendVisible : def.pressureTrendVisible,
-		rainUseSectionColours  : (conf.rainUseSectionColours !== undefined) ? conf.rainUseSectionColours : def.rainUseSectionColours,
-		rainUseGradientColours : (conf.rainUseGradientColours !== undefined) ? conf.rainUseGradientColours : def.rainUseGradientColours,
+		showPressTrend   : (conf.showPressTrend !== undefined) ? conf.showPressTrend : def.showPressTrend,
+		rainUseSectionColors  : (conf.rainUseSectionColors !== undefined) ? conf.rainUseSectionColors : def.rainUseSectionColors,
+		rainUseGradientColors : (conf.rainUseGradientColors !== undefined) ? conf.rainUseGradientColors : def.rainUseGradientColors,
 		
 		uvLcdDecimals        : def.uvLcdDecimals,
 		showSunshineLed      : (conf.showSunshineLed !== undefined) ? conf.showSunshineLed : def.showSunshineLed,

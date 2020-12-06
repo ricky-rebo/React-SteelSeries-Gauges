@@ -1,12 +1,12 @@
 import React, { Component } from 'react';
 // @ts-ignore
-import steelseries from '../libs/steelseries.js';
+import { drawFrame, drawForeground, drawBackground, Odometer } from "steelseries";
 // @ts-ignore
 import RGraph from '../libs/RGraph.rose.js';
-import GaugesController from '../controller/gauges_controller';
 import styles from '../style/common.css';
 import { gaugeShadow } from './gauge-utils.js';
 import { RtData, WindrunUnit } from '../controller/data-types.js';
+import { Props } from './data-types.js';
 
 function createCanvas(size: number) {
 	let canvas = document.createElement('canvas');
@@ -101,7 +101,7 @@ class WindRoseGauge extends Component<Props, State> {
 			// Create a steelseries gauge frame
 			this.buffers.frame = createCanvas(this.gaugeParams.size);
 			this.buffers.ctxFrame = this.buffers.frame.getContext('2d');
-			steelseries.drawFrame(
+			drawFrame(
 				this.buffers.ctxFrame,
 				this.props.controller.gaugeConfig.frameDesign,
 				this.gaugeParams.size2,
@@ -113,7 +113,7 @@ class WindRoseGauge extends Component<Props, State> {
 			// Create a steelseries gauge background
 			this.buffers.background = createCanvas(this.gaugeParams.size);
 			this.buffers.ctxBackground = this.buffers.background.getContext('2d');
-			steelseries.drawBackground(
+			drawBackground(
 				this.buffers.ctxBackground,
 				this.props.controller.gaugeConfig.background,
 				this.gaugeParams.size2,
@@ -128,7 +128,7 @@ class WindRoseGauge extends Component<Props, State> {
 			// Create a steelseries gauge foreground
 			this.buffers.foreground = createCanvas(this.gaugeParams.size);
 			this.buffers.ctxForeground = this.buffers.foreground.getContext('2d');
-			steelseries.drawForeground(
+			drawForeground(
 				this.buffers.ctxForeground,
 				this.props.controller.gaugeConfig.foreground,
 				this.gaugeParams.size,
@@ -148,7 +148,7 @@ class WindRoseGauge extends Component<Props, State> {
 					this.odoRef.current.setAttribute('style', this.odoParams.style);
 					
 					// Create the odometer
-					this.odoGauge = new steelseries.Odometer(
+					this.odoGauge = new Odometer(
 						this.odoRef.current, {
 							height  : this.odoParams.height,
 							digits  : this.odoParams.odoDigits - 1,
@@ -175,7 +175,7 @@ class WindRoseGauge extends Component<Props, State> {
 		}
 	}
 
-	componentDidUpdate() {
+	componentDidUpdate(_prevProps: Props, prevState: State) {
 		if(this.canvasRef.current && this.plotRef.current) {
 			// Clear the gauge
 			this.buffers.ctxRoseCanvas.clearRect(0, 0, this.gaugeParams.size, this.gaugeParams.size);
@@ -217,9 +217,11 @@ class WindRoseGauge extends Component<Props, State> {
 
 			// update the odometer
 			if (this.showOdo) {
-				//FIXME TweenJS animation broken
-				//this.odoGauge.setValueAnimated(extractDecimal(this.state.windrun));
-				this.odoGauge.setValue(this.state.odoValue);
+				if(this.state.odoUnit !== prevState.odoUnit) {
+					this.odoGauge.setValue(0);
+				}
+
+				this.odoGauge.setValueAnimated(this.state.odoValue);
 			}
 		}
 	}
@@ -311,11 +313,6 @@ class WindRoseGauge extends Component<Props, State> {
 			);
 			ctx.restore();
 	}
-}
-
-interface Props {
-	controller: GaugesController,
-	size: number
 }
 
 interface State {

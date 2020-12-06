@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
 // @ts-ignore
-import steelseries from '../libs/steelseries.js';
-import GaugesController from '../controller/gauges_controller';
+import { Radial, LedColor, Section } from "steelseries";
 import styles from '../style/common.css';
 import { ERR_VAL } from '../controller/data-utils';
 import { gaugeShadow, nextHighest } from './gauge-utils.js';
 import { RtData } from '../controller/data-types.js';
+import { Props } from './data-types';
 
 //TODO docs
 class SolarGauge extends Component<Props, State> {
@@ -14,7 +14,7 @@ class SolarGauge extends Component<Props, State> {
 	canvasRef: React.RefObject<HTMLCanvasElement>;
 	gauge: any;
 	params: any;
-	style: any;
+	style: React.CSSProperties;
 
 	constructor(props: Props) {
 		super(props);
@@ -36,10 +36,10 @@ class SolarGauge extends Component<Props, State> {
 			...this.props.controller.commonParams,
 			size: Math.ceil(this.props.size * this.props.controller.gaugeConfig.gaugeScaling),
 			section: [
-				steelseries.Section(0, 600, 'rgba(40,149,0,0.3)'),
-				steelseries.Section(600, 800, 'rgba(248,89,0,0.3)'),
-				steelseries.Section(800, 1000, 'rgba(216,0,29,0.3)'),
-				steelseries.Section(1000, 1800, 'rgba(107,73,200,0.3)')
+				Section(0, 600, 'rgba(40,149,0,0.3)'),
+				Section(600, 800, 'rgba(248,89,0,0.3)'),
+				Section(800, 1000, 'rgba(216,0,29,0.3)'),
+				Section(1000, 1800, 'rgba(107,73,200,0.3)')
 			],
 			maxValue: this.state.maxValue,
 			titleString: this.props.controller.lang.solar_title,
@@ -48,7 +48,7 @@ class SolarGauge extends Component<Props, State> {
 			thresholdVisible: false,
 			lcdDecimals: 0,
 			userLedVisible : this.props.controller.gaugeConfig.showSunshineLed,
-			userLedColor : steelseries.LedColor.YELLOW_LED,
+			userLedColor : LedColor.YELLOW_LED,
 			maxMeasuredValueVisible: true,
 		};
 
@@ -63,7 +63,7 @@ class SolarGauge extends Component<Props, State> {
 
 	componentDidMount() {
 		if(this.canvasRef.current) {
-			this.gauge = new steelseries.Radial(this.canvasRef.current, this.params);
+			this.gauge = new Radial(this.canvasRef.current, this.params);
 			this.gauge.setValue(this.state.value);
 		}
 	}
@@ -83,13 +83,13 @@ class SolarGauge extends Component<Props, State> {
 		if(CurrentSolarMax !== ERR_VAL){
 			newState.area=[
 				// Sunshine threshold
-				steelseries.Section(
+				Section(
 					Math.max(newState.currMaxValue * sunshineThresholdPct / 100, sunshineThreshold),
 					newState.currMaxValue,
 					'rgba(255,255,50,0.4)'
 				),
 				// Over max threshold
-				steelseries.Section(
+				Section(
 					newState.currMaxValue,
 					Math.min(newState.currMaxValue + newState.maxValue * 0.15,newState.maxValue),
 					'rgba(220,0,0,0.5)'
@@ -118,9 +118,8 @@ class SolarGauge extends Component<Props, State> {
 			this.gauge.setUserLedOnOff(this.state.ledState);
 		}
 		
-		//FIXME setValueAnimated() from steelseries lib not working!
-		//this.gauge.setValueAnimated(this.state.value);
-		this.gauge.setValue(this.state.value);
+		
+		this.gauge.setValueAnimated(this.state.value);
 		this.gauge.setMaxMeasuredValue(this.state.maxToday);
 	}
 
@@ -136,11 +135,6 @@ class SolarGauge extends Component<Props, State> {
 			</div>
 		);
 	}
-}
-
-interface Props {
-	controller: GaugesController,
-	size: number
 }
 
 interface State {

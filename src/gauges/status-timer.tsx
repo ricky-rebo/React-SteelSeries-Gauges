@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import GaugesController from '../controller/gauges_controller';
 // @ts-ignore
-import steelseries from '../libs/steelseries';
+import { DisplaySingle } from "steelseries";
 
 //TODO docs
 class StatusTimerGauge extends Component<Props, State> {
@@ -23,7 +23,7 @@ class StatusTimerGauge extends Component<Props, State> {
     this.params = {
       width            : props.width,
       height           : props.height ? props.height : 25,
-      lcdColor         : props.controller.gaugeConfig.lcdColour,
+      lcdColor         : props.controller.gaugeConfig.lcdColor,
       lcdDecimals      : 0,
       unitString       : props.controller.lang.timer,
       unitStringVisible: true,
@@ -33,12 +33,12 @@ class StatusTimerGauge extends Component<Props, State> {
 
     this.update = this.update.bind(this);
     this._tick = this._tick.bind(this);
-    props.controller.subscribe(StatusTimerGauge.NAME, this.update, null, this.update);
+    props.controller.subscribe(StatusTimerGauge.NAME, this.update, this.update);
   }
 
   componentDidMount() {
     if(this.canvasRef) {
-      this.gauge = new steelseries.DisplaySingle(this.canvasRef.current, this.params);
+      this.gauge = new DisplaySingle(this.canvasRef.current, this.params);
     }
   }
 
@@ -82,6 +82,7 @@ interface Props {
   width: number,
   height?: number
 };
+
 interface State {
   count: number
 }

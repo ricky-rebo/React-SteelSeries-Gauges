@@ -1,12 +1,10 @@
 import React, { Component } from 'react';
-
 // @ts-ignore
-import steelseries from '../libs/steelseries.js';
-
-import GaugesController from '../controller/gauges_controller';
+import { RadialBargraph, LabelNumberFormat, ColorDef } from "steelseries";
 import styles from '../style/common.css';
 import { RainUnit, RtData } from '../controller/data-types.js';
 import { createRainfallGradient, createRainfallSections, gaugeShadow, nextHighest } from './gauge-utils.js';
+import { Props } from './data-types';
 
 //TODO docs
 class RainGauge extends Component<Props, State> {
@@ -15,7 +13,7 @@ class RainGauge extends Component<Props, State> {
 	canvasRef: React.RefObject<HTMLCanvasElement>;
 	gauge: any;
 	params: any;
-	style: any;
+	style: React.CSSProperties;
 
 	constructor(props: Props) {
 			super(props);
@@ -23,7 +21,7 @@ class RainGauge extends Component<Props, State> {
 			this.canvasRef = React.createRef();
 
 			let { rain } = props.controller.getDisplayUnits();
-			let { rainScaleDefMaxmm, rainScaleDefMaxIn, rainUseGradientColours, rainUseSectionColours } = props.controller.gaugeConfig;
+			let { rainScaleDefMaxmm, rainScaleDefMaxIn, rainUseGradientColors: rainUseGradientColours, rainUseSectionColors: rainUseSectionColours, labelFormat } = props.controller.gaugeConfig;
 			this.state = {
 					maxValue: (rain === "mm") ? rainScaleDefMaxmm : rainScaleDefMaxIn,
 					value: 0.0001,
@@ -33,8 +31,8 @@ class RainGauge extends Component<Props, State> {
 					lcdDecimals: (rain === "mm") ? 1 : 2,
 					scaleDecimals: (rain === "mm") ? 1 : (rainScaleDefMaxIn < 1 ? 2 : 1),
 					labelNumberFormat: (rain === "mm")
-						? steelseries.LabelNumberFormat
-						: steelseries.LabelNumberFormat.FRACTIONAL,
+						? labelFormat
+						: LabelNumberFormat.FRACTIONAL,
 					sections: rainUseGradientColours
 						? createRainfallGradient(rain === "mm")
 						: null,
@@ -58,7 +56,7 @@ class RainGauge extends Component<Props, State> {
 				maxValue: this.state.maxValue,
 				unitString: this.state.displayUnit,
 				lcdDecimals: this.state.lcdDecimals,
-				valueColor: steelseries.ColorDef.BLUE,
+				valueColor: ColorDef.BLUE,
 				valueGradient: this.state.grandient,
 				section: this.state.sections,
 				labelNumberFormat: this.state.labelNumberFormat,
@@ -76,7 +74,7 @@ class RainGauge extends Component<Props, State> {
 
 	componentDidMount() {
 		if(this.canvasRef.current) {
-			this.gauge = new steelseries.RadialBargraph(this.canvasRef.current, this.params);
+			this.gauge = new RadialBargraph(this.canvasRef.current, this.params);
 			this.gauge.setValue(this.state.value);
 		}
 	}
@@ -85,13 +83,13 @@ class RainGauge extends Component<Props, State> {
 		let newState: any = {};
 
 		if(rainunit !== this.state.displayUnit) {
-			let { rainScaleDefMaxIn, rainUseGradientColours, rainUseSectionColours } = this.props.controller.gaugeConfig;
+			let { rainScaleDefMaxIn, rainUseGradientColors: rainUseGradientColours, rainUseSectionColors: rainUseSectionColours, labelFormat } = this.props.controller.gaugeConfig;
 			newState.displayUnit = rainunit;
 			newState.lcdDecimals = (rainunit === "mm") ? 1 : 2,
 			newState.scaleDecimals = (rainunit === "mm") ? 1 : (rainScaleDefMaxIn < 1 ? 2 : 1),
 			newState.labelNumberFormat = (rainunit === "mm")
-				? steelseries.LabelNumberFormat
-				: steelseries.LabelNumberFormat.FRACTIONAL,
+				? labelFormat
+				: LabelNumberFormat.FRACTIONAL,
 			newState.sections = rainUseGradientColours
 				? createRainfallGradient(rainunit === "mm")
 				: null,
@@ -135,9 +133,8 @@ class RainGauge extends Component<Props, State> {
 			this.gauge.setFractionalScaleDecimals(this.state.scaleDecimals);
 			this.gauge.setMaxValue(this.state.maxValue);
 		}
-		//FIXME Twwen.js animation in ss lib not working
-		//this.gauge.setValueAnimated(this.state.value);
-		this.gauge.setValue(this.state.value);
+		
+		this.gauge.setValueAnimated(this.state.value);
 
 		//TODO set popup text
 	}
@@ -160,11 +157,6 @@ class RainGauge extends Component<Props, State> {
 	}
 }
 
-interface Props {
-		controller: GaugesController,
-		size: number
-}
-
 interface State {
 		title: string,
 
@@ -174,7 +166,7 @@ interface State {
 		displayUnit: RainUnit,
 		lcdDecimals: number,
 		scaleDecimals: number,
-		labelNumberFormat: steelseries.LabelNumberFormat,
+		labelNumberFormat: LabelNumberFormat,
 		sections: any,
 		grandient: any
 

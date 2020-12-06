@@ -1,10 +1,9 @@
 import React, { Component } from 'react';
 // @ts-ignore
-import steelseries from '../libs/steelseries.js';
-import GaugesController from '../controller/gauges_controller';
+import { Radial, TrendState, Section } from "steelseries";
 import styles from '../style/common.css';
 import Cookies from 'universal-cookie/es6';
-import { InOutTemp } from './data-types';
+import { InOutTemp, Props } from './data-types';
 import { createTempSections, gaugeShadow, getMinTemp, getMaxTemp, tempTrend } from './gauge-utils.js';
 import { RtData, TempUnit } from '../controller/data-types.js';
 
@@ -17,7 +16,7 @@ class TempGauge extends Component<Props, State> {
 	canvasRef: React.RefObject<HTMLCanvasElement>;
 	gauge: any;
 	params: any;
-	style: any;
+	style: React.CSSProperties;
 	cookies: Cookies;
 
 	constructor(props: Props) {
@@ -26,7 +25,7 @@ class TempGauge extends Component<Props, State> {
 		this.canvasRef = React.createRef();
 
 		let tempType: InOutTemp = InOutTemp.OUT;;
-		if(props.controller.controllerConfig.useCookies && props.controller.gaugeConfig.showIndoorTempHum) {
+		if(props.controller.config.useCookies && props.controller.gaugeConfig.showIndoorTempHum) {
 			this.cookies = new Cookies();
 
 			let sel = this.cookies.get(COOKIE_NAME);
@@ -48,7 +47,7 @@ class TempGauge extends Component<Props, State> {
 			maxValue: (temp === "°C")
 				? this.props.controller.gaugeConfig.tempScaleDefMaxC
 				: this.props.controller.gaugeConfig.tempScaleDefMaxF,
-			trend: steelseries.TrendState.OFF,
+			trend: TrendState.OFF,
 			areas: [],
 
 			title: (tempType === InOutTemp.OUT)
@@ -76,7 +75,7 @@ class TempGauge extends Component<Props, State> {
 			maxMeasuredValueVisible: this.state.maxMinVisible,
 			titleString: this.state.title,
 			unitString: this.state.displayUnit,
-			trendVisible: this.props.controller.gaugeConfig.tempTrendVisible
+			trendVisible: this.props.controller.gaugeConfig.showTempTrend
 		};
 
 		this.style = this.props.controller.gaugeConfig.showGaugeShadow
@@ -90,7 +89,7 @@ class TempGauge extends Component<Props, State> {
 
 	componentDidMount() {
 		if(this.canvasRef.current) {
-			this.gauge = new steelseries.Radial(this.canvasRef.current, this.params);
+			this.gauge = new Radial(this.canvasRef.current, this.params);
 			this.gauge.setValue(this.state.value);
 		}
 	}
@@ -114,7 +113,9 @@ class TempGauge extends Component<Props, State> {
 		}
 
 		if(sel) {
-			newState.title = this.props.controller.lang.temp_title_out;
+			newState.title = (sel === InOutTemp.OUT)
+				? this.props.controller.lang.temp_title_out
+				: this.props.controller.lang.temp_title_in;
 			newState.selected = sel;
 		} 
 		else {
@@ -145,7 +146,7 @@ class TempGauge extends Component<Props, State> {
 
 			let low = data.tempTL;
 			let high = data.tempTH;
-			newState.areas = [steelseries.Section(low, high, this.props.controller.gaugeConfig.minMaxArea)];
+			newState.areas = [Section(low, high, this.props.controller.gaugeConfig.minMaxArea)];
 		}
 		else {
 			//Indoor selected 
@@ -157,7 +158,7 @@ class TempGauge extends Component<Props, State> {
 
 				let low = data.intempTL;
 				let high = data.intempTH;
-				newState.areas = [steelseries.Section(low, high, this.props.controller.gaugeConfig.minMaxArea)];
+				newState.areas = [Section(low, high, this.props.controller.gaugeConfig.minMaxArea)];
 			}
 			else { // Indoor - no Max/Min values supplied
 				lowScale = highScale = newState.value;
@@ -165,7 +166,7 @@ class TempGauge extends Component<Props, State> {
 			}
 
 			if (this.params.trendVisible) {
-				newState.trend = steelseries.TrendState.OFF;
+				newState.trend = TrendState.OFF;
 			}
 		}
 		
@@ -211,9 +212,7 @@ class TempGauge extends Component<Props, State> {
 		}
 
 		this.gauge.setArea(this.state.areas);
-		//FIXME setValueAnimated() from steelseries lib not working!
-		//this.gauge.setValueAnimated(this.state.value);
-		this.gauge.setValue(this.state.value);
+		this.gauge.setValueAnimated(this.state.value);
 	}
 
 	render() {
@@ -236,11 +235,6 @@ class TempGauge extends Component<Props, State> {
 			</div>
 		</div>
 	}
-}
-
-interface Props {
-	controller: GaugesController,
-	size: number
 }
 
 interface State {

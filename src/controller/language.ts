@@ -7,9 +7,13 @@
 */
 /*! Version: 2.7.0 - Updated: 28 March 2019 (Added Polish) */
 
+import { Lang } from "./data-types";
+
 /*global gauges */
 
-var LANG = LANG || {};
+var LANG: {
+    [propName: string]: Lang
+} = {};
 
 //======================================================================================================================
 // English
@@ -1431,8 +1435,8 @@ LANG.IT = {
     //        11 characters  ===="12345678901"====  11 characters
     //
     //
-    temp_title_out    : 'Temp. est.',
-    temp_title_in     : 'Temp. int.',
+    temp_title_out    : 'Temperatura',
+    temp_title_in     : 'T. interna',
     temp_out_info     : 'Temp. esterna',
     temp_out_web      : 'Esterna',
     temp_in_info      : 'Temp. interna',
@@ -1442,7 +1446,7 @@ LANG.IT = {
     dew_title         : 'Dew Point',
     dew_info          : 'Dew Point',
     dew_web           : 'Dew Point',
-    apptemp_title     : 'T. apparen.',
+    apptemp_title     : 'T. apparente',
     apptemp_info      : 'Temp. apparente',
     apptemp_web       : 'Temp. apparente',
     chill_title       : 'Wind Chill',
@@ -1524,16 +1528,16 @@ LANG.IT = {
                  'alle 16:00 durante l\'estate nelle zone che osservano l\'ora legale).'],
     //
     solar_title          : 'Radiazione solare',
-    solar_currentMax     : 'Attuale massima lettura teorica',
+    solar_currentMax     : 'Lettura massima teorica',
     solar_ofMax          : 'del massimo',
     solar_maxToday       : 'Lettura massima odierna',
     //
     cloudbase_title      : 'Base nuvola',
     cloudbase_popup_title: 'base nuvola teorica',
-    cloudbase_popup_text : 'Il calcolo è semplice; 1000 piedi per ogni 4,4 gradi Fahrenheit <br>' +
-                           'differenza tra la temperatura e il punto di rugiada. Si noti che questo semplicemente <br> ' +
-                           'dà l\'altezza teorica a cui Cumulus nuvole avrebbero cominciato a formare, <br>' +
-                           'perché l\'aria essere satura',
+    cloudbase_popup_text : 'Il calcolo è semplice; 1000 piedi per ogni 4,4 gradi Fahrenheit di <br>' +
+                           'differenza tra la temperatura e il punto di rugiada. Si noti che questo semplicemente calcolo <br> ' +
+                           'produce l\'altezza teorica a cui i cumuli di nuvole dovrebbero cominciare a formarsi, <br>' +
+                           'perché l\'aria è satura',
     feet              : 'piedi',
     metres            : 'metri',
     miles             : 'miglia',
@@ -1732,7 +1736,7 @@ LANG.ES = {
     max_hour_info     : 'Máxima por hora',
     minimum_info      : 'Mínima',
     //
-    coords            : ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'OSO', 'O', 'OSO', 'O', 'ONO', 'NO', 'NNO', 'ONO'],
+    coords            : ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSO', 'SO', 'OSO', 'O', 'ONO', 'NO', 'NNO'],
     compass           : ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'],
     months            : ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
 };
@@ -1907,8 +1911,8 @@ LANG.CT = {
     max_hour_info     : 'Pluja horària màxima',
     minimum_info      : 'Mínim',
     //
-    coords            : ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'WSW', 'W', 'WSW', 'W', 'WNW', 'NW', 'NNW', 'WNW'],
-    compass           : ['N', 'NE', 'E', 'ES', 'S', 'SW', 'W', 'NW'],
+    coords            : ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSO', 'SO', 'OSO', 'O', 'ONO', 'NO', 'NNO'],
+    compass           : ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'],
     months            : ['Gener', 'Febrer', 'Març', 'Abril', 'Maig', 'Juny', 'Juliol', 'Agost', 'Setembre', 'Octubre', 'Novembre', 'Desembre']
 };
 
@@ -2248,7 +2252,7 @@ LANG.PT = {
     max_hour_info     : 'Máx. por Hora',
     minimum_info      : 'Mínimo',
     //
-    coords            : ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'OSO', 'O', 'OSO', 'O', 'ONO', 'NO', 'NNO', 'ONO'],
+    coords            : ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSO', 'SO', 'OSO', 'O', 'ONO', 'NO', 'NNO'],
     compass           : ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'],
     months            : ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
 };

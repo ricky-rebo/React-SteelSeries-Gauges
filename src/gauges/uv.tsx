@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 // @ts-ignore
-import steelseries from '../libs/steelseries.js';
-import GaugesController from '../controller/gauges_controller';
+import { RadialBargraph, Section, GaugeType, gradientWrapper, rgbaColor } from "steelseries";
 import styles from '../style/common.css';
 import { gaugeShadow, nextHighest } from './gauge-utils.js';
 import { RtData } from '../controller/data-types.js';
+import { Props } from './data-types';
 
 //TODO docs
 class UVGauge extends Component<Props, State> {
@@ -13,7 +13,7 @@ class UVGauge extends Component<Props, State> {
 	canvasRef: React.RefObject<HTMLCanvasElement>;
 	gauge: any;
 	params: any;
-	style: any;
+	style: React.CSSProperties;
 
 	constructor(props: Props) {
 		super(props);
@@ -32,28 +32,28 @@ class UVGauge extends Component<Props, State> {
 		this.params = {
 			...this.props.controller.commonParams,
 			size: Math.ceil(this.props.size * this.props.controller.gaugeConfig.gaugeScaling),
-			gaugeType: steelseries.GaugeType.TYPE3,
+			gaugeType: GaugeType.TYPE3,
 			maxValue: this.state.maxValue,
 			titleString: this.props.controller.lang.uv_title,
 			niceScale: false,
 			section: [
-				steelseries.Section(0, 2.9, '#289500'),
-				steelseries.Section(2.9, 5.8, '#f7e400'),
-				steelseries.Section(5.8, 7.8, '#f85900'),
-				steelseries.Section(7.8, 10.9, '#d8001d'),
-				steelseries.Section(10.9, 20, '#6b49c8')
+				Section(0, 2.9, '#289500'),
+				Section(2.9, 5.8, '#f7e400'),
+				Section(5.8, 7.8, '#f85900'),
+				Section(7.8, 10.9, '#d8001d'),
+				Section(10.9, 20, '#6b49c8')
 			],
 			useSectionColors: false,
-			valueGradient: new steelseries.gradientWrapper(0, 16,
+			valueGradient: new gradientWrapper(0, 16,
 				[0, 0.1, 0.19, 0.31, 0.45, 0.625, 1],
 				[
-					new steelseries.rgbaColor(0, 200, 0, 1),
-					new steelseries.rgbaColor(0, 200, 0, 1),
-					new steelseries.rgbaColor(255, 255, 0, 1),
-					new steelseries.rgbaColor(248, 89, 0, 1),
-					new steelseries.rgbaColor(255, 0, 0, 1),
-					new steelseries.rgbaColor(255, 0, 144, 1),
-					new steelseries.rgbaColor(153, 140, 255, 1)
+					new rgbaColor(0, 200, 0, 1),
+					new rgbaColor(0, 200, 0, 1),
+					new rgbaColor(255, 255, 0, 1),
+					new rgbaColor(248, 89, 0, 1),
+					new rgbaColor(255, 0, 0, 1),
+					new rgbaColor(255, 0, 144, 1),
+					new rgbaColor(153, 140, 255, 1)
 				]
 			),
 			useValueGradient: true,
@@ -71,7 +71,7 @@ class UVGauge extends Component<Props, State> {
 
 	componentDidMount() {
 		if(this.canvasRef.current) {
-			this.gauge = new steelseries.RadialBargraph(this.canvasRef.current, this.params);
+			this.gauge = new RadialBargraph(this.canvasRef.current, this.params);
 			this.gauge.setValue(this.state.value);
 		}
 	}
@@ -109,9 +109,7 @@ class UVGauge extends Component<Props, State> {
 		}
 
 		this.gauge.setUnitString(this.state.risk);
-		//FIXME setValueAnimated() from steelseries lib not working!
-		//this.gauge.setValueAnimated(this.state.value);
-		this.gauge.setValue(this.state.value);
+		this.gauge.setValueAnimated(this.state.value);
 	}
 
 	render() {
@@ -126,11 +124,6 @@ class UVGauge extends Component<Props, State> {
 			</div>
 		);
 	}
-}
-
-interface Props {
-    controller: GaugesController,
-    size: number
 }
 
 interface State {

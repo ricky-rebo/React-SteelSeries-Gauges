@@ -1,6 +1,7 @@
 import { DewTemp } from '../gauges/data-types.js';
 // @ts-ignore
-import steelseries from '../libs/steelseries.js';
+import { FrameDesign, BackgroundColor, ForegroundType, PointerType, ColorDef, GaugeType, LcdColor, KnobType, KnobStyle, LabelNumberFormat, TickLabelOrientation } from "steelseries";
+//import steelseries from '../libs/js';
 
 export interface ControllerConfig {
 	weatherProgram: WProgram,
@@ -35,27 +36,27 @@ export interface GaugeConfig {
 	digitalFont: boolean,
 	digitalForecast: boolean,
 
-	frameDesign: steelseries.FrameDesign,
-	background: steelseries.BackgroundColor,
-	foreground: steelseries.ForegroundType,
-	pointer: steelseries.PointerType,
-	pointerColour: steelseries.ColorDef,
-	dirAvgPointer: steelseries.PointerType,
-	dirAvgPointerColour: steelseries.ColorDef,
-	gaugeType: steelseries.GaugeType,
-	lcdColour: steelseries.LcdColor,
-	knob: steelseries.KnobType,
-	knobStyle: steelseries.KnobStyle,
-	labelFormat: steelseries.LabelNumberFormat,
-	tickLabelOrientation: steelseries.TickLabelOrientation,
+	frameDesign: FrameDesign,
+	background: BackgroundColor,
+	foreground: ForegroundType,
+	pointer: PointerType,
+	pointerColor: ColorDef,
+	dirAvgPointer: PointerType,
+	dirAvgPointerColor: ColorDef,
+	gaugeType: GaugeType,
+	lcdColor: LcdColor,
+	knob: KnobType,
+	knobStyle: KnobStyle,
+	labelFormat: LabelNumberFormat,
+	tickLabelOrientation: TickLabelOrientation,
 
-	tempTrendVisible: boolean,
+	showTempTrend: boolean,
 	showIndoorTempHum: boolean,
 	dewDisplayType: DewTemp,
 
-	pressureTrendVisible: boolean,
-	rainUseSectionColours: boolean,
-	rainUseGradientColours: boolean,
+	showPressTrend: boolean,
+	rainUseSectionColors: boolean,
+	rainUseGradientColors: boolean,
 	
 	uvLcdDecimals: number,
 	showSunshineLed: boolean,
@@ -170,42 +171,42 @@ export interface CustomConfig {
 	/** Sector color for today's max/min
 	 * @description Must be an'rgba color! ['rgba(RED, GREEN, BLUE, TRANSPARENCY)']
 	 */
-	minMaxArea?          : string,
+	minMaxArea?: string,
 	/** Sector color for today's avg/latest wind direction
 	 * @description Must be an'rgba color! ['rgba(RED, GREEN, BLUE, TRANSPARENCY)']
 	 */
-	windAvgArea?         : string,
+	windAvgArea?: string,
 	/** Sector color for rose data in WindDir Gauge
 	 * @description Must be an'rgba color! ['rgba(RED, GREEN, BLUE, TRANSPARENCY)']
 	 */
-	windVariationSector? : string, // only used when rose data is shown on direction gauge
+	windVariationSector?: string, // only used when rose data is shown on direction gauge
 
-	frameDesign?          : steelseries.FrameDesign,
-	background?           : steelseries.BackgroundColor,
-	foreground?           : steelseries.ForegroundType,
-	pointer?              : steelseries.PointerType,
-	pointerColour?        : steelseries.ColorDef,
-	dirAvgPointer?        : steelseries.PointerType,
-	dirAvgPointerColour?  : steelseries.ColorDef,
-	gaugeType?            : steelseries.GaugeType,
-	lcdColour?            : steelseries.LcdColor,
-	knob?                 : steelseries.KnobType,
-	knobStyle?            : steelseries.KnobStyle,
-	labelFormat?				  : steelseries.LabelNumberFormat,
-	tickLabelOrientation? : steelseries.TickLabelOrientation, // was .NORMAL up to v1.6.4
+	frameDesign?          : FrameDesign,
+	background?           : BackgroundColor,
+	foreground?           : ForegroundType,
+	pointer?              : PointerType,
+	pointerColor?        : ColorDef,
+	dirAvgPointer?        : PointerType,
+	dirAvgPointerColor?  : ColorDef,
+	gaugeType?            : GaugeType,
+	lcdColor?            : LcdColor,
+	knob?                 : KnobType,
+	knobStyle?            : KnobStyle,
+	labelFormat?				  : LabelNumberFormat,
+	tickLabelOrientation? : TickLabelOrientation, // was .NORMAL up to v1.6.4
 
 	
 	/** Show a drop shadow outside the gauges (default: true) */
 	showGaugeShadow?: boolean,
 	/** Colour to use for gauge shadows - default 30 transparent black */
-	shadowColour?: string
+	shadowColor?: string
 
 	/** Show the indoor temperature/humidity options (default: false) */
 	showIndoorTempHum?: boolean,
 	/** Show Trend in Temp gauge (default: true) */
-	tempTrendVisible?       : boolean,
+	showTempTrend?: boolean,
 	/** Show trend in Baro Gauge (default: true) */
-	pressureTrendVisible?   : boolean,
+	showPressTrend?: boolean,
 
 	/** Initial 'scale' to display on the Dew Gauge (default: Type.DewDisplay.APPARENT) */
 	dewDisplayType?: DewTemp
@@ -225,11 +226,11 @@ export interface CustomConfig {
 	/** Use section color in Rain Gauge. (default: false)
 	 * @description Use this instead of rainUseGradientColours!
 	 */
-	rainUseSectionColours?  : boolean, 
+	rainUseSectionColors?: boolean, 
 	/** Use gradient color in Rain Gauge. (default: false)
 	 * @description Use this instead of rainUseSectionColours!
 	 */
-	rainUseGradientColours? : boolean,
+	rainUseGradientColors?: boolean,
 
 
 	// ****************************************************
@@ -351,14 +352,144 @@ export interface RtData {
 	build: string,
 	ver: number,
 
+	ledTitle?: string,
 	statusTimerStart?: boolean,
 	statusTimerReset?: number
 }
 
-export type Raw<T> = {
-	[P in keyof T]?: string;
-};
-
 export type RawData = {
 	[P in keyof Omit<RtData, "WindRoseData">]?: string;
 } & { WindRoseData?: number[] };
+
+export interface Lang {
+	canvasnosupport: string,
+	//
+	led_title         : string,
+	led_title_ok      : string,
+	led_title_lost    : string,
+	led_title_unknown : string,
+	led_title_offline : string,
+	//
+	weather           : string,
+	latitude          : string,
+	longitude         : string,
+	elevation         : string,
+	//
+	statusStr         : string,
+	StatusMsg         : string,
+	StatusHttp        : string,
+	StatusRetry       : string,
+	StatusRetryIn     : string,
+	StatusTimeout     : string,
+	StatusPageLimit   : string,
+	//
+	StatusLastUpdate  : string,
+	StatusMinsAgo     : string,
+	StatusHoursAgo    : string,
+	StatusDaysAgo     : string,
+	//
+	realtimeCorrupt   : string,
+	//
+	timer             : string,
+	at                : string,
+	//
+	temp_title_out    : string,
+	temp_title_in     : string,
+	temp_out_info     : string,
+	temp_out_web      : string,
+	temp_in_info      : string,
+	temp_in_web       : string,
+	temp_trend_info   : string,
+	//
+	dew_title         : string,
+	dew_info          : string,
+	dew_web           : string,
+	apptemp_title     : string,
+	apptemp_info      : string,
+	apptemp_web       : string,
+	chill_title       : string,
+	chill_info        : string,
+	chill_web         : string,
+	heat_title        : string,
+	heat_info         : string,
+	heat_web          : string,
+	humdx_title       : string,
+	humdx_info        : string,
+	humdx_web         : string,
+	//
+	rain_title        : string,
+	rrate_title       : string,
+	rrate_info        : string,
+	LastRain_info     : string,
+	LastRainedT_info  : string,
+	LastRainedY_info  : string,
+	//
+	hum_title_out     : string,
+	hum_title_in      : string,
+	hum_out_info      : string,
+	hum_in_info       : string,
+	hum_out_web       : string,
+	hum_in_web        : string,
+	//
+	baro_title        : string,
+	baro_info         : string,
+	baro_trend_info   : string,
+	//
+	wind_title        : string,
+	tenminavg_title   : string,
+	tenminavgwind_info: string,
+	maxavgwind_info   : string,
+	tenmingust_info   : string,
+	maxgust_info      : string,
+	latest_title      : string,
+	latestwind_info   : string,
+	bearing_info      : string,
+	latest_web        : string,
+	tenminavg_web     : string,
+	dominant_bearing  : string,
+	calm              : string,
+	windrose          : string,
+	windruntoday      : string,
+	//
+	uv_title     : string,
+	uv_levels    : [string, string, string, string, string, string],
+	uv_headlines : [string, string, string, string, string, string],
+	uv_details   : [string, string, string, string, string, string],
+	//
+	solar_title          : string,
+	solar_currentMax     : string,
+	solar_ofMax          : string,
+	solar_maxToday       : string,
+	//
+	cloudbase_title      : string,
+	cloudbase_popup_title: string,
+	cloudbase_popup_text : string,
+	feet              : string,
+	metres            : string,
+	miles             : string,
+	n_miles           : string,
+	km                : string,
+	//
+	lowest_info       : string,
+	highest_info      : string,
+	lowestF_info      : string,     // for proper translation of feminine words
+	highestF_info     : string,    // for proper translation of feminine words
+	//
+	RisingVeryRapidly : string,
+	RisingQuickly     : string,
+	Rising            : string,
+	RisingSlowly      : string,
+	Steady            : string,
+	FallingSlowly     : string,
+	Falling           : string,
+	FallingQuickly    : string,
+	FallingVeryRapidly: string,
+	//
+	maximum_info      : string,
+	max_hour_info     : string,
+	minimum_info      : string,
+	//
+	coords            : [string, string, string, string, string, string, string, string, string, string, string, string, string, string, string, string],
+	compass           : [string, string, string, string, string, string, string, string],
+	months            : [string, string, string, string, string, string, string, string, string, string, string, string, ]
+}

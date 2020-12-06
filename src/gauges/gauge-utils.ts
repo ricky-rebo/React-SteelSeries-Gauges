@@ -1,6 +1,6 @@
-import { RtData, PressUnit, TempUnit } from '../controller/data-types.js';
 // @ts-ignore
-import steelseries from '../libs/steelseries.js';
+import { Section, TrendState, gradientWrapper, rgbaColor } from "steelseries";
+import { RtData, PressUnit, TempUnit } from '../controller/data-types.js';
 
 /**
  * Creates an array of gauge sections appropriate for Celsius or Fahrenheit scales
@@ -9,41 +9,41 @@ import steelseries from '../libs/steelseries.js';
 export const createTempSections = (useCelsius: boolean) => {
 	if (useCelsius) {
 		return [
-			steelseries.Section(-100, -35, 'rgba(195, 92, 211, 0.4)'),
-			steelseries.Section(-35, -30, 'rgba(139, 74, 197, 0.4)'),
-			steelseries.Section(-30, -25, 'rgba(98, 65, 188, 0.4)'),
-			steelseries.Section(-25, -20, 'rgba(62, 66, 185, 0.4)'),
-			steelseries.Section(-20, -15, 'rgba(42, 84, 194, 0.4)'),
-			steelseries.Section(-15, -10, 'rgba(25, 112, 210, 0.4)'),
-			steelseries.Section(-10, -5, 'rgba(9, 150, 224, 0.4)'),
-			steelseries.Section(-5, 0, 'rgba(2, 170, 209, 0.4)'),
-			steelseries.Section(0, 5, 'rgba(0, 162, 145, 0.4)'),
-			steelseries.Section(5, 10, 'rgba(0, 158, 122, 0.4)'),
-			steelseries.Section(10, 15, 'rgba(54, 177, 56, 0.4)'),
-			steelseries.Section(15, 20, 'rgba(111, 202, 56, 0.4)'),
-			steelseries.Section(20, 25, 'rgba(248, 233, 45, 0.4)'),
-			steelseries.Section(25, 30, 'rgba(253, 142, 42, 0.4)'),
-			steelseries.Section(30, 40, 'rgba(236, 45, 45, 0.4)'),
-			steelseries.Section(40, 100, 'rgba(245, 109, 205, 0.4)')
+			Section(-100, -35, 'rgba(195, 92, 211, 0.4)'),
+			Section(-35, -30, 'rgba(139, 74, 197, 0.4)'),
+			Section(-30, -25, 'rgba(98, 65, 188, 0.4)'),
+			Section(-25, -20, 'rgba(62, 66, 185, 0.4)'),
+			Section(-20, -15, 'rgba(42, 84, 194, 0.4)'),
+			Section(-15, -10, 'rgba(25, 112, 210, 0.4)'),
+			Section(-10, -5, 'rgba(9, 150, 224, 0.4)'),
+			Section(-5, 0, 'rgba(2, 170, 209, 0.4)'),
+			Section(0, 5, 'rgba(0, 162, 145, 0.4)'),
+			Section(5, 10, 'rgba(0, 158, 122, 0.4)'),
+			Section(10, 15, 'rgba(54, 177, 56, 0.4)'),
+			Section(15, 20, 'rgba(111, 202, 56, 0.4)'),
+			Section(20, 25, 'rgba(248, 233, 45, 0.4)'),
+			Section(25, 30, 'rgba(253, 142, 42, 0.4)'),
+			Section(30, 40, 'rgba(236, 45, 45, 0.4)'),
+			Section(40, 100, 'rgba(245, 109, 205, 0.4)')
 		];
 	} else {
 		return [
-			steelseries.Section(-200, -30, 'rgba(195, 92, 211, 0.4)'),
-			steelseries.Section(-30, -25, 'rgba(139, 74, 197, 0.4)'),
-			steelseries.Section(-25, -15, 'rgba(98, 65, 188, 0.4)'),
-			steelseries.Section(-15, -5, 'rgba(62, 66, 185, 0.4)'),
-			steelseries.Section(-5, 5, 'rgba(42, 84, 194, 0.4)'),
-			steelseries.Section(5, 15, 'rgba(25, 112, 210, 0.4)'),
-			steelseries.Section(15, 25, 'rgba(9, 150, 224, 0.4)'),
-			steelseries.Section(25, 32, 'rgba(2, 170, 209, 0.4)'),
-			steelseries.Section(32, 40, 'rgba(0, 162, 145, 0.4)'),
-			steelseries.Section(40, 50, 'rgba(0, 158, 122, 0.4)'),
-			steelseries.Section(50, 60, 'rgba(54, 177, 56, 0.4)'),
-			steelseries.Section(60, 70, 'rgba(111, 202, 56, 0.4)'),
-			steelseries.Section(70, 80, 'rgba(248, 233, 45, 0.4)'),
-			steelseries.Section(80, 90, 'rgba(253, 142, 42, 0.4)'),
-			steelseries.Section(90, 110, 'rgba(236, 45, 45, 0.4)'),
-			steelseries.Section(110, 200, 'rgba(245, 109, 205, 0.4)')
+			Section(-200, -30, 'rgba(195, 92, 211, 0.4)'),
+			Section(-30, -25, 'rgba(139, 74, 197, 0.4)'),
+			Section(-25, -15, 'rgba(98, 65, 188, 0.4)'),
+			Section(-15, -5, 'rgba(62, 66, 185, 0.4)'),
+			Section(-5, 5, 'rgba(42, 84, 194, 0.4)'),
+			Section(5, 15, 'rgba(25, 112, 210, 0.4)'),
+			Section(15, 25, 'rgba(9, 150, 224, 0.4)'),
+			Section(25, 32, 'rgba(2, 170, 209, 0.4)'),
+			Section(32, 40, 'rgba(0, 162, 145, 0.4)'),
+			Section(40, 50, 'rgba(0, 158, 122, 0.4)'),
+			Section(50, 60, 'rgba(54, 177, 56, 0.4)'),
+			Section(60, 70, 'rgba(111, 202, 56, 0.4)'),
+			Section(70, 80, 'rgba(248, 233, 45, 0.4)'),
+			Section(80, 90, 'rgba(253, 142, 42, 0.4)'),
+			Section(90, 110, 'rgba(236, 45, 45, 0.4)'),
+			Section(110, 200, 'rgba(245, 109, 205, 0.4)')
 		];
 	}
 }
@@ -59,16 +59,16 @@ export const tempTrend = (trend: number, units: TempUnit, strings?: any) => {
 	// Scale is over 3 hours, in Celsius
 	var val = trend * 3 * (units === "°C" ? 1 : (5 / 9));
 			
-	if (trend === -9999) 	return (strings ? '--' : steelseries.TrendState.OFF);
-	else if (val > 5) 		return (strings ? strings.RisingVeryRapidly : steelseries.TrendState.UP);
-	else if (val > 3)			return (strings ? strings.RisingQuickly : steelseries.TrendState.UP);
-	else if (val > 1) 		return (strings ? strings.Rising : steelseries.TrendState.UP);
-	else if (val > 0.5) 	return (strings ? strings.RisingSlowly : steelseries.TrendState.UP);
-	else if (val >= -0.5) return (strings ? strings.Steady : steelseries.TrendState.STEADY);
-	else if (val >= -1) 	return (strings ? strings.FallingSlowly : steelseries.TrendState.DOWN);
-	else if (val >= -3) 	return (strings ? strings.Falling : steelseries.TrendState.DOWN);
-	else if (val >= -5) 	return (strings ? strings.FallingQuickly : steelseries.TrendState.DOWN);
-	else									return (strings ? strings.FallingVeryRapidly : steelseries.TrendState.DOWN);
+	if (trend === -9999) 	return (strings ? '--' : TrendState.OFF);
+	else if (val > 5) 		return (strings ? strings.RisingVeryRapidly : TrendState.UP);
+	else if (val > 3)			return (strings ? strings.RisingQuickly : TrendState.UP);
+	else if (val > 1) 		return (strings ? strings.Rising : TrendState.UP);
+	else if (val > 0.5) 	return (strings ? strings.RisingSlowly : TrendState.UP);
+	else if (val >= -0.5) return (strings ? strings.Steady : TrendState.STEADY);
+	else if (val >= -1) 	return (strings ? strings.FallingSlowly : TrendState.DOWN);
+	else if (val >= -3) 	return (strings ? strings.Falling : TrendState.DOWN);
+	else if (val >= -5) 	return (strings ? strings.FallingQuickly : TrendState.DOWN);
+	else									return (strings ? strings.FallingVeryRapidly : TrendState.DOWN);
 }
 
 /**
@@ -113,16 +113,16 @@ export const baroTrend = (trend: number, units: PressUnit, strings?: any) =>  {
 	else if (units === "kPa") val *= 10;
 	// assume everything else is hPa or mb, could be dangerous!
 	
-	if (trend === -9999) 	return (strings ? '--' : steelseries.TrendState.OFF);
-	else if (val > 6.0)  	return (strings ? strings.RisingVeryRapidly : steelseries.TrendState.UP);
-	else if (val > 3.5) 	return (strings ? strings.RisingQuickly : steelseries.TrendState.UP);
-	else if (val > 1.5) 	return (strings ? strings.Rising : steelseries.TrendState.UP);
-	else if (val > 0.1) 	return (strings ? strings.RisingSlowly : steelseries.TrendState.UP);
-	else if (val >= -0.1) return (strings ? strings.Steady : steelseries.TrendState.STEADY);
-	else if (val >= -1.5) return (strings ? strings.FallingSlowly : steelseries.TrendState.DOWN);
-	else if (val >= -3.5) return (strings ? strings.Falling : steelseries.TrendState.DOWN);
-	else if (val >= -6.0) return (strings ? strings.FallingQuickly : steelseries.TrendState.DOWN);
-	else 									return (strings ? strings.FallingVeryRapidly : steelseries.TrendState.DOWN);
+	if (trend === -9999) 	return (strings ? '--' : TrendState.OFF);
+	else if (val > 6.0)  	return (strings ? strings.RisingVeryRapidly : TrendState.UP);
+	else if (val > 3.5) 	return (strings ? strings.RisingQuickly : TrendState.UP);
+	else if (val > 1.5) 	return (strings ? strings.Rising : TrendState.UP);
+	else if (val > 0.1) 	return (strings ? strings.RisingSlowly : TrendState.UP);
+	else if (val >= -0.1) return (strings ? strings.Steady : TrendState.STEADY);
+	else if (val >= -1.5) return (strings ? strings.FallingSlowly : TrendState.DOWN);
+	else if (val >= -3.5) return (strings ? strings.Falling : TrendState.DOWN);
+	else if (val >= -6.0) return (strings ? strings.FallingQuickly : TrendState.DOWN);
+	else 									return (strings ? strings.FallingVeryRapidly : TrendState.DOWN);
 }
 
 /**
@@ -132,23 +132,23 @@ export const baroTrend = (trend: number, units: PressUnit, strings?: any) =>  {
 export const createCloudBaseSections =  (metric: boolean) => {
 	if (metric) {
 		return [
-			steelseries.Section(0, 150, 'rgba(245, 86, 59, 0.5)'),
-			steelseries.Section(150, 300, 'rgba(225, 155, 105, 0.5)'),
-			steelseries.Section(300, 750, 'rgba(212, 203, 109, 0.5)'),
-			steelseries.Section(750, 1000, 'rgba(150, 203, 150, 0.5)'),
-			steelseries.Section(1000, 1500, 'rgba(80, 192, 80, 0.5)'),
-			steelseries.Section(1500, 2500, 'rgba(0, 140, 0, 0.5)'),
-			steelseries.Section(2500, 5500, 'rgba(19, 103, 186, 0.5)')
+			Section(0, 150, 'rgba(245, 86, 59, 0.5)'),
+			Section(150, 300, 'rgba(225, 155, 105, 0.5)'),
+			Section(300, 750, 'rgba(212, 203, 109, 0.5)'),
+			Section(750, 1000, 'rgba(150, 203, 150, 0.5)'),
+			Section(1000, 1500, 'rgba(80, 192, 80, 0.5)'),
+			Section(1500, 2500, 'rgba(0, 140, 0, 0.5)'),
+			Section(2500, 5500, 'rgba(19, 103, 186, 0.5)')
 		];
 	} else {
 		return [
-			steelseries.Section(0, 500, 'rgba(245, 86, 59, 0.5)'),
-			steelseries.Section(500, 1000, 'rgba(225, 155, 105, 0.5)'),
-			steelseries.Section(1000, 2500, 'rgba(212, 203, 109, 0.5)'),
-			steelseries.Section(2500, 3500, 'rgba(150, 203, 150, 0.5)'),
-			steelseries.Section(3500, 5500, 'rgba(80, 192, 80, 0.5)'),
-			steelseries.Section(5500, 8500, 'rgba(0, 140, 0, 0.5)'),
-			steelseries.Section(8500, 18000, 'rgba(19, 103, 186, 0.5)')
+			Section(0, 500, 'rgba(245, 86, 59, 0.5)'),
+			Section(500, 1000, 'rgba(225, 155, 105, 0.5)'),
+			Section(1000, 2500, 'rgba(212, 203, 109, 0.5)'),
+			Section(2500, 3500, 'rgba(150, 203, 150, 0.5)'),
+			Section(3500, 5500, 'rgba(80, 192, 80, 0.5)'),
+			Section(5500, 8500, 'rgba(0, 140, 0, 0.5)'),
+			Section(8500, 18000, 'rgba(19, 103, 186, 0.5)')
 		];
 	}
 }
@@ -160,16 +160,16 @@ export const createCloudBaseSections =  (metric: boolean) => {
 export const createRainfallSections = (metric: boolean) => {
 	var factor = metric ? 1 : 1 / 25;
 	return [
-		steelseries.Section(0, 5 * factor, 'rgba(0, 250, 0, 1)'),
-		steelseries.Section(5 * factor, 10 * factor, 'rgba(0, 250, 117, 1)'),
-		steelseries.Section(10 * factor, 25 * factor, 'rgba(218, 246, 0, 1)'),
-		steelseries.Section(25 * factor, 40 * factor, 'rgba(250, 186, 0, 1)'),
-		steelseries.Section(40 * factor, 50 * factor, 'rgba(250, 95, 0, 1)'),
-		steelseries.Section(50 * factor, 65 * factor, 'rgba(250, 0, 0, 1)'),
-		steelseries.Section(65 * factor, 75 * factor, 'rgba(250, 6, 80, 1)'),
-		steelseries.Section(75 * factor, 100 * factor, 'rgba(205, 18, 158, 1)'),
-		steelseries.Section(100 * factor, 125 * factor, 'rgba(0, 0, 250, 1)'),
-		steelseries.Section(125 * factor, 500 * factor, 'rgba(0, 219, 212, 1)')
+		Section(0, 5 * factor, 'rgba(0, 250, 0, 1)'),
+		Section(5 * factor, 10 * factor, 'rgba(0, 250, 117, 1)'),
+		Section(10 * factor, 25 * factor, 'rgba(218, 246, 0, 1)'),
+		Section(25 * factor, 40 * factor, 'rgba(250, 186, 0, 1)'),
+		Section(40 * factor, 50 * factor, 'rgba(250, 95, 0, 1)'),
+		Section(50 * factor, 65 * factor, 'rgba(250, 0, 0, 1)'),
+		Section(65 * factor, 75 * factor, 'rgba(250, 6, 80, 1)'),
+		Section(75 * factor, 100 * factor, 'rgba(205, 18, 158, 1)'),
+		Section(100 * factor, 125 * factor, 'rgba(0, 0, 250, 1)'),
+		Section(125 * factor, 500 * factor, 'rgba(0, 219, 212, 1)')
 	];
 }
 
@@ -178,15 +178,15 @@ export const createRainfallSections = (metric: boolean) => {
  * @param metric 
  */
 export const createRainfallGradient = (metric: boolean) => {
-	var grad = new steelseries.gradientWrapper(
+	var grad = new gradientWrapper(
 		0,
 		(metric ? 100 : 4),
 		[0, 0.1, 0.62, 1],
 		[
-			new steelseries.rgbaColor(15, 148, 0, 1),
-			new steelseries.rgbaColor(213, 213, 0, 1),
-			new steelseries.rgbaColor(213, 0, 25, 1),
-			new steelseries.rgbaColor(250, 0, 0, 1)
+			new rgbaColor(15, 148, 0, 1),
+			new rgbaColor(213, 213, 0, 1),
+			new rgbaColor(213, 0, 25, 1),
+			new rgbaColor(250, 0, 0, 1)
 		]
 	);
 	return grad;
@@ -214,12 +214,12 @@ export const createRainfallGradient = (metric: boolean) => {
 export const createRainRateSections = (metric: boolean) => {
 	var factor = metric ? 1 : 1 / 25;
 	return [
-		steelseries.Section(0, 0.25 * factor, 'rgba(0, 140, 0, 0.5)'),
-		steelseries.Section(0.25 * factor, 1 * factor, 'rgba(80, 192, 80, 0.5)'),
-		steelseries.Section(1 * factor, 4 * factor, 'rgba(150, 203, 150, 0.5)'),
-		steelseries.Section(4 * factor, 16 * factor, 'rgba(212, 203, 109, 0.5)'),
-		steelseries.Section(16 * factor, 50 * factor, 'rgba(225, 155, 105, 0.5)'),
-		steelseries.Section(50 * factor, 1000 * factor, 'rgba(245, 86, 59, 0.5)')
+		Section(0, 0.25 * factor, 'rgba(0, 140, 0, 0.5)'),
+		Section(0.25 * factor, 1 * factor, 'rgba(80, 192, 80, 0.5)'),
+		Section(1 * factor, 4 * factor, 'rgba(150, 203, 150, 0.5)'),
+		Section(4 * factor, 16 * factor, 'rgba(212, 203, 109, 0.5)'),
+		Section(16 * factor, 50 * factor, 'rgba(225, 155, 105, 0.5)'),
+		Section(50 * factor, 1000 * factor, 'rgba(245, 86, 59, 0.5)')
 	];
 }
 

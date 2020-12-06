@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 // @ts-ignore
-import steelseries from '../libs/steelseries.js';
-import GaugesController from '../controller/gauges_controller';
+import { Radial } from "steelseries";
 import styles from '../style/common.css';
-import { CloudUnit, RtData } from '../controller/data-types';
+import { RtData } from '../controller/data-types';
 import { createCloudBaseSections, gaugeShadow, nextHighest } from './gauge-utils.js';
+import { Props } from './data-types';
 
 //TODO docs
 class CloudBaseGauge extends Component<Props, State> {
@@ -13,7 +13,7 @@ class CloudBaseGauge extends Component<Props, State> {
 	canvasRef: React.RefObject<HTMLCanvasElement>;
 	gauge: any;
 	params: any;
-	style: any;
+	style: React.CSSProperties;
 
 	constructor(props: Props) {
 		super(props);
@@ -56,7 +56,7 @@ class CloudBaseGauge extends Component<Props, State> {
 
 	componentDidMount() {
 		if(this.canvasRef.current) {
-			this.gauge = new steelseries.Radial(this.canvasRef.current, this.params);
+			this.gauge = new Radial(this.canvasRef.current, this.params);
 			this.gauge.setValue(this.state.value);
 		}
 	}
@@ -77,11 +77,11 @@ class CloudBaseGauge extends Component<Props, State> {
 			// adjust metre gauge in jumps of 1000 metres, don't downscale during the session
 			newState.maxValue = Math.max(nextHighest(newState.value, 1000), this.props.controller.gaugeConfig.cloudScaleDefMaxm);
 			
-			if(newState.value <= 1000 && this.props.controller.controllerConfig.roundCloudbaseVal) {
+			if(newState.value <= 1000 && this.props.controller.config.roundCloudbaseVal) {
 				// and round the value to the nearest  10 m
 				newState.value = Math.round(newState.value / 10) * 10;
 			}
-			else if(this.props.controller.controllerConfig.roundCloudbaseVal) {
+			else if(this.props.controller.config.roundCloudbaseVal) {
 				// and round the value to the nearest 50 m
 				newState.value = Math.round(newState.value / 50) * 50;
 			}
@@ -89,11 +89,11 @@ class CloudBaseGauge extends Component<Props, State> {
 		else {
 			newState.maxValue = Math.max(nextHighest(newState.value, 2000), this.props.controller.gaugeConfig.cloudScaleDefMaxft);
 			
-			if(newState.value <= 2000 && this.props.controller.controllerConfig.roundCloudbaseVal){
+			if(newState.value <= 2000 && this.props.controller.config.roundCloudbaseVal){
 				// and round the value to the nearest  50 ft
 				newState.value = Math.round(newState.value / 50) * 50;
 			}
-			else if(this.props.controller.controllerConfig.roundCloudbaseVal) {
+			else if(this.props.controller.config.roundCloudbaseVal) {
 				// and round the value to the nearest 10 ft
 				newState.value = Math.round(newState.value / 100) * 100;
 			}
@@ -110,11 +110,10 @@ class CloudBaseGauge extends Component<Props, State> {
 
 		if(this.state.maxValue !== this.gauge.getMaxValue()) {
 			this.gauge.setMaxValue(this.state.maxValue);
+			this.gauge.setValue(this.gauge.getMinValue());
 		}
 
-		//FIXME setValueAnimated() from steelseries lib not working!
-		//this.gauge.setValueAnimated(this.state.value);
-		this.gauge.setValue(this.state.value);
+		this.gauge.setValueAnimated(this.state.value);
 	}
 
 	render() {
@@ -136,16 +135,11 @@ class CloudBaseGauge extends Component<Props, State> {
 	}
 }
 
-interface Props {
-	controller: GaugesController,
-	size: number
-}
-
 interface State {
 	value: number,
 	sections: any[],
 	maxValue: number,
-	displayUnit: CloudUnit
+	displayUnit: string
 	//popUpTxt: string,
 }
 

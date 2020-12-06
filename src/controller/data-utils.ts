@@ -197,7 +197,7 @@ export const calcCloudbase = ({ temp, tempunit, dew, cloudbaseunit }: RtData) =>
 export const convTempData = (data: RtData, to: TempUnit) => {
 	if(data.tempunit === to) return;
 
-	const convFunc = to === "°C" ? c2f : f2c;
+	const convFunc = (to === "°C") ? f2c : c2f;
 	data.apptemp = convFunc(data.apptemp);
 	data.apptempTH = convFunc(data.apptempTH);
 	data.apptempTL = convFunc(data.apptempTL);
@@ -231,7 +231,7 @@ export const convTempData = (data: RtData, to: TempUnit) => {
 export const convRainData = (data: RtData, to: RainUnit) => {
 	if(data.rainunit === to) return;
 
-	const convFunc = to === "in" ? in2mm : mm2in;
+	const convFunc = to === "in" ? mm2in : in2mm;
 	data.rfall = convFunc(data.rfall);
 	data.rrate = convFunc(data.rrate);
 	data.rrateTM = convFunc(data.rrateTM);
@@ -358,7 +358,7 @@ export const convBaroData = function (data: RtData, to: PressUnit) {
 export const convCloudBaseData = (data: RtData, to: CloudUnit) => {
 	if(data.cloudbaseunit === to) return;
 
-	const convFunc = to === "m" ? m2ft : ft2m;
+	const convFunc = to === "m" ? ft2m : m2ft;
 	data.cloudbasevalue = convFunc(data.cloudbasevalue);
 	data.cloudbaseunit = to;
 }
@@ -373,7 +373,7 @@ const toFixedNumber = (num: number, digits: number, base?: number) => {
 }
 
 // Celsius to Fahrenheit
-const c2f = (val: number) => toFixedNumber((val * 9 / 5 + 32), 1);
+const c2f = (val: number) => toFixedNumber(((val * 9 / 5) + 32), 1);
 
 // Fahrenheit to Celsius
 const f2c = (val: number) => toFixedNumber(((val - 32) * 5 / 9), 1);
@@ -505,7 +505,7 @@ const extractCloudunit = (str?: string) => {
  */
 export const extractDecimal = (str?: string, errVal?: number) => {
 	if(str) {
-		str = str/*.toString()*/.replace(',', '.');
+		str = str.replace(',', '.');
 		let val;
 		if(val = (/[-+]?[0-9]+\.?[0-9]*/).exec(str))
 			return +val[0];
