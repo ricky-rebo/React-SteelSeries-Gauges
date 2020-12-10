@@ -1,3 +1,4 @@
+import { c2f, f2c, ft2m, hpa2inhg, hpa2kpa, in2mm, inhg2hpa, km2miles, km2nmiles, kmh2ms, kpa2hpa, kts2ms, m2ft, miles2km, mm2in, mph2ms, ms2kmh, ms2kts, ms2mph, nmiles2km } from "weather-units-conversion";
 import { CloudUnit, PressUnit, RainUnit, RawData, RtData, TempUnit, WindUnit } from "./data-types";
 
 export const ERR_VAL = -9999;
@@ -176,6 +177,12 @@ export const isStationOffline = ({ timeUTC }: RtData, stationTimeout: number, la
 	return null;
 }
 
+
+
+// =======================================
+// ===         DATA CONVERSION         ===
+// =======================================
+
 /**
  * //TODO 
  * @param data 
@@ -184,7 +191,7 @@ export const calcCloudbase = ({ temp, tempunit, dew, cloudbaseunit }: RtData) =>
 	var sprd = temp - dew;
 	var cb = sprd * (tempunit === "°C" ? 400 : 227.3); // cloud base in feet
 	if (cloudbaseunit === "m") {
-			cb = +ft2m(cb);
+			cb = ft2m(cb, 0);
 	}
 	return cb;
 }
@@ -198,25 +205,25 @@ export const convTempData = (data: RtData, to: TempUnit) => {
 	if(data.tempunit === to) return;
 
 	const convFunc = (to === "°C") ? f2c : c2f;
-	data.apptemp = convFunc(data.apptemp);
-	data.apptempTH = convFunc(data.apptempTH);
-	data.apptempTL = convFunc(data.apptempTL);
-	data.dew = convFunc(data.dew);
-	data.dewpointTH = convFunc(data.dewpointTH);
-	data.dewpointTL = convFunc(data.dewpointTL);
-	data.heatindex = convFunc(data.heatindex);
-	data.heatindexTH = convFunc(data.heatindexTH);
-	data.humidex = convFunc(data.humidex);
-	data.intemp = convFunc(data.intemp);
+	data.apptemp = convFunc(data.apptemp, 1);
+	data.apptempTH = convFunc(data.apptempTH, 1);
+	data.apptempTL = convFunc(data.apptempTL, 1);
+	data.dew = convFunc(data.dew, 1);
+	data.dewpointTH = convFunc(data.dewpointTH, 1);
+	data.dewpointTL = convFunc(data.dewpointTL, 1);
+	data.heatindex = convFunc(data.heatindex, 1);
+	data.heatindexTH = convFunc(data.heatindexTH, 1);
+	data.humidex = convFunc(data.humidex, 1);
+	data.intemp = convFunc(data.intemp, 1);
 	if (data.intempTL && data.intempTH) {
-			data.intempTL = convFunc(data.intempTL);
-			data.intempTH = convFunc(data.intempTH);
+			data.intempTL = convFunc(data.intempTL, 1);
+			data.intempTH = convFunc(data.intempTH, 1);
 	}
-	data.temp = convFunc(data.temp);
-	data.tempTH = convFunc(data.tempTH);
-	data.tempTL = convFunc(data.tempTL);
-	data.wchill = convFunc(data.wchill);
-	data.wchillTL = convFunc(data.wchillTL);
+	data.temp = convFunc(data.temp, 1);
+	data.tempTH = convFunc(data.tempTH, 1);
+	data.tempTL = convFunc(data.tempTL, 1);
+	data.wchill = convFunc(data.wchill, 1);
+	data.wchillTL = convFunc(data.wchillTL, 1);
 	data.temptrend = to === "°F"
 		? toFixedNumber((data.temptrend * 9 / 5), 1)
 		: toFixedNumber((data.temptrend * 5 / 9), 1)
@@ -232,10 +239,11 @@ export const convRainData = (data: RtData, to: RainUnit) => {
 	if(data.rainunit === to) return;
 
 	const convFunc = to === "in" ? mm2in : in2mm;
-	data.rfall = convFunc(data.rfall);
-	data.rrate = convFunc(data.rrate);
-	data.rrateTM = convFunc(data.rrateTM);
-	data.hourlyrainTH = convFunc(data.hourlyrainTH);
+	const precision = to === "in" ? 2 : 1;
+	data.rfall = convFunc(data.rfall, precision);
+	data.rrate = convFunc(data.rrate, precision);
+	data.rrateTM = convFunc(data.rrateTM, precision);
+	data.hourlyrainTH = convFunc(data.hourlyrainTH, precision);
 	data.rainunit = to;
 }
 
@@ -292,12 +300,12 @@ export const convWindData = function (data: RtData, to: WindUnit) {
 				toFunc2 = dummy;
 	}
 	// do the conversions
-	data.wgust = toFunc1(fromFunc1(data.wgust));
-	data.wgustTM = toFunc1(fromFunc1(data.wgustTM));
-	data.windTM = toFunc1(fromFunc1(data.windTM));
-	data.windrun = toFunc2(fromFunc2(data.windrun));
-	data.wlatest = toFunc1(fromFunc1(data.wlatest));
-	data.wspeed = toFunc1(fromFunc1(data.wspeed));
+	data.wgust = toFunc1(fromFunc1(data.wgust), 1);
+	data.wgustTM = toFunc1(fromFunc1(data.wgustTM), 1);
+	data.windTM = toFunc1(fromFunc1(data.windTM), 1);
+	data.windrun = toFunc2(fromFunc2(data.windrun), 1);
+	data.wlatest = toFunc1(fromFunc1(data.wlatest), 1);
+	data.wspeed = toFunc1(fromFunc1(data.wspeed), 1);
 	data.windunit = to;
 }
 
@@ -364,79 +372,17 @@ export const convCloudBaseData = (data: RtData, to: CloudUnit) => {
 }
 
 
-// ======================================
-// ===        UNITS CONVERSION        ===
-// ======================================
+
+// =======================================
+// ===         OTHER FUNCTIONS         ===
+// =======================================
+
 const toFixedNumber = (num: number, digits: number, base?: number) => {
   var pow = Math.pow(base||10, digits);
   return Math.round(num * pow) / pow;
 }
 
-// Celsius to Fahrenheit
-const c2f = (val: number) => toFixedNumber(((val * 9 / 5) + 32), 1);
 
-// Fahrenheit to Celsius
-const f2c = (val: number) => toFixedNumber(((val - 32) * 5 / 9), 1);
-
-// mph to ms
-const mph2ms = (val: number) => toFixedNumber((val * 0.447), 1);
-
-// knots to ms
-const kts2ms = (val: number) => toFixedNumber((val * 0.515), 1);
-
-// kph to ms
-const kmh2ms = (val: number) => toFixedNumber((val * 0.2778), 1);
-
-// ms to kts
-const ms2kts = (val: number) => toFixedNumber((val * 1.9426), 1);
-
-// ms to mph
-const ms2mph = (val: number) => toFixedNumber((val * 2.237), 1);
-
-// ms to kph
-const ms2kmh = (val: number) => toFixedNumber((val * 3.6), 1);
-
-// mm to inches
-const mm2in = (val: number) => toFixedNumber((val / 25.4), 2);
-
-// inches to mm
-const in2mm = (val: number) => toFixedNumber((val * 25.4), 1);
-
-// miles to km
-const miles2km = (val: number) => toFixedNumber((val * 1.609344), 1);
-
-// nautical miles to km
-const nmiles2km = (val: number) => toFixedNumber((val * 1.85200), 1);
-
-// km to miles
-const km2miles = (val: number) => toFixedNumber((val / 1.609344), 1);
-
-// km to nautical miles
-const km2nmiles = (val: number) => toFixedNumber((val / 1.85200), 1);
-
-// hPa to inHg (@0°C)
-const hpa2inhg = (val: number, decimals?: number) => toFixedNumber((val * 0.029528744), decimals || 3);
-
-// inHg to hPa (@0°C)
-const inhg2hpa = (val: number) => toFixedNumber((val / 0.029528744), 1);
-
-// kPa to hPa
-const kpa2hpa = (val: number) => toFixedNumber((val * 10), 1);
-
-// hPa to kPa
-const hpa2kpa = (val: number, decimals?: number) => toFixedNumber((val / 10), decimals || 2);
-
-// m to ft
-const m2ft = (val: number) => toFixedNumber((val * 3.2808399), 0);
-
-//feet to meters
-const ft2m = (val: number) => toFixedNumber((val / 3.2808399), 0);
-
-
-
-// =======================================
-// ===         OTHER FUNCTIONS         ===
-// =======================================
 const extractTempunit = (str?: string) => {
 	if(str) {
 		// clean up temperature units - remove html encoded degree symbols

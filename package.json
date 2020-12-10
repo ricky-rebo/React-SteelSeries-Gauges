@@ -63,6 +63,7 @@
   ],
   "dependencies": {
     "steelseries": "^1.0.7",
-    "universal-cookie": "^4.0.4"
+    "universal-cookie": "^4.0.4",
+    "weather-units-conversion": "^1.0.1"
   }
 }
