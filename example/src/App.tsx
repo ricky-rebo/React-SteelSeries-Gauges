@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { ExampleComponent, GaugesController, GaugeSize, Gauge, Type, Lang } from 'react-steelseries-gauges'
+import { ExampleComponent, GaugesController, GaugeSize, Gauge, Type, Langs } from 'react-steelseries-gauges'
 import 'react-steelseries-gauges/dist/index.css'
 
 class App extends React.Component {
@@ -9,7 +9,7 @@ class App extends React.Component {
   constructor(props: any) {
     super(props);
 
-    this.controller = new GaugesController(Lang.IT, {
+    this.controller = new GaugesController(Langs.IT, {
       weatherProgram: Type.Program.WHEATHER_DISPLAY,
       realTimeUrl: "/customclientraw.txt",
       realtimeInterval: 7
