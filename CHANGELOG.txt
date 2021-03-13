@@ -1,0 +1,46 @@
+Diffs from MASTER branch
+
+- Removed from controller all the code unrelated to Weather Display configs and data processing
+	- removed WProgram enum and related config
+	- removed various switchs and checks in constructor and start
+
+
+- Fixed controller Status
+	- defined a standard structure for all statuses
+	- now we only have 
+		- Loading (initial state)
+		- OK
+		- Warning (station offline)
+		- Error (file not found, controller timeout, generical error) -> HERE the controller STOPS all his works
+	- More work on Status planned (see /controller/AA_TODO)
+
+
+- Fixed 'RtData' interface:
+	- Only WD data structure, no optional attributes (based on customclientrawlocat.txt v14)
+	- Modified even customclientrawlocal.txt template, now provide directly nbumerical values,
+		no string to number conversion needed
+
+
+- General refctoring and file renaming:
+	- controller/data_utils.ts 			-> controller/utils.ts
+	- controller/data_types.ts 			-> controller/types.ts
+	- controller/gauges_controller 	-> controller/controller.ts
+	- gauges/gauge_utils.ts 				-> gauges/utils.ts
+	- gauge/gauge_types.ts 					-> gauges/types.ts
+
+
+- Moved all config related to gauge style and format away from the controller [ONGOING] (see gauges/AA_TODO)
+	- All gauge default configs moved in gauges/defaults.ts [DONE]
+	- Removed various configs, including 'gaugeScaling' -> now gauge use directly 'props.size'
+	- Removed 'params' container from gauges, now it is created and passed directly in 'componendDidMount()'
+		when the gauge is created
+	- Instead of 'params', now gauges have 'config' object, actually filled
+		only with defaults values from gauges/defaults.ts
+		(maybe in future implement the possibility to use custom configs via props?)
+
+
+- Specific utility functions, used by a single gauge, moved within the gauge .tsx file itself [ONGOING]
+
+
+- Fixed various types in gauges
+	

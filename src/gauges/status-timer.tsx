@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
-import GaugesController from '../controller/gauges_controller';
+import GaugesController from '../controller/controller';
 // @ts-ignore
 import { DisplaySingle } from "steelseries";
+import { RtData, StatusDef } from '../controller/types';
 
-//TODO docs
+
 class StatusTimerGauge extends Component<Props, State> {
   static NAME = "STATUS_TIMER";
 
@@ -12,13 +13,15 @@ class StatusTimerGauge extends Component<Props, State> {
   gauge: any;
 
   tickTockInterval: NodeJS.Timeout|undefined;
+  lastUpdate = "";
+  resetValue: number;
 
   constructor(props: Props) {
     super(props);
 
     this.canvasRef = React.createRef();
 
-    this.state = { count: 1 }
+    this.state = { count: 0 }
 
     this.params = {
       width            : props.width,
@@ -27,13 +30,15 @@ class StatusTimerGauge extends Component<Props, State> {
       lcdDecimals      : 0,
       unitString       : props.controller.lang.timer,
       unitStringVisible: true,
-      digitalFont      : props.controller.gaugeConfig.digitalFont,
       value            : this.state.count
     }
 
+    this.resetValue = props.controller.config.realtimeInterval;
+
     this.update = this.update.bind(this);
+    this.statusUpdate = this.statusUpdate.bind(this);
     this._tick = this._tick.bind(this);
-    props.controller.subscribe(StatusTimerGauge.NAME, this.update, this.update);
+    props.controller.subscribe(StatusTimerGauge.NAME, this.update, this.statusUpdate);
   }
 
   componentDidMount() {
@@ -42,22 +47,34 @@ class StatusTimerGauge extends Component<Props, State> {
     }
   }
 
-  async update({ statusTimerStart, statusTimerReset, statusTimerStop }: any) {
-    if(statusTimerStop !== undefined && this.tickTockInterval !== undefined) {
+  async update({ timerReset }: RtData) {
+    if(timerReset) {
+      this.setState({ count: this.resetValue });
+    }
+  }
+
+  async statusUpdate({ timerState, timerReset }: StatusDef) {
+    if(timerState && this.tickTockInterval === undefined) {
+      this.tickTockInterval = setInterval(this._tick, 1000);
+    }
+    else if(!timerState && this.tickTockInterval !== undefined) {
       clearInterval(this.tickTockInterval);
       this.tickTockInterval = undefined;
     }
-    else if(statusTimerStart !== undefined && this.tickTockInterval === undefined) {
-      this.tickTockInterval = setInterval(this._tick, 1000);
-    }
-    
-    if(statusTimerReset  !== undefined) {
-      this.setState({ count: statusTimerReset });
+
+    if(timerReset !== -1) {
+      this.setState({ count: timerReset });
     }
   }
 
   _tick() {
-    this.setState({ count: (this.state.count - 1) });
+    //if(this.state.count > 0) {
+      this.setState({ count: (this.state.count - 1) });
+    /*}
+    else if(this.tickTockInterval) {
+      clearInterval(this.tickTockInterval);
+      this.tickTockInterval = undefined;
+    }*/
   }
 
   componentDidUpdate() {

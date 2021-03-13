@@ -3,52 +3,65 @@ import React, { Component } from 'react';
 import { Radial, Section } from "steelseries";
 import styles from '../style/common.css';
 import Cookies, { Cookie } from 'universal-cookie/es6';
-import { InOutTemp, Props } from './data-types';
-import { gaugeShadow } from './gauge-utils.js';
-import { RtData } from '../controller/data-types.js';
+import { Lang, RtData } from '../controller/types';
+import { InOutType, CommonProps, RGBAColor } from './types';
+import { gaugeShadow } from './utils';
+import { getCommonParams, MIN_MAX_AREA_COLOR, SHADOW_COLOR, SHOW_GAUGE_SHADOW, SHOW_HUM_INDOOR } from './defaults';
 
 const COOKIE_NAME = 'hum-display';
 
-//TODO docs
-class HumGauge extends Component<Props, State> {
+
+class HumGauge extends Component<CommonProps, State> {
 	static NAME = "HUM_GAUGE";
 
 	canvasRef: React.RefObject<HTMLCanvasElement>;
-	gauge: any;
-	params: any;
+	gauge: Radial;
+
+	config: Config;
+
+	//params: any;
 	style: React.CSSProperties;
 	cookies: Cookie;
 
-	constructor(props: Props) {
+	constructor(props: CommonProps) {
 		super(props);
 
 		this.canvasRef = React.createRef();
 
-		let tempType = InOutTemp.OUT;
-		if(props.controller.config.useCookies && props.controller.gaugeConfig.showIndoorTempHum) {
+		this.config = {
+			showIndoor: SHOW_HUM_INDOOR,
+			minMaxAreaColor: MIN_MAX_AREA_COLOR,
+
+			showGaugeShadow: SHOW_GAUGE_SHADOW,
+			shadowColor: SHADOW_COLOR
+		}
+
+		let humType: InOutType = "out";
+		if(props.controller.config.useCookies && this.config.showIndoor) {
 			this.cookies = new Cookies();
 			let sel = this.cookies.get(COOKIE_NAME);
-			if(sel) tempType = sel;
+			if(sel) {
+				humType = sel;
+			}
 			else {
 				//TODO set expire date
-				this.cookies.set(COOKIE_NAME, tempType, { path: '/' });
+				this.cookies.set(COOKIE_NAME, humType, { path: '/' });
 			}
 		}
 		
 		this.state = {
-			title: this.props.controller.lang.hum_title_out,
-			selected: tempType,
+			title: getTitle(humType, props.controller.lang),
+			selected: humType,
 
 			value: 0.0001,
 			areas: [],
 			
-			//popUpTxt: '',
-			//graph: '',
+			//popUpTxt: ''
 		}
 
-		this.params = {
+		/*this.params = {
 			...this.props.controller.commonParams,
-			size: Math.ceil(this.props.size * this.props.controller.gaugeConfig.gaugeScaling),
+			size: this.props.size,
 			section: [
 				Section(0, 20, 'rgba(255,255,0,0.3)'),
 				Section(20, 80, 'rgba(0,255,0,0.3)'),
@@ -59,10 +72,10 @@ class HumGauge extends Component<Props, State> {
 			thresholdVisible: false,
 			titleString: this.state.title,
 			unitString: 'RH%',
-		};
+		};*/
 
-		this.style = this.props.controller.gaugeConfig.showGaugeShadow
-			? gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
+		this.style = this.config.showGaugeShadow
+			? gaugeShadow(this.props.size, this.config.shadowColor)
 			: {};
 
 		this.update = this.update.bind(this);
@@ -72,7 +85,22 @@ class HumGauge extends Component<Props, State> {
 
 	componentDidMount() {
 		if(this.canvasRef.current) {
-			this.gauge = new Radial(this.canvasRef.current, this.params);
+			this.gauge = new Radial(this.canvasRef.current, {
+				...getCommonParams(),
+
+				size: this.props.size,
+				section: [
+					Section(0, 20, 'rgba(255,255,0,0.3)'),
+					Section(20, 80, 'rgba(0,255,0,0.3)'),
+					Section(80, 100, 'rgba(255,0,0,0.3)')
+				],
+				area: [],
+				maxValue: 100,
+				thresholdVisible: false,
+				titleString: this.state.title,
+				unitString: 'RH%',
+			});
+
 			this.gauge.setValue(this.state.value);
 		}
 	}
@@ -81,7 +109,7 @@ class HumGauge extends Component<Props, State> {
 		this._setState(mapLocalData(data));
 	}
 
-	setInOutHum(sel: InOutTemp) {
+	setInOutHum(sel: InOutType) {
 		if(this.state.data) {
 			this._setState(this.state.data, sel);
 
@@ -90,45 +118,31 @@ class HumGauge extends Component<Props, State> {
 		}
 	}
 
-	_setState(data: LocalDataDef, sel?: InOutTemp) {
+	_setState(data: LocalDataDef, sel?: InOutType) {
 		let newState: any = {};
 
 		if(sel) {
-			newState.selected = sel
-			if(sel === InOutTemp.OUT) {
-				newState.title = this.props.controller.lang.hum_title_out;
-			}
-			else {
-				newState.title = this.props.controller.lang.hum_title_in;
-			}
+			newState.selected = sel;
+			newState.title = getTitle(sel, this.props.controller.lang);
 		}
 		else {
 			newState.selected = this.state.selected;
 			newState.data = data;
 		}
 
-		let { minMaxArea } = this.props.controller.gaugeConfig;
-		if(newState.selected == InOutTemp.OUT) {
+		if(newState.selected == "out") {
 			newState.value = data.hum;
-		
-			newState.areas = [Section(data.humTL, data.humTH, minMaxArea)];
+			newState.areas = [Section(data.humTL, data.humTH, this.config.minMaxAreaColor)];
 		}
 		else {
 			newState.value = data.inhum;
-			if (data.inhumTL && data.inhumTH) {
-				// Indoor - and Max/Min values supplied
-				newState.areas=[Section(data.inhumTL, data.inhumTH, minMaxArea)];
-			}
-			else {
-				// Indoor - no Max/Min values supplied
-				newState.areas=[];
-			}
+			newState.areas=[Section(data.inhumTL, data.inhumTH, this.config.minMaxAreaColor)];
 		}
 
 		this.setState(newState);
 	}
 
-	componentDidUpdate(_prevProps: Props, prevState: State) {
+	componentDidUpdate(_prevProps: CommonProps, prevState: State) {
 		if(prevState.selected !== this.state.selected) {
 			this.gauge.setTitleString(this.state.title);
 		}
@@ -140,20 +154,21 @@ class HumGauge extends Component<Props, State> {
 	render() {
 		return (
 			<div className={styles.gauge}>
-				<div id="tip_4">
-					<canvas 
-						ref={this.canvasRef}
-						width={this.params.size}
-						height={this.params.size}
-						style={this.style}
-					></canvas>
+				<canvas 
+					ref={this.canvasRef}
+					width={this.props.size}
+					height={this.props.size}
+					style={this.style}
+				></canvas>
+				<div>
+					<button onClick={() => this.setInOutHum("out")}>Out</button>
+					<button onClick={() => this.setInOutHum("in")}>In</button>
 				</div>
-				<button onClick={() => this.setInOutHum(InOutTemp.OUT)}>Out</button>
-				<button onClick={() => this.setInOutHum(InOutTemp.IN)}>In</button>
 			</div>
 		);
 	}
 }
+
 
 interface State {
 	data?: LocalDataDef,
@@ -162,10 +177,18 @@ interface State {
 	title: string,
 	areas: any[],
 
-	selected: InOutTemp,
+	selected: InOutType,
 
 	//popUpTxt: string,
 	//graph: string
+}
+
+interface Config {
+	showIndoor: boolean,
+	minMaxAreaColor: RGBAColor,
+
+	showGaugeShadow: boolean,
+	shadowColor: RGBAColor
 }
 
 interface LocalDataDef {
@@ -173,9 +196,10 @@ interface LocalDataDef {
 	humTL: number,
 	humTH: number,
 	inhum: number,
-	inhumTL?: number,
-	inhumTH?: number
+	inhumTL: number,
+	inhumTH: number
 }
+
 
 function mapLocalData(data: RtData) {
 	let locData: LocalDataDef = {
@@ -188,5 +212,8 @@ function mapLocalData(data: RtData) {
 	}
 	return locData;
 }
+
+const getTitle = (sel: InOutType, lang: Lang) => (sel==="out" ? lang.hum_title_out : lang.hum_title_in);
+
 
 export default HumGauge;

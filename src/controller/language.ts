@@ -7,13 +7,11 @@
 */
 /*! Version: 2.7.0 - Updated: 28 March 2019 (Added Polish) */
 
-import { Lang } from "./data-types";
+import { Lang } from "./types";
 
 /*global gauges */
 
-var LANG: {
-    [propName: string]: Lang
-} = {};
+var LANG: Record<string, Lang> = {};
 
 //======================================================================================================================
 // English

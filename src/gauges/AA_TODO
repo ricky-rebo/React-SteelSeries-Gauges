@@ -1,0 +1,12 @@
+//TODO
+- creare attributo "config" in ogni gauge contenente gli attuali riferimenti a props.controller.gaugeConfig
+- per ora filling con valori default in ./defaults
+- refactoring vario nel life cycle dei gauge
+
+- FUTURE -> implementare custom config tramite props?
+
+-> baro.tsx OK
+-> cloudbase.tsx OK
+-> dew.tsx OK
+-> hum.tsx OK
+-> led OK

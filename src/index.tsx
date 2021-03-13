@@ -1,7 +1,4 @@
-import * as React from 'react'
-import styles from './styles.module.css'
-
-import GaugesController from './controller/gauges_controller';
+import GaugesController from './controller/controller';
 import LANG from './controller/language';
 
 import GaugeSize from './style/gaugeSize';
@@ -21,16 +18,7 @@ import WindDirGauge from './gauges/wind-dir';
 import WindSpeedGauge from './gauges/wind-speed';
 import WindRoseGauge from './gauges/wind-rose';
 
-import { Lang, WProgram } from './controller/data-types';
-import { DewTemp } from './gauges/data-types';
-
-class ExampleComponent extends React.Component<{ text: string }, {}> {
-  constructor(props: { text: string }) { super(props); }
-
-  render() {
-    return <div className={styles.test}>Example Component: {this.props.text}</div>
-  }
-}
+import { Lang } from './controller/types';
 
 const Gauge = {
   Led: LedGauge,
@@ -54,17 +42,15 @@ const Gauge = {
   WindRose: WindRoseGauge
 }
 
-const Type = {
-  Program: {...WProgram},
+/*const Type = {
   DewDisplay: {...DewTemp}
-}
+}*/
 
-export { 
-  ExampleComponent,
+export {
   Gauge,
   GaugeSize,
   GaugesController,
-  Type,
+  //Type,
   Lang,
   LANG as Langs
 };

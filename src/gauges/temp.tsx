@@ -3,14 +3,14 @@ import React, { Component } from 'react';
 import { Radial, TrendState, Section } from "steelseries";
 import styles from '../style/common.css';
 import Cookies from 'universal-cookie/es6';
-import { InOutTemp, Props } from './data-types';
-import { createTempSections, gaugeShadow, getMinTemp, getMaxTemp, tempTrend } from './gauge-utils.js';
-import { RtData, TempUnit } from '../controller/data-types.js';
+import { InOutType, CommonProps } from './types';
+import { createTempSections, gaugeShadow, getMinTemp, getMaxTemp, tempTrend } from './utils.js';
+import { RtData, TempUnit } from '../controller/types.js';
 
 const COOKIE_NAME = 'temp-display';
 
-//TODO docs
-class TempGauge extends Component<Props, State> {
+
+class TempGauge extends Component<CommonProps, State> {
 	static NAME = "TEMP_GAUGE";
 
 	canvasRef: React.RefObject<HTMLCanvasElement>;
@@ -19,12 +19,12 @@ class TempGauge extends Component<Props, State> {
 	style: React.CSSProperties;
 	cookies: Cookies;
 
-	constructor(props: Props) {
+	constructor(props: CommonProps) {
 		super(props);
 
 		this.canvasRef = React.createRef();
 
-		let tempType: InOutTemp = InOutTemp.OUT;;
+		let tempType: InOutType = "out";
 		if(props.controller.config.useCookies && props.controller.gaugeConfig.showIndoorTempHum) {
 			this.cookies = new Cookies();
 
@@ -50,7 +50,7 @@ class TempGauge extends Component<Props, State> {
 			trend: TrendState.OFF,
 			areas: [],
 
-			title: (tempType === InOutTemp.OUT)
+			title: (tempType === "out")
 				? this.props.controller.lang.temp_title_out
 				: this.props.controller.lang.temp_title_in,
 			displayUnit: temp,
@@ -98,13 +98,13 @@ class TempGauge extends Component<Props, State> {
 		this._setState(mapLocalData(data));
 	}
 
-	setInOutTemp(sel: string) {
+	setInOutTemp(sel: InOutType) {
 		if(this.state.data) {
 			this._setState(this.state.data, sel);
 		}
 	}
 
-	_setState(data: LocalDataDef, sel?: string) {
+	_setState(data: LocalDataDef, sel?: InOutType) {
 		let newState: any = {};
 
 		if(data.tempunit !== this.state.displayUnit) {
@@ -113,7 +113,7 @@ class TempGauge extends Component<Props, State> {
 		}
 
 		if(sel) {
-			newState.title = (sel === InOutTemp.OUT)
+			newState.title = (sel === "out")
 				? this.props.controller.lang.temp_title_out
 				: this.props.controller.lang.temp_title_in;
 			newState.selected = sel;
@@ -131,7 +131,7 @@ class TempGauge extends Component<Props, State> {
 			: this.props.controller.gaugeConfig.tempScaleDefMaxF;
 
 		let lowScale: number, highScale: number;
-		if(newState.selected === InOutTemp.OUT) {
+		if(newState.selected === "out") {
 			newState.value = data.temp;
 			
 			lowScale = newState.minValue, data;
@@ -189,7 +189,7 @@ class TempGauge extends Component<Props, State> {
 		this.setState(newState);
 	}
 
-	componentDidUpdate(_prevProps: Props, prevState: State) {
+	componentDidUpdate(_prevProps: CommonProps, prevState: State) {
 		if(prevState.selected !== this.state.selected) {
 			this.gauge.setTitleString(this.state.title);
 			this.gauge.setMaxMeasuredValueVisible(this.state.maxMinVisible);
@@ -242,7 +242,7 @@ interface State {
 
 	displayUnit: TempUnit,
 	maxMinVisible: boolean,
-	selected: InOutTemp,
+	selected: InOutType,
 
 	value: number,
 	minValue: number,
@@ -256,7 +256,7 @@ interface State {
 	//graph: string
 }
 
-interface LocalDataDef {
+export interface LocalDataDef {
 	temp: number, tempunit: TempUnit, temptrend: number,
 	tempTL: number, dewpointTL: number, apptempTL: number, wchillTL: number,
 	tempTH: number, apptempTH: number, heatindexTH: number, humidex: number,

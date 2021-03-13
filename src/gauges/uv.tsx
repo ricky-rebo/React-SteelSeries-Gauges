@@ -2,12 +2,12 @@ import React, { Component } from 'react';
 // @ts-ignore
 import { RadialBargraph, Section, GaugeType, gradientWrapper, rgbaColor } from "steelseries";
 import styles from '../style/common.css';
-import { gaugeShadow, nextHighest } from './gauge-utils.js';
-import { RtData } from '../controller/data-types.js';
-import { Props } from './data-types';
+import { gaugeShadow, nextHighest } from './utils.js';
+import { RtData } from '../controller/types.js';
+import { CommonProps } from './types';
 
-//TODO docs
-class UVGauge extends Component<Props, State> {
+
+class UVGauge extends Component<CommonProps, State> {
 	static NAME = "UV_GAUGE";
 
 	canvasRef: React.RefObject<HTMLCanvasElement>;
@@ -15,7 +15,7 @@ class UVGauge extends Component<Props, State> {
 	params: any;
 	style: React.CSSProperties;
 
-	constructor(props: Props) {
+	constructor(props: CommonProps) {
 		super(props);
 
 		this.canvasRef = React.createRef();
@@ -103,7 +103,7 @@ class UVGauge extends Component<Props, State> {
 		this.setState(newState);
 	}
 
-	componentDidUpdate(_prevProps: Props, prevState: State) {
+	componentDidUpdate(_prevProps: CommonProps, prevState: State) {
 		if(prevState.maxValue !== this.state.maxValue) {
 			this.gauge.setMaxValue(this.state.maxValue)
 		}

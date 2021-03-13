@@ -1,8 +1,11 @@
 // @ts-ignore
 import { Section, TrendState, gradientWrapper, rgbaColor } from "steelseries";
-import { RtData, PressUnit, TempUnit } from '../controller/data-types.js';
+import { RtData, TempUnit } from '../controller/types';
+import { LocalDataDef as TempData } from './temp';
+import { LocalDataDef as DewData } from './dew';
 
 /**
+ * //TODO move in Temp Gauge
  * Creates an array of gauge sections appropriate for Celsius or Fahrenheit scales
  * @param useCelsius True id you're using Celsius, False otherwise
  */
@@ -49,6 +52,7 @@ export const createTempSections = (useCelsius: boolean) => {
 }
 
 /**
+ * //TODO move in Temp Gauge
  * Converts a temperature trend value into a localised string, or +1, 0, -1 depending on the value of bTxt
  * @param trend 
  * @param units 
@@ -71,12 +75,13 @@ export const tempTrend = (trend: number, units: TempUnit, strings?: any) => {
 	else									return (strings ? strings.FallingVeryRapidly : TrendState.DOWN);
 }
 
+
 /**
  * Returns the lowest temperature today for gauge scaling
  * @param deflt 
  * @param data 
  */
-export const getMinTemp = (deflt: number, { tempTL, dewpointTL, apptempTL, wchillTL }: Partial<RtData>) => {
+export const getMinTemp = (deflt: number, { tempTL, dewpointTL, apptempTL, wchillTL }: RtData|TempData|DewData) => {
 	tempTL = tempTL ? tempTL : deflt;
 	dewpointTL = dewpointTL ? dewpointTL : deflt;
 	apptempTL = apptempTL ? apptempTL : deflt;
@@ -89,7 +94,7 @@ export const getMinTemp = (deflt: number, { tempTL, dewpointTL, apptempTL, wchil
  * @param deflt 
  * @param data 
  */
-export const getMaxTemp = (deflt: number, { tempTH, apptempTH, heatindexTH, humidex }: Partial<RtData>) => {
+export const getMaxTemp = (deflt: number, { tempTH, apptempTH, heatindexTH, humidex }: RtData|TempData|DewData) => {
 	tempTH = tempTH ? tempTH : deflt;
 	apptempTH = apptempTH ? apptempTH : deflt;
 	heatindexTH = heatindexTH ? heatindexTH : deflt;
@@ -97,63 +102,9 @@ export const getMaxTemp = (deflt: number, { tempTH, apptempTH, heatindexTH, humi
 	return Math.max(tempTH, apptempTH, heatindexTH, humidex);
 }
 
-/**
- * Converts a pressure trend value into a localised string, or +1, 0, -1 depending on the value of bTxt
- * @param trend 
- * @param units 
- * @param bTxt 
- * @param strings 
- */
-export const baroTrend = (trend: number, units: PressUnit, strings?: any) =>  {
-	// The terms below are the UK Met Office terms for a 3 hour change in hPa
-	// trend is supplied as an hourly change, so multiply by 3
-	var val = trend * 3;
-	
-	if (units === "inHg") 		val *= 33.8639;
-	else if (units === "kPa") val *= 10;
-	// assume everything else is hPa or mb, could be dangerous!
-	
-	if (trend === -9999) 	return (strings ? '--' : TrendState.OFF);
-	else if (val > 6.0)  	return (strings ? strings.RisingVeryRapidly : TrendState.UP);
-	else if (val > 3.5) 	return (strings ? strings.RisingQuickly : TrendState.UP);
-	else if (val > 1.5) 	return (strings ? strings.Rising : TrendState.UP);
-	else if (val > 0.1) 	return (strings ? strings.RisingSlowly : TrendState.UP);
-	else if (val >= -0.1) return (strings ? strings.Steady : TrendState.STEADY);
-	else if (val >= -1.5) return (strings ? strings.FallingSlowly : TrendState.DOWN);
-	else if (val >= -3.5) return (strings ? strings.Falling : TrendState.DOWN);
-	else if (val >= -6.0) return (strings ? strings.FallingQuickly : TrendState.DOWN);
-	else 									return (strings ? strings.FallingVeryRapidly : TrendState.DOWN);
-}
 
 /**
- * Create an array of section highlights for the CloudBase gauge
- * @param metric 
- */
-export const createCloudBaseSections =  (metric: boolean) => {
-	if (metric) {
-		return [
-			Section(0, 150, 'rgba(245, 86, 59, 0.5)'),
-			Section(150, 300, 'rgba(225, 155, 105, 0.5)'),
-			Section(300, 750, 'rgba(212, 203, 109, 0.5)'),
-			Section(750, 1000, 'rgba(150, 203, 150, 0.5)'),
-			Section(1000, 1500, 'rgba(80, 192, 80, 0.5)'),
-			Section(1500, 2500, 'rgba(0, 140, 0, 0.5)'),
-			Section(2500, 5500, 'rgba(19, 103, 186, 0.5)')
-		];
-	} else {
-		return [
-			Section(0, 500, 'rgba(245, 86, 59, 0.5)'),
-			Section(500, 1000, 'rgba(225, 155, 105, 0.5)'),
-			Section(1000, 2500, 'rgba(212, 203, 109, 0.5)'),
-			Section(2500, 3500, 'rgba(150, 203, 150, 0.5)'),
-			Section(3500, 5500, 'rgba(80, 192, 80, 0.5)'),
-			Section(5500, 8500, 'rgba(0, 140, 0, 0.5)'),
-			Section(8500, 18000, 'rgba(19, 103, 186, 0.5)')
-		];
-	}
-}
-
-/**
+ * //TODO move in Rain Gauge
  * Returns an array of section highlights for total rainfall in mm or inches
  * @param metric 
  */
@@ -174,6 +125,7 @@ export const createRainfallSections = (metric: boolean) => {
 }
 
 /**
+ * //TODO move in Rain Gauge
  * Returns an array of SS colours for continuous gradient colouring of the total rainfall LED gauge
  * @param metric 
  */
@@ -193,6 +145,7 @@ export const createRainfallGradient = (metric: boolean) => {
 }
 	
 /**
+ * //TODO move in RainRate Gauge
  * Returns an array of section highlights for the Rain Rate gauge.
  * Assumes 'standard' descriptive limits from UK met office:
  *  < 0.25 mm/hr - Very light rain
@@ -223,6 +176,7 @@ export const createRainRateSections = (metric: boolean) => {
 	];
 }
 
+
 /**
  * Create a shadow effect for the gauge using CSS
  * @param size The size of the gauge
@@ -235,8 +189,11 @@ export const gaugeShadow = (size: number, color: string) => {
 		borderRadius: Math.floor(size / 2) + 'px'
 	};
 }
+
+
+
 /**
- * //TODO
+ * //TODO move in WindDir Gauge
  * @param startCol 
  * @param endCol 
  * @param fraction 
@@ -257,6 +214,7 @@ export const gradient = (startCol : string, endCol : string, fraction :number) =
 		(grnOrigin + (gradientSizeGrn * fraction)).toFixed(0) + ',' +
 		(bluOrigin + (gradientSizeBlu * fraction)).toFixed(0);
 }
+
 
 /**
  * Returns the next highest number in the step sequence

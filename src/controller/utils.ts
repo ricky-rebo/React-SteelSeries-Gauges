@@ -1,110 +1,129 @@
 import { c2f, f2c, ft2m, hpa2inhg, hpa2kpa, in2mm, inhg2hpa, km2miles, km2nmiles, kmh2ms, kpa2hpa, kts2ms, m2ft, miles2km, mm2in, mph2ms, ms2kmh, ms2kts, ms2mph, nmiles2km } from "weather-units-conversion";
-import { CloudUnit, PressUnit, RainUnit, RawData, RtData, TempUnit, WindUnit } from "./data-types";
+import { CloudUnit, Lang, PressUnit, RainUnit, RawData, RtData, TempUnit, WindUnit } from "./types";
 
+//TODO remove
 export const ERR_VAL = -9999;
-
-export const parseRawData = (rawData: RawData) => {
+/*
+export const OLD_parseRawData = (rawData: RawData) => {
 	let data: RtData = {
-		date: rawData.date ? rawData.date : "",
-		timeUTC: rawData.timeUTC ? rawData.timeUTC : "",
-		dateFormat: rawData.dateFormat ? rawData.dateFormat : "",
-		SensorContactLost: rawData.SensorContactLost ? +rawData.SensorContactLost : 0,
-		forecast: rawData.forecast ? rawData.forecast : "",
+		date: rawData.date,
+		timeUTC: rawData.timeUTC,
+		dateFormat: rawData.dateFormat,
+		SensorContactLost: +rawData.SensorContactLost,
+		forecast: rawData.forecast,
 
-		tempunit: extractTempunit(rawData.tempunit),
-		temp: extractDecimal(rawData.temp),
-		temptrend: extractDecimal(rawData.temptrend),
-		tempTL: extractDecimal(rawData.tempTL),
-		tempTH: extractDecimal(rawData.tempTH),
-		dew: extractDecimal(rawData.dew),
-		dewpointTL: extractDecimal(rawData.dewpointTL),
-		dewpointTH: extractDecimal(rawData.dewpointTH),
-		apptemp: extractDecimal(rawData.apptemp),
-		apptempTL: extractDecimal(rawData.apptempTL),
-		apptempTH: extractDecimal(rawData.apptempTH),
-		wchill: extractDecimal(rawData.wchill),
-		wchillTL: extractDecimal(rawData.wchillTL),
-		heatindex: extractDecimal(rawData.heatindex),
-		heatindexTH: extractDecimal(rawData.heatindexTH),
-		humidex: extractDecimal(rawData.humidex),
-		intemp: extractDecimal(rawData.intemp),
-		intempTL: rawData.intempTL ? extractDecimal(rawData.intempTL) : undefined,
-		intempTH: rawData.intempTH ? extractDecimal(rawData.intempTH) : undefined,
+		tempunit: parseTempunit(rawData.tempunit),
+		temp: rawData.temp,
+		temptrend: rawData.temptrend,
+		tempTL: rawData.tempTL,
+		tempTH: rawData.tempTH,
+		dew: rawData.dew,
+		dewpointTL: rawData.dewpointTL,
+		dewpointTH: rawData.dewpointTH,
+		apptemp: rawData.apptemp,
+		apptempTL: rawData.apptempTL,
+		apptempTH: rawData.apptempTH,
+		wchill: rawData.wchill,
+		wchillTL: rawData.wchillTL,
+		heatindex: rawData.heatindex,
+		heatindexTH: rawData.heatindexTH,
+		humidex: rawData.humidex,
+		intemp: rawData.intemp,
+		intempTL: rawData.intempTL,
+		intempTH: rawData.intempTH,
 		
-		TtempTL: rawData.TtempTL ? rawData.TtempTL : "",
-		TtempTH: rawData.TtempTH ? rawData.TtempTH : "",
+		TtempTL: rawData.TtempTL,
+		TtempTH: rawData.TtempTH,
 		TintempTL: rawData.TintempTL,
 		TintempTH: rawData.TintempTH,
-		TdewpointTL: rawData.TdewpointTL ? rawData.TdewpointTL : "",
-		TdewpointTH: rawData.TdewpointTH ? rawData.TdewpointTH : "",
-		TapptempTL: rawData.TapptempTL ? rawData.TapptempTL : "",
-		TapptempTH: rawData.TapptempTH ? rawData.TapptempTH : "",
-		TwchillTL: rawData.TwchillTL ? rawData.TwchillTL : "",
-		TheatindexTH: rawData.TheatindexTH ? rawData.TheatindexTH : "",
+		TdewpointTL: rawData.TdewpointTL,
+		TdewpointTH: rawData.TdewpointTH,
+		TapptempTL: rawData.TapptempTL,
+		TapptempTH: rawData.TapptempTH,
+		TwchillTL: rawData.TwchillTL,
+		TheatindexTH: rawData.TheatindexTH,
 
-		windunit: extractWindunit(rawData.windunit),                                                                                                                                            
-		wlatest: extractDecimal(rawData.wlatest),
-		wspeed: extractDecimal(rawData.wspeed),
-		windTM: extractDecimal(rawData.windTM),
-		wgust: extractDecimal(rawData.wgust),
-		wgustTM: extractDecimal(rawData.wgustTM),
+		windunit: parseWindunit(rawData.windunit),                                                                                                                                            
+		wlatest: rawData.wlatest,
+		wspeed: rawData.wspeed,
+		windTM: rawData.windTM,
+		wgust: rawData.wgust,
+		wgustTM: rawData.wgustTM,
 		
-		domwinddir: rawData.domwinddir ? rawData.domwinddir : "",
-		bearing: extractInteger(rawData.bearing),
-		avgbearing: extractInteger(rawData.bearing),
-		BearingRangeFrom10: extractInteger(rawData.bearing),
-		BearingRangeTo10: extractInteger(rawData.bearing),
-		bearingTM: extractInteger(rawData.bearing),
-		windrun: extractDecimal(rawData.windrun),
+		domwinddir: rawData.domwinddir,
+		bearing: rawData.bearing,
+		avgbearing: rawData.bearing,
+		BearingRangeFrom10: rawData.bearing,
+		BearingRangeTo10: rawData.bearing,
+		bearingTM: rawData.bearing,
+		windrun: rawData.windrun,
 		WindRoseData: rawData.WindRoseData,
-		Tbeaufort: rawData.Tbeaufort ? rawData.Tbeaufort : "",
-		TwgustTM: rawData.TwgustTM ? rawData.TwgustTM : "",
+		Tbeaufort: rawData.Tbeaufort,
+		TwgustTM: rawData.TwgustTM,
 
-		pressunit: extractPressunit(rawData.pressunit),
-		press: extractDecimal(rawData.press),
-		presstrendval: extractDecimal(rawData.presstrendval),
-		pressL: extractDecimal(rawData.pressL),
-		pressH: extractDecimal(rawData.pressH),
-		pressTL: extractDecimal(rawData.pressTL),
-		pressTH: extractDecimal(rawData.pressTH),
-		TpressTL: rawData.TpressTL ? rawData.TpressTL : "",
-		TpressTH: rawData.TpressTH ? rawData.TpressTH : "",
+		pressunit: parsePressunit(rawData.pressunit),
+		press: rawData.press,
+		presstrendval: rawData.presstrendval,
+		pressL: rawData.pressL,
+		pressH: rawData.pressH,
+		pressTL: rawData.pressTL,
+		pressTH: rawData.pressTH,
+		TpressTL: rawData.TpressTL,
+		TpressTH: rawData.TpressTH,
 
-		rainunit: extractRainunit(rawData.rainunit),
-		rfall: extractDecimal(rawData.rfall),
-		hourlyrainTH: extractDecimal(rawData.hourlyrainTH),
-		rrate: extractDecimal(rawData.rrate),
-		rrateTM: extractDecimal(rawData.rrateTM),
-		TrrateTM: rawData.TrrateTM ? rawData.TrrateTM : '',
-		ThourlyrainTH: rawData.ThourlyrainTH ? rawData.ThourlyrainTH : '',
-		LastRainTipISO: rawData.LastRainTipISO ? rawData.LastRainTipISO : '',
+		rainunit: parseRainunit(rawData.rainunit),
+		rfall: rawData.rfall,
+		hourlyrainTH: rawData.hourlyrainTH,
+		rrate: rawData.rrate,
+		rrateTM: rawData.rrateTM,
+		TrrateTM: rawData.TrrateTM,
+		ThourlyrainTH: rawData.ThourlyrainTH,
+		LastRainTipISO: rawData.LastRainTipISO,
 		LastRained: '',
 
-		hum: extractDecimal(rawData.hum),
-		humTL: extractDecimal(rawData.humTL),
-		humTH: extractDecimal(rawData.humTH),
-		inhum: extractDecimal(rawData.inhum),
-		inhumTL: rawData.inhumTL ? extractDecimal(rawData.inhumTL) : undefined,
-		inhumTH: rawData.inhumTH ? extractDecimal(rawData.inhumTH) : undefined,
-		ThumTL: rawData.ThumTL ? rawData.ThumTL : '',
-		ThumTH: rawData.ThumTH ? rawData.ThumTH : '',
+		hum: rawData.hum,
+		humTL: rawData.humTL,
+		humTH: rawData.humTH,
+		inhum: rawData.inhum,
+		inhumTL: rawData.inhumTL,
+		inhumTH: rawData.inhumTH,
+		ThumTL: rawData.ThumTL,
+		ThumTH: rawData.ThumTH,
 		TinhumTL: rawData.TinhumTL,
 		TinhumTH: rawData.TinhumTH,
 		
-		UV: extractDecimal(rawData.UV),
-		UVTH: extractDecimal(rawData.UVTH),
-		SolarRad: extractInteger(rawData.SolarRad),
-		CurrentSolarMax: extractInteger(rawData.CurrentSolarMax),
-		SolarTM: extractInteger(rawData.SolarTM),
+		UV: rawData.UV,
+		UVTH: rawData.UVTH,
+		SolarRad: rawData.SolarRad,
+		CurrentSolarMax: rawData.CurrentSolarMax,
+		SolarTM: rawData.SolarTM,
 
-		cloudbaseunit: extractCloudunit(rawData.cloudbaseunit),
-		cloudbasevalue: extractInteger(rawData.cloudbasevalue),
+		cloudbaseunit: parseCloudunit(rawData.cloudbaseunit),
+		cloudbasevalue: rawData.cloudbasevalue,
 
-		version: rawData.version ? rawData.version : '',
-		build: rawData.build ? rawData.build : '0',
-		ver: rawData.ver ? +rawData.ver : -1
+		version: rawData.version,
+		build: rawData.build,
+		ver: rawData.ver
 	}
 	return data;
+}
+*/
+
+export const parseRawData = (raw: RawData): RtData => {
+	return {
+		...raw,
+
+		tempunit: parseTempunit(raw.tempunit),
+		windunit: parseWindunit(raw.windunit),
+		pressunit: parsePressunit(raw.pressunit),
+		rainunit: parseRainunit(raw.rainunit),
+		cloudbaseunit: parseCloudunit(raw.cloudbaseunit),
+
+		LastRained: "",
+
+		timerState: true,
+		timerReset: true
+	}
 }
 
 
@@ -113,10 +132,11 @@ export const parseRawData = (rawData: RawData) => {
  * @param data
  * @param lang 
  */
-export const parseLastRain = ({ LastRainTipISO, dateFormat }: RtData, lang: any) => {
+export const parseLastRain = ({ LastRainTipISO, dateFormat }: RtData, lang: Lang) => {
 	try {
 		let [date, time] = LastRainTipISO.split(' '); 
-		let dt = date.replace(/\//g, '-').split('-');  // WD uses dd/mm/yyyy, we use a '-'
+		//let dt = date.replace(/\//g, '-').split('-');  // WD uses dd/mm/yyyy, we use a '-' //CLEANUP
+		let dt = date.split('/');
 		let tm = time.split(':');
 
 		let then: Date;
@@ -147,22 +167,14 @@ export const parseLastRain = ({ LastRainTipISO, dateFormat }: RtData, lang: any)
 	
 }
 
-/**
- * //TODO
- * @param data 
- * @param stationTimeout 
- * @param lang 
- */
-export const isStationOffline = ({ timeUTC }: RtData, stationTimeout: number, lang: any) => {
+
+export const isStationOffline = ({ timeUTC }: RtData, stationTimeout: number, lang: Lang) => {
 	let now = Date.now();
 	let tmp = timeUTC.split(',');
 	//console.log("tmp: " + tmp);
 	let sampleDate = Date.UTC(+tmp[0], +tmp[1] - 1, +tmp[2], +tmp[3], +tmp[4], +tmp[5]);
 
 	let elapsedMins = Math.floor((now - sampleDate) / (1000 * 60));
-	//console.log("now: " + now)
-	//console.log("sample date: " + +sampleDate)
-	//console.log("elapsed mins: " + elapsedMins)
 	if(elapsedMins > stationTimeout) {
 		let timeAgo: string;
 		if(elapsedMins < 120) // up to 2 hours ago
@@ -174,7 +186,7 @@ export const isStationOffline = ({ timeUTC }: RtData, stationTimeout: number, la
 		return `${lang.led_title_offline} ${lang.StatusLastUpdate} ${timeAgo}`;
 	}
 	
-	return null;
+	return;
 }
 
 
@@ -184,21 +196,7 @@ export const isStationOffline = ({ timeUTC }: RtData, stationTimeout: number, la
 // =======================================
 
 /**
- * //TODO 
- * @param data 
- */
-export const calcCloudbase = ({ temp, tempunit, dew, cloudbaseunit }: RtData) => {
-	var sprd = temp - dew;
-	var cb = sprd * (tempunit === "°C" ? 400 : 227.3); // cloud base in feet
-	if (cloudbaseunit === "m") {
-			cb = ft2m(cb, 0);
-	}
-	return cb;
-}
-
-/**
  * convTempData() converts all the temperature values using the supplied conversion function
- * //TODO
  * @param data 
  */
 export const convTempData = (data: RtData, to: TempUnit) => {
@@ -232,7 +230,6 @@ export const convTempData = (data: RtData, to: TempUnit) => {
 
 /**
  * convRainData() converts all the rain data units using the supplied conversion function
- * //TODO
  * @param data 
  */
 export const convRainData = (data: RtData, to: RainUnit) => {
@@ -249,7 +246,6 @@ export const convRainData = (data: RtData, to: RainUnit) => {
 
 /**
  * convWindData() converts all the wind values using the supplied conversion function
- * //TODO
  * @param data
  * @param to 
  */
@@ -383,97 +379,60 @@ const toFixedNumber = (num: number, digits: number, base?: number) => {
 }
 
 
-const extractTempunit = (str?: string) => {
+const parseTempunit = (str: string) => {
 	if(str) {
-		// clean up temperature units - remove html encoded degree symbols
-		if(str.length > 1) str = str.replace(/&\S*;/, '°');
-		else str = "°" + str;
+			str = "°" + str;
 
 		if(str === "°C" || str === "°F")
 			return str;
 	}
 	return "";
 }
-const extractRainunit = (str?: string) => {
-	if(str) {
-		// WView sends ' mm' etc
-		str = str.trim();
-
-		if(str === "mm" || str === "in")
-			return str;
-	}
+const parseRainunit = (str: string) => {
+	if(str === "mm" || str === "in")
+		return str;
+	
 	return "";
 }
-const extractPressunit = (str?: string) => {
+const parsePressunit = (str: string) => {
 	if(str) {
 		// WView sends ' in', ' mb', or ' hPa'
-		str = str.trim();
-		if(str === 'in') str = "inHg"; // Cumulus and WView send 'in'
+		//str = str.trim();
+		//if(str === 'in') str = "inHg"; // Cumulus and WView send 'in'
 
 		if(str === "hPa" || str === "inHg" || str === "mb" || str === "kPa")
 			return str;
 	}
 	return "";
 }
-const extractWindunit = (str?: string) => {
+const parseWindunit = (str: string) => {
 	if(str) {
 		// WView sends ' kmh' etc -- WeatherCat sends "MPH"
-		str = str.trim().toLowerCase();
-		if (str === 'knots') // WeatherCat/weewx send "Knots", we use "kts"
+		//str = str.trim().toLowerCase();
+		/*if (str === 'knots') // WeatherCat/weewx send "Knots", we use "kts"
 			str = "kts" 
 		else if (str === 'kmh' || str === 'kph') // WD wind unit omits '/', weewx sends 'kph' 
-			str = "km/h";
+			str = "km/h";*/
+
+		if (str === 'kmh') str = "km/h"
 
 		if(str === "km/h" || str === "m/s" || str === "mph" || str === "kts")
 			return str;
 	}
 	return "";
 }
-const extractCloudunit = (str?: string) => {
+const parseCloudunit = (str: string) => {
 	if(str) {
 		// change WeatherCat units from Metres/Feet to m/ft
-		if (str.toLowerCase() === 'metres')
+		/*if (str.toLowerCase() === 'metres')
 			str = "m";
 		else if (str.toLowerCase() === 'feet')
-			str = "ft";
+			str = "ft";*/
 
 		if(str === "m" || str === "ft")
 			return str;
 	}
 	return "";
-}
-
-/**
- * extractDecimal() returns a decimal number from a string, the decimal point can be either a dot or a comma
- * it ignores any text such as pre/appended units
- * @param str 
- * @param errVal 
- */
-export const extractDecimal = (str?: string, errVal?: number) => {
-	if(str) {
-		str = str.replace(',', '.');
-		let val;
-		if(val = (/[-+]?[0-9]+\.?[0-9]*/).exec(str))
-			return +val[0];
-	}
-
-	return errVal || ERR_VAL; // error condition
-}
-
-/**
- * extractInteger() returns an integer from a string
- * it ignores any text such as pre/appended units
- * @param str 
- * @param errVal 
- */
-export const extractInteger = (str?: string, errVal?: number) => {
-	if(str) {
-		let val;
-		if(val = (/[-+]?[0-9]+/).exec(str))
-			return +val[0];
-	}
-	
-	return errVal || ERR_VAL;
 }
 
 /**

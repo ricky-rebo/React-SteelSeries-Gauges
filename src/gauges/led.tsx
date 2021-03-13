@@ -1,19 +1,17 @@
 import React, { Component } from 'react';
-import GaugesController from '../controller/gauges_controller';
+import GaugesController from '../controller/controller';
 // @ts-ignore
 import { Led, LedColor } from "steelseries";
-// @ts-ignore
-import { RtData } from '../controller/data-types';
-//import steelseries from '../libs/steelseries';
+import { RtData, StatusDef } from '../controller/types';
 
-//TODO docs
+const DEF_SIZE = 25;
+
 class LedGauge extends Component<Props, State> {
 	static NAME = "LED";
 
 	canvasRef: React.RefObject<HTMLCanvasElement>;
 
-	gauge: any;
-	params: any;
+	gauge: Led;
 
 	constructor(props: Props) {
 		super(props);
@@ -27,11 +25,6 @@ class LedGauge extends Component<Props, State> {
 			blink: false
 		}
 
-		this.params = {
-			ledColor: this.state.color,
-			size    : props.size ? props.size : 25
-		};
-
 		this.dataUpdate = this.dataUpdate.bind(this);
 		this.statusUpdate = this.statusUpdate.bind(this);
 		props.controller.subscribe(LedGauge.NAME, this.dataUpdate, this.statusUpdate);
@@ -39,7 +32,10 @@ class LedGauge extends Component<Props, State> {
 
 	componentDidMount() {
 		if(this.canvasRef.current) {
-			this.gauge = new Led(this.canvasRef.current, this.params);
+			this.gauge = new Led(this.canvasRef.current, {
+				ledColor: this.state.color,
+				size    : this.props.size||DEF_SIZE
+			});
 		}
 	}
 
@@ -48,23 +44,20 @@ class LedGauge extends Component<Props, State> {
 			this.setState({ title: ledTitle });
 	}
 
-	async statusUpdate({ ledTitle, ledColor, ledBlink, ledState }: any) {
+	async statusUpdate({ ledTitle, ledColor, ledBlink, ledState }: StatusDef) {
 		let newState: any = {};
 
-		if(ledTitle !== undefined)
+		if(ledTitle !== "")
 			newState.title = ledTitle;
 		
-		if(ledColor !== undefined)
-			newState.color = ledColor;
+		newState.color = ledColor;
 
-		if(ledBlink !== undefined)
-			newState.blink = ledBlink;
+		newState.blink = ledBlink;
 		
-		if(ledState !== undefined)
+		if(!ledBlink)
 			newState.isOn = ledState;
 		
-		if(newState !== {})
-			this.setState(newState);
+		this.setState(newState);
 	}
 
 	componentDidUpdate(_prevProps: Props, prevState: State) {
@@ -87,8 +80,8 @@ class LedGauge extends Component<Props, State> {
 		return (
 			<canvas
 				ref={this.canvasRef}
-				width={this.params.size}
-				height={this.params.size}
+				width={this.props.size||DEF_SIZE}
+				height={this.props.size||DEF_SIZE}
 			></canvas>
 		);
 	}

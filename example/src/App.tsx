@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { ExampleComponent, GaugesController, GaugeSize, Gauge, Type, Langs } from 'react-steelseries-gauges'
+import { GaugesController, GaugeSize, Gauge, Langs } from 'react-steelseries-gauges'
 import 'react-steelseries-gauges/dist/index.css'
 
 class App extends React.Component {
@@ -10,24 +10,27 @@ class App extends React.Component {
     super(props);
 
     this.controller = new GaugesController(Langs.IT, {
-      weatherProgram: Type.Program.WHEATHER_DISPLAY,
       realTimeUrl: "/customclientraw.txt",
-      realtimeInterval: 7
+      realtimeInterval: 7,
+      pageUpdateLimit: 1
     });
   }
 	
 	componentDidMount() {
     this.controller.start();
 	}
+
+  componentWillUnmount() {
+    this.controller.stop();
+  }
   
   render() {
     let dim = GaugeSize.Lrg;
-    let controller = this.controller
+    let controller = this.controller;
 
     return(
       <div>
-        <ExampleComponent text="Create React Library Example 😄" />
-        <div style={{ marginLeft: 'auto', marginRight: 'auto', textAlign: 'center' }}>
+        <div style={{ marginLeft: 'auto', marginRight: 'auto', textAlign: 'center', marginTop:'20px' }}>
           <div>
             <Gauge.Led controller={this.controller} size={30} />
             <Gauge.StatusScroller controller={this.controller} width={750} height={30} /> &nbsp;

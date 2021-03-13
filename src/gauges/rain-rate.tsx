@@ -2,12 +2,12 @@ import React, { Component } from 'react';
 // @ts-ignore
 import { Radial, LabelNumberFormat } from "steelseries";
 import styles from '../style/common.css';
-import { createRainRateSections, gaugeShadow, nextHighest } from './gauge-utils.js';
-import { RtData } from '../controller/data-types.js';
-import { Props } from './data-types';
+import { createRainRateSections, gaugeShadow, nextHighest } from './utils.js';
+import { RtData } from '../controller/types.js';
+import { CommonProps } from './types';
 
-//TODO docs
-class RainRateGauge extends Component<Props, State> {
+
+class RainRateGauge extends Component<CommonProps, State> {
 		static NAME = "RAINRATE_GAUGE";
 
 		canvasRef: React.RefObject<HTMLCanvasElement>;
@@ -15,7 +15,7 @@ class RainRateGauge extends Component<Props, State> {
 		params: any;
 		style: React.CSSProperties;
 
-		constructor(props: Props) {
+		constructor(props: CommonProps) {
 				super(props);
 
 				this.canvasRef = React.createRef();
@@ -108,7 +108,7 @@ class RainRateGauge extends Component<Props, State> {
 			this.setState(newState);
 		}
 
-		componentDidUpdate(_prevProps: Props, prevState: State) {
+		componentDidUpdate(_prevProps: CommonProps, prevState: State) {
 			if(this.state.displayUnit !== prevState.displayUnit) {
 				this.gauge.setUnitString(this.state.displayUnit);
 				this.gauge.setSection(this.state.sections);

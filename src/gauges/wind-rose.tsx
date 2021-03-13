@@ -4,9 +4,9 @@ import { drawFrame, drawForeground, drawBackground, Odometer } from "steelseries
 // @ts-ignore
 import RGraph from '../libs/RGraph.rose.js';
 import styles from '../style/common.css';
-import { gaugeShadow } from './gauge-utils.js';
-import { RtData, WindrunUnit } from '../controller/data-types.js';
-import { Props } from './data-types.js';
+import { gaugeShadow } from './utils.js';
+import { RtData, WindrunUnit } from '../controller/types.js';
+import { CommonProps } from './types.js';
 
 function createCanvas(size: number) {
 	let canvas = document.createElement('canvas');
@@ -15,8 +15,8 @@ function createCanvas(size: number) {
 	return canvas;
 }
 
-//TODO docs
-class WindRoseGauge extends Component<Props, State> {
+
+class WindRoseGauge extends Component<CommonProps, State> {
 	static NAME = "WINDROSE_GAUGE";
 
 	canvasRef: React.RefObject<HTMLCanvasElement>;
@@ -45,7 +45,7 @@ class WindRoseGauge extends Component<Props, State> {
 	}
 	odoGauge: any;
 		
-	constructor(props: Props) {
+	constructor(props: CommonProps) {
 		super(props);
 
 		this.canvasRef = React.createRef();
@@ -175,7 +175,7 @@ class WindRoseGauge extends Component<Props, State> {
 		}
 	}
 
-	componentDidUpdate(_prevProps: Props, prevState: State) {
+	componentDidUpdate(_prevProps: CommonProps, prevState: State) {
 		if(this.canvasRef.current && this.plotRef.current) {
 			// Clear the gauge
 			this.buffers.ctxRoseCanvas.clearRect(0, 0, this.gaugeParams.size, this.gaugeParams.size);

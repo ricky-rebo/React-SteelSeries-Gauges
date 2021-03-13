@@ -1,26 +1,24 @@
 import LedGauge from '../gauges/led';
 import StatusScrollerGauge from '../gauges/status-scroller';
 import StatusTimerGauge from '../gauges/status-timer';
-import CloudBaseGauge from '../gauges/cloudbase';
 
 import Cookies from 'universal-cookie/es6';
 
-import { ControllerConfig, CustomConfig, DisplayUnits, GaugeConfig, Lang, RawData, RtData, StatusType, WProgram } from './data-types';
-import { CONTROLLER_CONFIG, GAUGE_CONFIG, DISPLAY_UNITS, Status } from './defaults';
-import { calcCloudbase, convBaroData, convCloudBaseData, convRainData, convTempData, convWindData, ERR_VAL, getWindrunUnits, isStationOffline, parseLastRain, parseRawData } from './data-utils';
+import { ControllerConfig, CustomConfig, DisplayUnits, GaugeConfig, Lang, RawData, RtData, StatusDef, StatusType } from './types';
+import { CONTROLLER_DEF, GAUGE_DEF, DISPLAY_UNITS, Status } from './defaults';
+import { convBaroData, convCloudBaseData, convRainData, convTempData, convWindData, getWindrunUnits, isStationOffline, parseLastRain, parseRawData } from './utils';
 
-const ERR_RT_RETRY = 5;
+const MIN_SCHEME_VER = 14;
 const COOKIE_NAME = 'units';
 
 export default class GaugesController {
-	min_rt_ver: number;
 	lang: Lang;
 	config: ControllerConfig;
 	gaugeConfig: GaugeConfig;
 	commonParams: any;
 
 	fetchController: AbortController;
-	status: any = Status.Loading;
+	status: StatusDef = Status.Loading;
 	displayUnits: DisplayUnits;
 	data: RtData;
 
@@ -28,13 +26,20 @@ export default class GaugesController {
 	dataUpdate: any[] = [];
 	statusUpdate: any[] = [];
 	
-	firstRun: any = true;
+	firstRun: boolean = true;
 	customUnits: boolean = false;
 	cookies: Cookies;
 	rtDownLoadTimer: NodeJS.Timeout;
 
 	constructor(lang: Lang, config: CustomConfig) {
-		this.config = setControllerConfig(config);
+		this.config = {
+			realTimeUrl       : config.realTimeUrl,
+			realtimeInterval  : config.realtimeInterval ? config.realtimeInterval : CONTROLLER_DEF.realtimeInterval,
+			stationTimeout    : config.stationTimeout ? config.stationTimeout : CONTROLLER_DEF.stationTimeout,
+			pageUpdateLimit   : config.pageUpdateLimit ? config.pageUpdateLimit : CONTROLLER_DEF.pageUpdateLimit,
+			useCookies        : (config.useCookies !== undefined) ? config.useCookies : CONTROLLER_DEF.useCookies,  
+		}
+
 		this.gaugeConfig = setGaugeConfigs(config);
 
 		if(this.config.useCookies) {
@@ -52,14 +57,11 @@ export default class GaugesController {
 			}
 		}
 
-		//dashboard mode used only by Cumulus MX!
-		if(this.config.weatherProgram !== WProgram.CUMULUS)
-			this.config.dashboardMode = false;
-
 		this.lang = lang;
 
 
 		// Common parameters for all the SteelSeries gauges
+		//TODO remove
 		this.commonParams = {
 				fullScaleDeflectionTime: 4,             // Bigger numbers (seconds) slow the gauge pointer movements more
 				gaugeType              : this.gaugeConfig.gaugeType,
@@ -75,7 +77,7 @@ export default class GaugesController {
 				knobStyle              : this.gaugeConfig.knobStyle,
 				lcdColor               : this.gaugeConfig.lcdColor,
 				lcdDecimals            : 1,
-				digitalFont            : this.gaugeConfig.digitalFont,
+				digitalFont            : false,
 				tickLabelOrientation   : this.gaugeConfig.tickLabelOrientation,
 				labelNumberFormat      : this.gaugeConfig.labelFormat
 		}
@@ -97,7 +99,6 @@ export default class GaugesController {
 	}
 
 	start = () => {
-		//TODO
 		if(!this.gauges.some(gauge => gauge === LedGauge.NAME)) {
 			throw "Led Gauge needed to start SteelSeries Wheather Gauges controller";
 		}
@@ -108,71 +109,26 @@ export default class GaugesController {
 			throw "Timer Gauge needed to start SteelSeries Wheather Gauges controller";
 		}
 
-		switch(this.config.weatherProgram) {
-			case WProgram.CUMULUS:
-				this.min_rt_ver = 12;
-				this.config.showPopupGraphs = false; //FIXME no graphs support for now :/
-				break;
-			case WProgram.WHEATHER_DISPLAY:
-				this.min_rt_ver = 12; //FIXME set to 14
-				break;
-			case WProgram.VWS:
-				this.min_rt_ver = 11;
-				//FIXME throw error if rose is present? + eventually disable showRoseOnDirGauge?
-				//FIXME throw error if cloudbase gauge is present? why?
-				this.config.showPopupGraphs = false; //FIXME no graphs support for now :/
-				break;
-			case WProgram.WHEATHER_CAT:
-				this.min_rt_ver = 14;
-				this.config.showPopupGraphs = false; //FIXME no graphs support for now :/
-				break;
-			case WProgram.METEO_BRIDGE:
-				this.min_rt_ver = 10;
-				this.config.showPopupGraphs = false;        // config.tipImgs - no Meteobridge images available
-				this.gaugeConfig.showWindVariation = false;      // no wind variation data from MB
-				//FIXME throw error if rose is present? + eventually disable showRoseOnDirGauge?
-				//FIXME throw error if cloudbase gauge is present? why?
-				break;
-			case WProgram.W_VIEW:
-				this.min_rt_ver = 11;
-				this.gaugeConfig.showSunshineLed = false;     // WView does not provide the current theoretical solar max required to determine sunshine
-				this.gaugeConfig.showWindVariation = false;   // no wind variation from WView
-				//FIXME throw error if rose is present? + eventually disable showRoseOnDirGauge?
-				//FIXME throw error if cloudbase gauge is present? why?
-				this.config.showPopupGraphs = false; //FIXME no graphs support for now :/
-				break;
-			case WProgram.WEE_WX:
-				this.min_rt_ver = 14;
-				break;
-			case WProgram.WLCOM:
-				this.min_rt_ver = 10;
-				this.config.showPopupGraphs = false;        // config.tipImgs - no WL images available
-				this.gaugeConfig.showWindVariation = false;      // no wind variation data from WL
-				//FIXME throw error if rose is present? + eventually disable showRoseOnDirGauge?
-				//FIXME throw error if cloudbase gauge is present? why?
-				break;
-			default:
-				throw "[SS Gauges] Invalid Wheather Program Type";
+		this._getRealTime();
+
+		if(this.config.pageUpdateLimit > 0) {
+			setTimeout(
+				() => {
+					this._updateStatus(Status.Error, this.lang.StatusTimeout, this.lang.StatusPageLimit);
+					console.log("[INFO] Controller Timeout")
+				},
+				this.config.pageUpdateLimit * 60 * 1000
+			);	
 		}
+	}
 
-		//TODO get user sets units from cookie
-
-		if(!this.config.dashboardMode) {
-			this._getRealTime();
-
-			//TODO override page update if url param present and valid
-			if(this.config.pageUpdateLimit > 0) {
-				setTimeout(() => this._updateStatus(Status.GaugesTimeout), this.config.pageUpdateLimit * 60 * 1000);
-			}
-		}
-
-
-		
+	//FIXME check if it works
+	stop() {
+		clearTimeout(this.rtDownLoadTimer);
+		this.fetchController.abort();
 	}
 
 	changeUnits({ temp, rain, press, wind, cloud }: Partial<DisplayUnits>) {
-		//TODO remove
-		//console.log("changeUnits() called")
 		let units: DisplayUnits = {...this.displayUnits};
 		let somethingChanged = false;
 
@@ -232,106 +188,116 @@ export default class GaugesController {
 	getDisplayUnits = () => (this.displayUnits);
 
 	_getRealTime = () => {
+		//DEBUG
+		//console.log("[CTRL] _getRealTime()");
+
 		fetch(this.config.realTimeUrl, { method: 'get', signal: this.fetchController.signal })
 		.then(res => res.json())
 		.then(this._checkRtRes, this._checkRtErr);
 	}
 
-	_checkRtRes(dataObj: any) {
-		let delay: number;
+	_checkRtRes(dataObj: RawData) {
+		//DEBUG
+		//console.log("[CTRL] _checkRtRes()");
+
+		if(dataObj.ver && dataObj.ver >= MIN_SCHEME_VER) {
+			this._processData(dataObj);
+			if(this.config.realtimeInterval > 0)
+				this.rtDownLoadTimer = setTimeout(this._getRealTime, this.config.realtimeInterval * 1000);
+			else
+				this._getRealTime();
+		}
+		else {
+			let rtFile = this.config.realTimeUrl.substr(this.config.realTimeUrl.lastIndexOf('/') + 1);
+			this._updateStatus(
+				Status.Error,
+				`Your ${rtFile} file template needs to be updated! - Minimum version: ${MIN_SCHEME_VER} (Your version: ${dataObj.ver})`
+			);
+		}
+
+		/*let delay: number = -1;
 		if(this._processData(dataObj))
 			delay = this.config.realtimeInterval;
 		else 
-			delay = ERR_RT_RETRY;
+			delay = 5//ERR_RT_RETRY;
 		
 		if(delay > 0)
 			this.rtDownLoadTimer = setTimeout(this._getRealTime, delay * 1000);
 		else
-			this._getRealTime();
+			this._getRealTime();*/
 	}
 
 	_checkRtErr(err: any) {
-		if(err.substr(0, err.indexOf(':')) !== 'AbortError') {
-			this._updateStatus(Status.Error, err, ERR_RT_RETRY);
-			this.rtDownLoadTimer = setTimeout(this._getRealTime, ERR_RT_RETRY * 1000);
-		}
+		//DEBUG
+		console.log(`[CTRL] _checkRtErr(${err.name})`);
+
+		// AbortError can be ignored
+		// It's throwed when the controller manually abort the fetch request
+		if(err.name === 'AbortError') return;
+
+		let msg = err;
+		if(err.name === "SyntaxError")
+			msg = "Error: \"customclientraw.txt\" file not found! ";
+
+		this._updateStatus(Status.Error, msg);
+		//this.rtDownLoadTimer = setTimeout(this._getRealTime, ERR_RT_RETRY * 1000);
+
 	}
 
-	_processData = (rawData: RawData) => {
-		if(rawData.ver && +rawData.ver >= this.min_rt_ver) {
-			
-			let data = parseRawData(rawData);
-			
-			// *** CHECK IF STATION IS OFFLINE ***
-			let stationOffMsg = isStationOffline(data, this.config.stationTimeout, this.lang);
-			if(stationOffMsg !== null) {
-				this._updateStatus(Status.StationOffline);
-				data.forecast = stationOffMsg;
-			}
-			else if(+data.SensorContactLost === 1) {
-				this._updateStatus(Status.SensorContactLost);
-			} 
-			else if(this.status.type !== 'OK') {
-				this._updateStatus(Status.OK);
+	async _processData(rawData: RawData) {
+		//DEBUG
+		//console.log("[CTRL] _processData()");
+
+		let data = parseRawData(rawData);
+
+		if(this.status.type === StatusType.LOADING) {
+			let units = undefined;
+			if(this.config.useCookies && this.cookies) {
+				units = this.cookies.get('units');
 			}
 
-			if(this.status.type === 'OK') {
-				data.ledTitle = `${this.lang.led_title_ok}. ${this.lang.StatusLastUpdate}: ${data.date}`;
+			if(!units) {
+				units = {
+					temp: data.tempunit,
+					rain: data.rainunit,
+					press: data.pressunit,
+					wind: data.windunit,
+					windrun: getWindrunUnits(data.windunit),
+					cloud: data.cloudbaseunit
+				};
+
+				if(this.config.useCookies && this.cookies) {
+					let expireDate = new Date();
+					expireDate.setFullYear(expireDate.getFullYear() + 1);
+					this.cookies.set('units', units, { path: '/', expires: expireDate })
+				}
 			}
 
+			this._updateUnits(units);
 
-			if(data.dateFormat === "") data.dateFormat = 'y/m/d';
-			else data.dateFormat = data.dateFormat.replace('%', ''); //WD leaves a trailing % char from the tag
+			data.timerState = true;
+			this.firstRun = false;
+		}
+
+
+		
+		// *** CHECK IF STATION IS OFFLINE ***
+		let stationOffMsg = isStationOffline(data, this.config.stationTimeout, this.lang);
+		if(!stationOffMsg || !this.data) {
+			//TODO remove?
+			data.dateFormat = data.dateFormat.replace('%', ''); //WD leaves a trailing % char from the tag
 			
 
 			// mainpulate the last rain time into something more friendly
 			data.LastRained = parseLastRain(data, this.lang);
-	
+
 
 			// de-encode the forecast string if required (Cumulus support for extended characters)
-			data.forecast = stripHtml(data.forecast).trim();
-
 			
-			if (this.gauges.some(gauge => gauge === CloudBaseGauge.NAME) && data.cloudbasevalue === ERR_VAL ) {
-				// Some Wheather Programs (MeteoBridge? WeatherCat? VWS? WView?) do not provide a cloud base value, so we have to calculate it...
-				// It isn't clear which programs, there are many logic inconsistencies in the original gauges.js
-				// assume if the station uses an imperial wind speed they want cloud base in feet, otherwise metres
-				data.cloudbaseunit = (data.windunit === "mph" || data.windunit === "kts") ? "ft" : "m";
-				data.cloudbasevalue = calcCloudbase(data);
-			}
+			data.forecast = stationOffMsg ? stationOffMsg : stripHtml(data.forecast).trim();
 
 
 			/* *** EVENTUAL DATA CONVERSION *** */
-			if(this.firstRun) {
-				//TODO get user pref units from cookie
-
-				let units = undefined;;
-				if(this.config.useCookies && this.cookies) {
-					units = this.cookies.get('units');
-				}
-
-				if(!units) {
-					units = {
-						temp: data.tempunit,
-						rain: data.rainunit,
-						press: data.pressunit,
-						wind: data.windunit,
-						windrun: getWindrunUnits(data.windunit),
-						cloud: data.cloudbaseunit
-					};
-
-					if(this.config.useCookies && this.cookies) {
-						let expireDate = new Date();
-						expireDate.setFullYear(expireDate.getFullYear() + 1);
-						this.cookies.set('units', units, { path: '/', expires: expireDate })
-					}
-				}
-
-				this._updateUnits(units);
-
-				data.statusTimerStart = true;
-				this.firstRun = false;
-			}
 			
 			// Temperature data conversion for display required?
 			if (data.tempunit !== this.displayUnits.temp) {
@@ -354,102 +320,98 @@ export default class GaugesController {
 			}
 
 			if (data.cloudbaseunit !== this.displayUnits.cloud) {
-				// Cloud height needs converting
-				convCloudBaseData(data, this.displayUnits.cloud);
-				
+				convCloudBaseData(data, this.displayUnits.cloud); // Cloud height needs converting
 			}
 
-			data.statusTimerReset = this.config.realtimeInterval;
+			//data.timerReset = this.config.realtimeInterval;
 
-			//TODO remove
-			console.log(data);
+			if(stationOffMsg && this.status.type !== StatusType.WARNING) {
+				this._updateStatus(Status.Warning, this.lang.led_title_offline);
+			}
+			else if(this.status.type !== StatusType.OK) {
+				this._updateStatus(Status.OK);
+				data.ledTitle = `${this.lang.led_title_ok}. ${this.lang.StatusLastUpdate}: ${data.date}`;
+			}
+			else if(this.status.type === StatusType.OK) {
+				data.ledTitle = `${this.lang.led_title_ok}. ${this.lang.StatusLastUpdate}: ${data.date}`;
+			}
+
 			this.data = data;
-			this._updateData(data);
+		}
+		else if(stationOffMsg) {
+			this.data.forecast = stationOffMsg;
+			this.data.timerReset = true;
 
-			return true;
+			if(this.status.type !== StatusType.WARNING) {
+				this._updateStatus(Status.Warning, this.lang.led_title_offline);
+			}
 		}
-		else {
-			if(rawData.ver && +rawData.ver < this.min_rt_ver)
-				this._updateStatus(Status.FatalError, `Your ${this.config.realTimeUrl.substr(this.config.realTimeUrl.lastIndexOf('/') + 1)} file template needs updating!`);
-			else
-				this._updateStatus(Status.Error, this.lang.realtimeCorrupt);
-			return false;
+
+		/*
+		if(stationOffMsg) {
+			data.forecast = stationOffMsg;
+			data.timerReset = this.config.realtimeInterval;
 		}
+		else if(this.status.type !== StatusType.OK) {
+			this._updateStatus(Status.OK);
+		}
+
+		if(this.status.type === StatusType.OK) {
+			data.ledTitle = `${this.lang.led_title_ok}. ${this.lang.StatusLastUpdate}: ${data.date}`;
+		}*/
+
+		//data.timerReset = this.config.realtimeInterval;
+
+		//DEBUG
+		console.log("[CTRL] Data processed:");
+		console.log(this.data);
+
+		//this.data = data;
+		this._updateData(/*this.data*/);
 	}
 
 
 	/* *** Updates Pubblish *** */
-	_updateData = (data?: RtData) => {
-		if(data) this.data = data;
+	_updateData = (/*data: RtData*/) => {
+		//DEBUG
+		//console.log("[CTRL] _updateData()");
+
 		if(this.data) {
-			this.dataUpdate.forEach(upd => upd(this.data));
+			this.dataUpdate.forEach(fun => fun(this.data));
+			this.data.timerReset = false;
 		}
 	}
 
 	_updateUnits = (units: any) => {
+		//DEBUG
+		//console.log("[CTRL] _updateUnits()");
+
 		this.displayUnits = units;
 		this._updateData();
 	}
 
-	_updateStatus = (status: any, msg?: string, timer?: number) => {
-		switch(status.type) {
-			case StatusType.STATION_OFFLINE:
-				status.ledTitle = this.lang.led_title_offline;
-				//status.statusString = msg;
-				break;
-			case StatusType.SENSOR_CONTACT_LOST:
-				status.ledTitle = this.lang.led_title_lost;
-				status.statusString = this.lang.led_title_lost;
-				break;
-			case StatusType.TIMEOUT:
-				status.ledTitle = this.lang.StatusTimeout;
-				status.statusString = this.lang.StatusPageLimit;
-				clearTimeout(this.rtDownLoadTimer);
-				this.fetchController.abort();
-				break;
-			case StatusType.ERROR:
-				status.ledTitle = this.lang.led_title_unknown;
-				if(msg && msg !== "") status.statusString = msg;
-				if(timer) status.statusTimerReset = timer;
-				if(this.status.type === StatusType.LOADING) status.statusTimerStart = true;
-				break;
-			case StatusType.FATAL_ERROR:
-				status.ledTitle = this.lang.led_title_unknown;
-				if(msg && msg !== "") status.statusString = msg;
-				clearTimeout(this.rtDownLoadTimer);
-				this.fetchController.abort();
+	_updateStatus = (status: StatusDef, title?: string, msg?: string, timer?: number) => {
+		//DEBUG
+		console.log("[CTRL] _updateStatus()");
+
+		if(title) status.ledTitle = title;
+		if(msg) status.statusMsg = msg;
+		if(timer && status.timerState) status.timerReset = timer;
+
+		if(status.type === StatusType.ERROR) {
+			clearTimeout(this.rtDownLoadTimer);
+			this.fetchController.abort();
 		}
 
+		console.log(`[CTRL] Status Update: ${this.status.type} > ${status.type}`)
 		this.status = status;
 		this.statusUpdate.forEach(upd => upd(this.status));
 	}
 }
 
 
-
-const setControllerConfig = (conf: CustomConfig) => {
-	let ret: ControllerConfig = {
-		weatherProgram    : conf.weatherProgram,
-		dashboardMode     : (conf.dashboardMode !== undefined) ? conf.dashboardMode : CONTROLLER_CONFIG.dashboardMode,
-		realTimeUrl       : conf.realTimeUrl,
-		realtimeInterval  : conf.realtimeInterval ? conf.realtimeInterval : CONTROLLER_CONFIG.realtimeInterval,
-		graphUpdateTime   : conf.graphUpdateTime ? conf.graphUpdateTime : CONTROLLER_CONFIG.graphUpdateTime,
-		stationTimeout    : conf.stationTimeout ? conf.stationTimeout : CONTROLLER_CONFIG.stationTimeout,
-		pageUpdateLimit   : conf.pageUpdateLimit ? conf.pageUpdateLimit : CONTROLLER_CONFIG.pageUpdateLimit,
-		pageUpdatePswd    : conf.pageUpdatePswd ? conf.pageUpdatePswd : CONTROLLER_CONFIG.pageUpdatePswd,
-
-		showPopupData     : (conf.showPopupData !== undefined) ? conf.showPopupData : CONTROLLER_CONFIG.showPopupData,
-		showPopupGraphs   : (conf.showPopupGraphs !== undefined) ? conf.showPopupGraphs : CONTROLLER_CONFIG.showPopupGraphs,
-		mobileShowGraphs  : (conf.mobileShowGraphs !== undefined) ? conf.mobileShowGraphs : CONTROLLER_CONFIG.mobileShowGraphs, 
-		roundCloudbaseVal : (conf.roundCloudbaseVal !== undefined) ? conf.roundCloudbaseVal : CONTROLLER_CONFIG.roundCloudbaseVal,                   
-
-		useCookies        : (conf.useCookies !== undefined) ? conf.useCookies : CONTROLLER_CONFIG.useCookies,  
-	}
-	return ret;
-}
-
 const setGaugeConfigs = (conf: CustomConfig) => {
-	const def = GAUGE_CONFIG;
+	const def = GAUGE_DEF;
 	let gaugeConfig: GaugeConfig = {
 		minMaxArea          : conf.minMaxArea ? conf.minMaxArea : def.minMaxArea,
 		windAvgArea         : conf.windAvgArea ? conf.windAvgArea : def.windAvgArea,
@@ -457,11 +419,7 @@ const setGaugeConfigs = (conf: CustomConfig) => {
 		shadowColour        : conf.shadowColor ? conf.shadowColor : def.shadowColour,
 
 		gaugeScaling       : conf.gaugeScaling ? conf.gaugeScaling : def.gaugeScaling,
-		gaugeMobileScaling : conf.gaugeMobileScaling ? conf.gaugeMobileScaling : def.gaugeMobileScaling,
 		showGaugeShadow    : (conf.showGaugeShadow !== undefined) ? conf.showGaugeShadow : def.showGaugeShadow,
-
-		digitalFont     : (conf.digitalFont !== undefined) ? conf.digitalFont : def.digitalFont,
-		digitalForecast : (conf.digitalForecast !== undefined) ? conf.digitalForecast : def.digitalForecast,
 
 		frameDesign          : conf.frameDesign ? conf.frameDesign : def.frameDesign,
 		background           : conf.background ? conf.background : def.background,
@@ -495,6 +453,8 @@ const setGaugeConfigs = (conf: CustomConfig) => {
 		showRoseGaugeOdo   : (conf.showRoseGaugeOdo !== undefined) ? conf.showRoseGaugeOdo : def.showRoseGaugeOdo,
 		showRoseOnDirGauge : (conf.showRoseOnDirGauge !== undefined) ? conf.showRoseOnDirGauge : def.showRoseOnDirGauge,     
 
+		roundCloudbaseVal : (conf.roundCloudbaseVal !== undefined) ? conf.roundCloudbaseVal : def.roundCloudbaseVal,                   
+
 		tempScaleDefMinC      : def.tempScaleDefMinC,
 		tempScaleDefMaxC      : def.tempScaleDefMaxC,
 		tempScaleDefMinF      : def.tempScaleDefMinF,
@@ -522,7 +482,7 @@ const setGaugeConfigs = (conf: CustomConfig) => {
 	return gaugeConfig;
 }
 
-const setDisplayUnits = ({ tempUnit, rainUnit, pressUnit, windUnit, cloudUnit }: Partial<CustomConfig>) => {
+const setDisplayUnits = ({ tempUnit, rainUnit, pressUnit, windUnit, cloudUnit }: CustomConfig) => {
 	let customUnits: boolean = false;
 	if(tempUnit || rainUnit || pressUnit || windUnit || cloudUnit)
 		customUnits = true;

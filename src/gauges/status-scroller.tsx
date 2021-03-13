@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
-import GaugesController from '../controller/gauges_controller';
+import GaugesController from '../controller/controller';
 // @ts-ignore
 import { DisplaySingle } from "steelseries";
-import { RtData } from '../controller/data-types';
+import { RtData, StatusDef } from '../controller/types';
 
-//TODO docs
+
 class StatusScrollerGauge extends Component<Props, State> {
   static NAME = "STATUS_SCROLLER";
 
@@ -27,7 +27,7 @@ class StatusScrollerGauge extends Component<Props, State> {
       lcdColor         : props.controller.gaugeConfig.lcdColor,
       unitStringVisible: false,
       value            : this.state.value,
-      digitalFont      : props.controller.gaugeConfig.digitalForecast,
+      digitalFont      : false,
       valuesNumeric    : false,
       autoScroll       : true,
       alwaysScroll     : false
@@ -45,13 +45,12 @@ class StatusScrollerGauge extends Component<Props, State> {
   }
 
   async dataUpdate({ forecast }: RtData) {
-    if(forecast !== undefined)
-      this.setState({ value: forecast });
+    this.setState({ value: forecast });
   }
 
-  async statusUpdate({ statusString }: { statusString: string }) {
-    if(statusString !== undefined)
-      this.setState({ value: statusString });
+  async statusUpdate({ statusMsg }: StatusDef) {
+    if(statusMsg !== "")
+      this.setState({ value: statusMsg });
   }
 
   componentDidUpdate() {
