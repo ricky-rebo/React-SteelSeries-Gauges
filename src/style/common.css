@@ -21,6 +21,14 @@ body {
   position: relative;
 }
 
+.odo {
+  position: absolute;
+  top: 67%;
+  left: 50%;
+  transform: translateX(-50%);
+  -webkit-transform: translateX(-50%);
+}
+
 input[type='radio'] {
   width: 15px;
   height: auto;

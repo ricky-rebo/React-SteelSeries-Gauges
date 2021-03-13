@@ -142,10 +142,11 @@ class WindRoseGauge extends Component<CommonProps, State> {
 				this._drawEmptyGauge(this.buffers.ctxRoseCanvas);
 
 				if (this.showOdo && this.odoRef.current && this.odoParams) {
-					let top = Math.ceil(this.gaugeParams.size * 0.7 + roseCanvas.offsetTop);
+					/*let top = Math.ceil(this.gaugeParams.size * 0.7 + roseCanvas.offsetTop);
 					let left = Math.ceil((this.gaugeParams.size - this.odoParams.width) / 2 + roseCanvas.offsetLeft);
 					this.odoParams.style = `position: absolute; top: ${top}px; left: ${left}px`
-					this.odoRef.current.setAttribute('style', this.odoParams.style);
+					this.odoRef.current.setAttribute('style', this.odoParams.style);*/
+					this.odoRef.current.setAttribute("class", styles.odo);
 					
 					// Create the odometer
 					this.odoGauge = new Odometer(
