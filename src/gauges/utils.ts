@@ -143,38 +143,7 @@ export const createRainfallGradient = (metric: boolean) => {
 	);
 	return grad;
 }
-	
-/**
- * //TODO move in RainRate Gauge
- * Returns an array of section highlights for the Rain Rate gauge.
- * Assumes 'standard' descriptive limits from UK met office:
- *  < 0.25 mm/hr - Very light rain
- *  0.25mm/hr to 1.0mm/hr - Light rain
- *  1.0 mm/hr to 4.0 mm/hr - Moderate rain
- *  4.0 mm/hr to 16.0 mm/hr - Heavy rain
- *  16.0 mm/hr to 50 mm/hr - Very heavy rain
- *  > 50.0 mm/hour - Extreme rain
 
-	* Roughly translated to the corresponding Inch rates
-	*  < 0.001
-	*  0.001 to 0.05
-	*  0.05 to 0.20
-	*  0.20 to 0.60
-	*  0.60 to 2.0
-	*  > 2.0
-* @param metric 
-*/      
-export const createRainRateSections = (metric: boolean) => {
-	var factor = metric ? 1 : 1 / 25;
-	return [
-		Section(0, 0.25 * factor, 'rgba(0, 140, 0, 0.5)'),
-		Section(0.25 * factor, 1 * factor, 'rgba(80, 192, 80, 0.5)'),
-		Section(1 * factor, 4 * factor, 'rgba(150, 203, 150, 0.5)'),
-		Section(4 * factor, 16 * factor, 'rgba(212, 203, 109, 0.5)'),
-		Section(16 * factor, 50 * factor, 'rgba(225, 155, 105, 0.5)'),
-		Section(50 * factor, 1000 * factor, 'rgba(245, 86, 59, 0.5)')
-	];
-}
 
 
 /**
