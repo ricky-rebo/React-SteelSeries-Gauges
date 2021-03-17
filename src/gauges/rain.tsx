@@ -1,18 +1,21 @@
 import React, { Component } from 'react';
 // @ts-ignore
-import { RadialBargraph, LabelNumberFormat, ColorDef } from "steelseries";
+import { RadialBargraph, LabelNumberFormat, ColorDef, gradientWrapper, rgbaColor, Section } from "steelseries";
 import styles from '../style/common.css';
 import { RainUnit, RtData } from '../controller/types.js';
-import { createRainfallGradient, createRainfallSections, gaugeShadow, nextHighest } from './utils.js';
-import { CommonProps } from './types';
+import { gaugeShadow, nextHighest } from './utils.js';
+import { CommonProps, RGBAColor } from './types';
+import { getCommonParams, LABEL_FORMAT, RainScaleDef, RAIN_USE_GRADIENT_COLOR, RAIN_USE_SECTION_COLOR, SHADOW_COLOR, SHOW_GAUGE_SHADOW } from './defaults';
 
 
 class RainGauge extends Component<CommonProps, State> {
 	static NAME = "RAIN_GAUGE";
 
 	canvasRef: React.RefObject<HTMLCanvasElement>;
-	gauge: any;
-	params: any;
+	gauge: RadialBargraph;
+
+	config: Config;
+
 	style: React.CSSProperties;
 
 	constructor(props: CommonProps) {
@@ -20,37 +23,62 @@ class RainGauge extends Component<CommonProps, State> {
 
 			this.canvasRef = React.createRef();
 
+			this.config = {
+				scaleDef: RainScaleDef,
+				useGradient: RAIN_USE_GRADIENT_COLOR,
+				useSections: RAIN_USE_GRADIENT_COLOR ? false : RAIN_USE_SECTION_COLOR,
+				labelFormat: LABEL_FORMAT,
+				showGaugeShadow: SHOW_GAUGE_SHADOW,
+				shadowColor: SHADOW_COLOR
+			}
+
 			let { rain } = props.controller.getDisplayUnits();
-			let { rainScaleDefMaxmm, rainScaleDefMaxIn, rainUseGradientColors: rainUseGradientColours, rainUseSectionColors: rainUseSectionColours, labelFormat } = props.controller.gaugeConfig;
 			this.state = {
-					maxValue: (rain === "mm") ? rainScaleDefMaxmm : rainScaleDefMaxIn,
+					maxValue: (rain === "mm")
+						? this.config.scaleDef.Max_mm
+						: this.config.scaleDef.Max_In,
 					value: 0.0001,
 					title: props.controller.lang.rain_title,
 
 					displayUnit: rain,
 					lcdDecimals: (rain === "mm") ? 1 : 2,
-					scaleDecimals: (rain === "mm") ? 1 : (rainScaleDefMaxIn < 1 ? 2 : 1),
+					scaleDecimals: (rain === "mm")
+						? 1
+						: (this.config.scaleDef.Max_In < 1 ? 2 : 1),
 					labelNumberFormat: (rain === "mm")
-						? labelFormat
+						? this.config.labelFormat
 						: LabelNumberFormat.FRACTIONAL,
-					sections: rainUseGradientColours
+					grandient: this.config.useGradient
 						? createRainfallGradient(rain === "mm")
 						: null,
-					grandient: rainUseSectionColours
+					sections: this.config.useSections
 						? createRainfallSections(rain === "mm")
 						: []
 					
 					//popUpTxt: '',
-					//graph: '',
 			}
 
-			this.params = {
-				...this.props.controller.commonParams,
-				size: Math.ceil(this.props.size * this.props.controller.gaugeConfig.gaugeScaling),
+			
+
+			this.style = this.config.showGaugeShadow
+				? gaugeShadow(this.props.size, this.config.shadowColor)
+				: {};
+
+			this.update = this.update.bind(this);
+
+			this.props.controller.subscribe(RainGauge.NAME, this.update);
+	}
+
+	componentDidMount() {
+		if(this.canvasRef.current) {
+			this.gauge = new RadialBargraph(this.canvasRef.current, {
+				...getCommonParams(),
+				
+				size: this.props.size,
 				titleString: this.state.title,
 				thresholdVisible: false,
-				useValueGradient: rainUseGradientColours,
-				useSectionColors: rainUseSectionColours,
+				useValueGradient: this.config.useGradient,
+				useSectionColors: this.config.useSections,
 				niceScale: false,
 
 				maxValue: this.state.maxValue,
@@ -61,20 +89,7 @@ class RainGauge extends Component<CommonProps, State> {
 				section: this.state.sections,
 				labelNumberFormat: this.state.labelNumberFormat,
 				fractionalScaleDecimals: this.state.scaleDecimals,
-			};
-
-			this.style = this.props.controller.gaugeConfig.showGaugeShadow
-				? gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
-				: {};
-
-			this.update = this.update.bind(this);
-
-			this.props.controller.subscribe(RainGauge.NAME, this.update);
-	}
-
-	componentDidMount() {
-		if(this.canvasRef.current) {
-			this.gauge = new RadialBargraph(this.canvasRef.current, this.params);
+			});
 			this.gauge.setValue(this.state.value);
 		}
 	}
@@ -83,34 +98,30 @@ class RainGauge extends Component<CommonProps, State> {
 		let newState: any = {};
 
 		if(rainunit !== this.state.displayUnit) {
-			let { rainScaleDefMaxIn, rainUseGradientColors: rainUseGradientColours, rainUseSectionColors: rainUseSectionColours, labelFormat } = this.props.controller.gaugeConfig;
 			newState.displayUnit = rainunit;
 			newState.lcdDecimals = (rainunit === "mm") ? 1 : 2,
-			newState.scaleDecimals = (rainunit === "mm") ? 1 : (rainScaleDefMaxIn < 1 ? 2 : 1),
+			newState.scaleDecimals = (rainunit === "mm")
+				? 1
+				: (this.config.scaleDef.Max_In < 1 ? 2 : 1),
 			newState.labelNumberFormat = (rainunit === "mm")
-				? labelFormat
+				? this.config.labelFormat
 				: LabelNumberFormat.FRACTIONAL,
-			newState.sections = rainUseGradientColours
+			newState.sections = this.config.useGradient
 				? createRainfallGradient(rainunit === "mm")
 				: null,
-			newState.grandient = rainUseSectionColours
+			newState.grandient = this.config.useSections
 				? createRainfallSections(rainunit === "mm")
 				: []
 		}
 
 		newState.value = rfall;
 		if (rainunit === "mm") { // 10, 20, 30...
-			newState.maxValue = Math.max(nextHighest(newState.value, 10), this.props.controller.gaugeConfig.rainScaleDefMaxmm);
+			newState.maxValue = Math.max(nextHighest(newState.value, 10), this.config.scaleDef.Max_mm);
 		}
 		else {
 			// inches 0.5, 1.0, 2.0, 3.0 ... 10.0, 12.0, 14.0
-			if (newState.value <= 1) {
-				newState.maxValue = Math.max(nextHighest(newState.value, 0.5), this.props.controller.gaugeConfig.rainScaleDefMaxIn);
-			} else if (newState.value <= 6) {
-				newState.maxValue = Math.max(nextHighest(newState.value, 1), this.props.controller.gaugeConfig.rainScaleDefMaxIn);
-			} else {
-				newState.maxValue = Math.max(nextHighest(newState.value, 2), this.props.controller.gaugeConfig.rainScaleDefMaxIn);
-			}
+			let step = (newState.value <= 1) ? 0.5 : (newState.value <= 6) ? 1 : 2;
+			newState.maxValue = Math.max(nextHighest(newState.value, step), this.config.scaleDef.Max_In);
 			newState.scaleDecimals = newState.maxValue < 1 ? 2 : 1;
 		}
 
@@ -128,7 +139,6 @@ class RainGauge extends Component<CommonProps, State> {
 		}
 
 		if (this.state.maxValue !== this.gauge.getMaxValue()) {
-			// Gauge scale is too low, increase it.
 			this.gauge.setValue(0);
 			this.gauge.setFractionalScaleDecimals(this.state.scaleDecimals);
 			this.gauge.setMaxValue(this.state.maxValue);
@@ -144,8 +154,8 @@ class RainGauge extends Component<CommonProps, State> {
 			<div className={styles.gauge}>
 				<canvas 
 					ref={this.canvasRef}
-					width={this.params.size}
-					height={this.params.size}
+					width={this.props.size}
+					height={this.props.size}
 					style={this.style}
 				></canvas>
 				<div>
@@ -155,6 +165,16 @@ class RainGauge extends Component<CommonProps, State> {
 			</div>
 		);
 	}
+}
+
+
+interface Config {
+	scaleDef: typeof RainScaleDef,
+	useGradient: boolean,
+	useSections: boolean,
+	labelFormat: LabelNumberFormat,
+	showGaugeShadow: boolean,
+	shadowColor: RGBAColor
 }
 
 interface State {
@@ -167,11 +187,51 @@ interface State {
 		lcdDecimals: number,
 		scaleDecimals: number,
 		labelNumberFormat: LabelNumberFormat,
-		sections: any,
-		grandient: any
+		sections: Section[],
+		grandient: gradientWrapper|null
 
 		//popUpTxt?: string,
-		//graph?: string
 }
+
+
+/**
+ * Returns an array of section highlights for total rainfall in mm or inches
+ * @param metric 
+ */
+ export const createRainfallSections = (metric: boolean) => {
+	var factor = metric ? 1 : 1 / 25;
+	return [
+		Section(0, 5 * factor, 'rgba(0, 250, 0, 1)'),
+		Section(5 * factor, 10 * factor, 'rgba(0, 250, 117, 1)'),
+		Section(10 * factor, 25 * factor, 'rgba(218, 246, 0, 1)'),
+		Section(25 * factor, 40 * factor, 'rgba(250, 186, 0, 1)'),
+		Section(40 * factor, 50 * factor, 'rgba(250, 95, 0, 1)'),
+		Section(50 * factor, 65 * factor, 'rgba(250, 0, 0, 1)'),
+		Section(65 * factor, 75 * factor, 'rgba(250, 6, 80, 1)'),
+		Section(75 * factor, 100 * factor, 'rgba(205, 18, 158, 1)'),
+		Section(100 * factor, 125 * factor, 'rgba(0, 0, 250, 1)'),
+		Section(125 * factor, 500 * factor, 'rgba(0, 219, 212, 1)')
+	];
+}
+
+/**
+ * Returns an array of SS colours for continuous gradient colouring of the total rainfall LED gauge
+ * @param metric 
+ */
+export const createRainfallGradient = (metric: boolean) => {
+	var grad = new gradientWrapper(
+		0,
+		(metric ? 100 : 4),
+		[0, 0.1, 0.62, 1],
+		[
+			new rgbaColor(15, 148, 0, 1),
+			new rgbaColor(213, 213, 0, 1),
+			new rgbaColor(213, 0, 25, 1),
+			new rgbaColor(250, 0, 0, 1)
+		]
+	);
+	return grad;
+}
+
 
 export default RainGauge;

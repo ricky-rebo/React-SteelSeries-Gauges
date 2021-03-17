@@ -104,49 +104,6 @@ export const getMaxTemp = (deflt: number, { tempTH, apptempTH, heatindexTH, humi
 
 
 /**
- * //TODO move in Rain Gauge
- * Returns an array of section highlights for total rainfall in mm or inches
- * @param metric 
- */
-export const createRainfallSections = (metric: boolean) => {
-	var factor = metric ? 1 : 1 / 25;
-	return [
-		Section(0, 5 * factor, 'rgba(0, 250, 0, 1)'),
-		Section(5 * factor, 10 * factor, 'rgba(0, 250, 117, 1)'),
-		Section(10 * factor, 25 * factor, 'rgba(218, 246, 0, 1)'),
-		Section(25 * factor, 40 * factor, 'rgba(250, 186, 0, 1)'),
-		Section(40 * factor, 50 * factor, 'rgba(250, 95, 0, 1)'),
-		Section(50 * factor, 65 * factor, 'rgba(250, 0, 0, 1)'),
-		Section(65 * factor, 75 * factor, 'rgba(250, 6, 80, 1)'),
-		Section(75 * factor, 100 * factor, 'rgba(205, 18, 158, 1)'),
-		Section(100 * factor, 125 * factor, 'rgba(0, 0, 250, 1)'),
-		Section(125 * factor, 500 * factor, 'rgba(0, 219, 212, 1)')
-	];
-}
-
-/**
- * //TODO move in Rain Gauge
- * Returns an array of SS colours for continuous gradient colouring of the total rainfall LED gauge
- * @param metric 
- */
-export const createRainfallGradient = (metric: boolean) => {
-	var grad = new gradientWrapper(
-		0,
-		(metric ? 100 : 4),
-		[0, 0.1, 0.62, 1],
-		[
-			new rgbaColor(15, 148, 0, 1),
-			new rgbaColor(213, 213, 0, 1),
-			new rgbaColor(213, 0, 25, 1),
-			new rgbaColor(250, 0, 0, 1)
-		]
-	);
-	return grad;
-}
-
-
-
-/**
  * Create a shadow effect for the gauge using CSS
  * @param size The size of the gauge
  * @param color The color of the shadow (specified in the controller's config)
