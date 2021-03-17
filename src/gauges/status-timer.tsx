@@ -1,39 +1,36 @@
 import React, { Component } from 'react';
 import GaugesController from '../controller/controller';
 // @ts-ignore
-import { DisplaySingle } from "steelseries";
+import { DisplaySingle, LcdColor } from "steelseries";
 import { RtData, StatusDef } from '../controller/types';
+import { LCD_COLOR } from './defaults';
 
 
 class StatusTimerGauge extends Component<Props, State> {
   static NAME = "STATUS_TIMER";
 
   canvasRef: React.RefObject<HTMLCanvasElement>;
-  params: any;
-  gauge: any;
+  gauge: DisplaySingle;
+
+  config: Config;
 
   tickTockInterval: NodeJS.Timeout|undefined;
-  lastUpdate = "";
-  resetValue: number;
 
   constructor(props: Props) {
     super(props);
 
     this.canvasRef = React.createRef();
 
-    this.state = { count: 0 }
-
-    this.params = {
-      width            : props.width,
-      height           : props.height ? props.height : 25,
-      lcdColor         : props.controller.gaugeConfig.lcdColor,
-      lcdDecimals      : 0,
-      unitString       : props.controller.lang.timer,
-      unitStringVisible: true,
-      value            : this.state.count
+    this.config = {
+      width: props.width,
+      height: props.height ? props.height : 25,
+      lcdColor: LCD_COLOR,
+      resetValue: props.controller.config.realtimeInterval
     }
 
-    this.resetValue = props.controller.config.realtimeInterval;
+    this.state = {
+      count: 0
+    }
 
     this.update = this.update.bind(this);
     this.statusUpdate = this.statusUpdate.bind(this);
@@ -43,13 +40,21 @@ class StatusTimerGauge extends Component<Props, State> {
 
   componentDidMount() {
     if(this.canvasRef) {
-      this.gauge = new DisplaySingle(this.canvasRef.current, this.params);
+      this.gauge = new DisplaySingle(this.canvasRef.current, {
+        width            : this.config.width,
+        height           : this.config.height,
+        lcdColor         : this.config.lcdColor,
+        lcdDecimals      : 0,
+        unitString       : this.props.controller.lang.timer,
+        unitStringVisible: true,
+        value            : this.state.count
+      });
     }
   }
 
   async update({ timerReset }: RtData) {
     if(timerReset) {
-      this.setState({ count: this.resetValue });
+      this.setState({ count: this.config.resetValue });
     }
   }
 
@@ -68,13 +73,7 @@ class StatusTimerGauge extends Component<Props, State> {
   }
 
   _tick() {
-    //if(this.state.count > 0) {
-      this.setState({ count: (this.state.count - 1) });
-    /*}
-    else if(this.tickTockInterval) {
-      clearInterval(this.tickTockInterval);
-      this.tickTockInterval = undefined;
-    }*/
+    this.setState({ count: (this.state.count - 1) });
   }
 
   componentDidUpdate() {
@@ -87,18 +86,26 @@ class StatusTimerGauge extends Component<Props, State> {
     return (
       <canvas
         ref={this.canvasRef}
-        width={this.params.width}
-        height={this.params.height}
+        width={this.config.width}
+        height={this.config.height}
       ></canvas>
     )
   }
 }
 
+
 interface Props {
   controller: GaugesController,
   width: number,
   height?: number
-};
+}
+
+interface Config {
+  width: number,
+  height: number,
+  lcdColor: LcdColor,
+  resetValue: number
+}
 
 interface State {
   count: number

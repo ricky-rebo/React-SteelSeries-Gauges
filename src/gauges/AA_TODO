@@ -13,3 +13,5 @@
 -> rain-rate.tsx OK
 -> rain.tsx OK
 -> solar.tsx OK
+-> status-scroller.tsx OK
+-> status-timer.tsx OK

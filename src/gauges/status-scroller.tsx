@@ -1,36 +1,32 @@
 import React, { Component } from 'react';
 import GaugesController from '../controller/controller';
 // @ts-ignore
-import { DisplaySingle } from "steelseries";
+import { DisplaySingle, LcdColor } from "steelseries";
 import { RtData, StatusDef } from '../controller/types';
+import { LCD_COLOR } from './defaults';
 
 
 class StatusScrollerGauge extends Component<Props, State> {
   static NAME = "STATUS_SCROLLER";
 
   canvasRef: React.RefObject<HTMLCanvasElement>;
-  gauge: any;
-  params: any;
+  gauge: DisplaySingle;
+
+  config: Config;
 
   constructor(props: Props) {
     super(props);
 
     this.canvasRef = React.createRef();
 
-    this.state = {
-      value: props.controller.lang.statusStr
+    this.config = {
+      lcdColor: LCD_COLOR,
+      width: props.width,
+      height: props.height ? props.height : 25
     }
 
-    this.params = {
-      width            : props.width,
-      height           : props.height ? props.height : 25,
-      lcdColor         : props.controller.gaugeConfig.lcdColor,
-      unitStringVisible: false,
-      value            : this.state.value,
-      digitalFont      : false,
-      valuesNumeric    : false,
-      autoScroll       : true,
-      alwaysScroll     : false
+    this.state = {
+      value: props.controller.lang.statusStr
     }
 
     this.dataUpdate = this.dataUpdate.bind(this);
@@ -40,7 +36,17 @@ class StatusScrollerGauge extends Component<Props, State> {
 
   componentDidMount() {
     if(this.canvasRef.current) {
-      this.gauge = new DisplaySingle(this.canvasRef.current, this.params);
+      this.gauge = new DisplaySingle(this.canvasRef.current, {
+        width            : this.props.width,
+        height           : this.props.height ? this.props.height : 25,
+        lcdColor         : this.config.lcdColor,
+        unitStringVisible: false,
+        value            : this.state.value,
+        digitalFont      : false,
+        valuesNumeric    : false,
+        autoScroll       : true,
+        alwaysScroll     : false
+      });
     }
   }
 
@@ -62,18 +68,25 @@ class StatusScrollerGauge extends Component<Props, State> {
     return (
       <canvas
         ref={this.canvasRef}
-        width={this.params.width}
-        height={this.params.height}
+        width={this.config.width}
+        height={this.config.height}
       ></canvas>
     )
   }
 }
+
 
 interface Props {
   controller: GaugesController,
   width: number,
   height?: number
 };
+
+interface Config {
+  lcdColor: LcdColor,
+  width: number,
+  height: number
+}
 
 interface State {
   value: string
