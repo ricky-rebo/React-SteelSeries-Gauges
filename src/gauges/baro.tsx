@@ -85,7 +85,7 @@ class BaroGauge extends Component<CommonProps, State> {
 				...getCommonParams(),
 				
 				size: this.props.size,
-				sections: this.state.sections,
+				section: this.state.sections,
 				area: this.state.areas,
 				minValue: this.state.minValue,
 				maxValue: this.state.maxValue,
@@ -193,7 +193,6 @@ class BaroGauge extends Component<CommonProps, State> {
 			if(this.config.showTrend)
 				this.gauge.setTrend(this.state.trend);
 
-			
 			this.gauge.setArea(this.state.areas);
 			this.gauge.setSection(this.state.sections);
 			this.gauge.setValueAnimated(this.state.value);

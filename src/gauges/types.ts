@@ -30,7 +30,7 @@ export interface GaugeParams {
 	pointerColor           : ColorDef,
 	knobType               : KnobType,
 	knobStyle              : KnobStyle,
-	lcdColor               : ColorDef,
+	lcdColor               : LcdColor,
 	lcdDecimals            : number,
 	digitalFont            : boolean,
 	tickLabelOrientation   : TickLabelOrientation,
