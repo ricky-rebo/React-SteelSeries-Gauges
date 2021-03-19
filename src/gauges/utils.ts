@@ -5,6 +5,47 @@ import { LocalDataDef as TempData } from './temp';
 import { LocalDataDef as DewData } from './dew';
 
 /**
+ * Returns the lowest temperature today for gauge scaling
+ * @param deflt 
+ * @param data 
+ */
+export const getMinTemp = (deflt: number, { tempTL, dewpointTL, apptempTL, wchillTL }: RtData|TempData|DewData) => {
+	tempTL = tempTL ? tempTL : deflt;
+	dewpointTL = dewpointTL ? dewpointTL : deflt;
+	apptempTL = apptempTL ? apptempTL : deflt;
+	wchillTL = wchillTL ? wchillTL : deflt;
+	return Math.min(tempTL, dewpointTL, apptempTL, wchillTL);
+}
+
+/**
+ * Returns the highest temperature today for gauge scaling
+ * @param deflt 
+ * @param data 
+ */
+export const getMaxTemp = (deflt: number, { tempTH, apptempTH, heatindexTH, humidex }: RtData|TempData|DewData) => {
+	tempTH = tempTH ? tempTH : deflt;
+	apptempTH = apptempTH ? apptempTH : deflt;
+	heatindexTH = heatindexTH ? heatindexTH : deflt;
+	humidex = humidex ? humidex : deflt;
+	return Math.max(tempTH, apptempTH, heatindexTH, humidex);
+}
+
+/**
+ * Returns the next highest number in the step sequence
+ * @param value 
+ * @param step 
+ */
+export const nextHighest = (value: number, step: number) => (value == 0 ? step : Math.ceil(value / step) * step)
+
+/**
+ * Returns the next lowest number in the step sequence
+ * @param value 
+ * @param step 
+ */
+export const nextLowest = (value: number, step: number) => (value == 0 ? -step : Math.floor(value / step) * step)
+
+
+/**
  * Creates an array of gauge sections appropriate for Celsius or Fahrenheit scales
  * @param useCelsius True id you're using Celsius, False otherwise
  */
@@ -51,34 +92,6 @@ export const createTempSections = (useCelsius: boolean) => {
 	}
 }
 
-
-/**
- * Returns the lowest temperature today for gauge scaling
- * @param deflt 
- * @param data 
- */
-export const getMinTemp = (deflt: number, { tempTL, dewpointTL, apptempTL, wchillTL }: RtData|TempData|DewData) => {
-	tempTL = tempTL ? tempTL : deflt;
-	dewpointTL = dewpointTL ? dewpointTL : deflt;
-	apptempTL = apptempTL ? apptempTL : deflt;
-	wchillTL = wchillTL ? wchillTL : deflt;
-	return Math.min(tempTL, dewpointTL, apptempTL, wchillTL);
-}
-
-/**
- * Returns the highest temperature today for gauge scaling
- * @param deflt 
- * @param data 
- */
-export const getMaxTemp = (deflt: number, { tempTH, apptempTH, heatindexTH, humidex }: RtData|TempData|DewData) => {
-	tempTH = tempTH ? tempTH : deflt;
-	apptempTH = apptempTH ? apptempTH : deflt;
-	heatindexTH = heatindexTH ? heatindexTH : deflt;
-	humidex = humidex ? humidex : deflt;
-	return Math.max(tempTH, apptempTH, heatindexTH, humidex);
-}
-
-
 /**
  * Create a shadow effect for the gauge using CSS
  * @param size The size of the gauge
@@ -91,43 +104,3 @@ export const gaugeShadow = (size: number, color: string) => {
 		borderRadius: Math.floor(size / 2) + 'px'
 	};
 }
-
-
-
-/**
- * //TODO move in WindDir Gauge
- * @param startCol 
- * @param endCol 
- * @param fraction 
- */
-export const gradient = (startCol : string, endCol : string, fraction :number) => {
-	var redOrigin, grnOrigin, bluOrigin,
-			gradientSizeRed, gradientSizeGrn, gradientSizeBlu;
-
-	redOrigin = parseInt(startCol.substr(0, 2), 16);
-	grnOrigin = parseInt(startCol.substr(2, 2), 16);
-	bluOrigin = parseInt(startCol.substr(4, 2), 16);
-
-	gradientSizeRed = parseInt(endCol.substr(0, 2), 16)  - redOrigin; // Graduation Size Red
-	gradientSizeGrn = parseInt(endCol.substr(2, 2), 16)  - grnOrigin;
-	gradientSizeBlu = parseInt(endCol.substr(4, 2), 16)  - bluOrigin;
-
-	return (redOrigin + (gradientSizeRed * fraction)).toFixed(0) + ',' +
-		(grnOrigin + (gradientSizeGrn * fraction)).toFixed(0) + ',' +
-		(bluOrigin + (gradientSizeBlu * fraction)).toFixed(0);
-}
-
-
-/**
- * Returns the next highest number in the step sequence
- * @param value 
- * @param step 
- */
-export const nextHighest = (value: number, step: number) => (value == 0 ? step : Math.ceil(value / step) * step)
-
-/**
- * Returns the next lowest number in the step sequence
- * @param value 
- * @param step 
- */
-export const nextLowest = (value: number, step: number) => (value == 0 ? -step : Math.floor(value / step) * step)

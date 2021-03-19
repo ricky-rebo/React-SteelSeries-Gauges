@@ -5,6 +5,10 @@
 
 - FUTURE -> implementare custom config tramite props?
 
+- FUTURE -> sistemare iface LocalDataDef in Dew e Hum
+
+- FUTURE -> rimuovere ObjectRef e usare id per gauge
+
 -> baro.tsx OK
 -> cloudbase.tsx OK
 -> dew.tsx OK
@@ -16,3 +20,4 @@
 -> status-scroller.tsx OK
 -> status-timer.tsx OK
 -> temp.tsx OK
+-> uv.tsx OK

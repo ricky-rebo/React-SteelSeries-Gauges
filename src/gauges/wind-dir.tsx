@@ -1,48 +1,51 @@
 import React, { Component } from 'react';
 // @ts-ignore
-import { WindDirection, Section } from "steelseries";
+import { WindDirection, Section, PointerType, ColorDef, rgbaColor } from "steelseries";
 import styles from '../style/common.css';
-import { gaugeShadow, gradient } from './utils.js';
+import { gaugeShadow } from './utils.js';
 import { RtData } from '../controller/types.js';
-import { CommonProps } from './types';
+import { CommonProps, RGBAColor } from './types';
+import { DIR_AVG_POINTER, DIR_AVG_POINTER_COLOR, getCommonParams, MIN_MAX_AREA_COLOR, POINTER, SHADOW_COLOR, SHOW_GAUGE_SHADOW, SHOW_ROSE_ON_DIR, SHOW_WIND_METAR, SHOW_WIND_VARIATION, WIND_VAR_SECTION_COLOR } from './defaults';
 
 
 class WindDirGauge extends Component<CommonProps, State> {
 	static NAME = "WINDDIR_GAUGE";
 	
 	canvasRef: React.RefObject<HTMLCanvasElement>;
-	gauge: any;
-	params: any;
+	gauge: WindDirection;
+
+	config: Config;
+
 	style: React.CSSProperties;
 
 	constructor(props: CommonProps) {
 		super(props);
 
 		this.canvasRef = React.createRef();
+
+		this.config = {
+			dirLstPointer: POINTER,
+			dirAvgPointer: DIR_AVG_POINTER,
+			dirAvgPointerColor: DIR_AVG_POINTER_COLOR,
+			showWindVariation: SHOW_WIND_VARIATION,
+			variationSectorColor: WIND_VAR_SECTION_COLOR,
+			minMaxAreaColor: MIN_MAX_AREA_COLOR,
+			showRoseOnDirGauge: SHOW_ROSE_ON_DIR,
+			showWindMetar: SHOW_WIND_METAR,
+			showGaugeShadow: SHOW_GAUGE_SHADOW,
+			shadowColor: SHADOW_COLOR
+		};
 	
 		this.state = {
 			valueLatest: 0,
 			valueAverage: 0,
-			VRB:'',
-			area:[],
-			section:[]
+			VRB: '',
+			area: [],
+			section: []
 		};
 
-		this.params = {
-			...this.props.controller.commonParams,
-			size: Math.ceil(this.props.size * this.props.controller.gaugeConfig.gaugeScaling),
-			lcdtitleStrings: [this.props.controller.lang.latest_web, this.props.controller.lang.tenminavg_web],
-			pointerTypeLatest: this.props.controller.gaugeConfig.pointer, 
-			pointerTypeAverage:this.props.controller.gaugeConfig.dirAvgPointer,
-			pointerColorAverage:this.props.controller.gaugeConfig.dirAvgPointerColor,
-			degreeScale: true,
-			pointSymbols: this.props.controller.lang.compass,
-			roseVisible: false,
-			useColorLabels: false, 
-		};
-
-		this.style = this.props.controller.gaugeConfig.showGaugeShadow
-			? gaugeShadow(this.params.size, this.props.controller.gaugeConfig.shadowColour)
+		this.style = this.config.showGaugeShadow
+			? gaugeShadow(this.props.size, this.config.shadowColor)
 			: {};
 
 		this.update = this.update.bind(this);
@@ -52,7 +55,19 @@ class WindDirGauge extends Component<CommonProps, State> {
 
 	componentDidMount() {
 		if(this.canvasRef.current) {
-			this.gauge = new WindDirection(this.canvasRef.current, this.params);
+			this.gauge = new WindDirection(this.canvasRef.current, {
+				...getCommonParams(),
+	
+				size: this.props.size,
+				lcdtitleStrings: [this.props.controller.lang.latest_web, this.props.controller.lang.tenminavg_web],
+				pointerTypeLatest: this.config.dirLstPointer, 
+				pointerTypeAverage: this.config.dirAvgPointer,
+				pointerColorAverage: this.config.dirAvgPointerColor,
+				degreeScale: true,
+				pointSymbols: this.props.controller.lang.compass,
+				roseVisible: false,
+				useColorLabels: false, 
+			});
 			this.gauge.setValueAverage(this.state.valueAverage);
 			this.gauge.setValueLatest(this.state.valueLatest)
 		}
@@ -70,7 +85,7 @@ class WindDirGauge extends Component<CommonProps, State> {
 			newState.valueLatest = 0;
 		}
 
-		if(this.props.controller.gaugeConfig.showWindVariation) {
+		if(this.config.showWindVariation) {
 			let windSpd = wspeed;
 			let windGst = wgust;
 			let avgKnots: number, gstKnots: number;
@@ -99,7 +114,7 @@ class WindDirGauge extends Component<CommonProps, State> {
 			avgKnots = Math.round(avgKnots);
 			gstKnots = Math.round(gstKnots);
 
-			if(this.props.controller.gaugeConfig.showWindMetar) {
+			if(this.config.showWindMetar) {
 				newState.VRB = ` - METAR: ${('0'+avgbearing).slice(-3)}${('0' + avgKnots).slice(-2)}G${('0' + gstKnots).slice(-2)}KT`;
 			}
 			else{
@@ -107,24 +122,24 @@ class WindDirGauge extends Component<CommonProps, State> {
 			}
 
 			if(windSpd > 0) {
-				//FIXME code redundancy?
-				if(avgKnots < 3) { // Europe uses 3kts, USA 6kts as the threshold
-					if(this.props.controller.gaugeConfig.showRoseOnDirGauge) {
-						newState.section = [Section(bearingFrom, bearingTo, this.props.controller.gaugeConfig.windVariationSector)];
+				/*if(avgKnots < 3) { // Europe uses 3kts, USA 6kts as the threshold
+					if(this.config.showRoseOnDirGauge) {
+						newState.section = [Section(bearingFrom, bearingTo, this.config.variationSectorColor)];
 					}
 					else {
-						newState.area = [Section(bearingFrom, bearingTo, this.props.controller.gaugeConfig.minMaxArea)];
+						newState.area = [Section(bearingFrom, bearingTo, this.config.minMaxAreaColor)];
 					}
 				}
-				else if (this.props.controller.gaugeConfig.showRoseOnDirGauge) {
-					newState.section = [Section(bearingFrom, bearingTo, this.props.controller.gaugeConfig.windVariationSector)];
+				else*/ 
+				if (this.config.showRoseOnDirGauge) {
+					newState.section = [Section(bearingFrom, bearingTo, this.config.variationSectorColor)];
 				}
 				else {
-					newState.area = [Section(bearingFrom, bearingTo, this.props.controller.gaugeConfig.minMaxArea)];
+					newState.area = [Section(bearingFrom, bearingTo, this.config.minMaxAreaColor)];
 				}
 
-				let range = (bearingTo < bearingFrom ? (360 + bearingTo) : bearingTo) - (bearingFrom);
-				if(this.props.controller.gaugeConfig.showWindMetar) {
+				if(this.config.showWindMetar) {
+					let range = (bearingTo < bearingFrom ? (360 + bearingTo) : bearingTo) - (bearingFrom);
 					if((range>0 && range<60) || range === 0 && bearingFrom === newState.valueAverage)
 						newState.VRB += ' STDY';
 					else if(newState.avgKnots < 3) {
@@ -137,12 +152,12 @@ class WindDirGauge extends Component<CommonProps, State> {
 			}
 			else {
 				// Zero wind speed, calm
-				if(this.props.controller.gaugeConfig.showWindMetar){
+				if(this.config.showWindMetar){
 					newState.VRB = ' - METAR: 00000KT';
 				}
 				
 				newState.section = [];
-				if(!this.props.controller.gaugeConfig.showRoseOnDirGauge) {
+				if(!this.config.showRoseOnDirGauge) {
 					newState.area = [];
 				}
 			}
@@ -151,7 +166,7 @@ class WindDirGauge extends Component<CommonProps, State> {
 			newState.VRB = '';
 		}
 
-		if(this.props.controller.gaugeConfig.showRoseOnDirGauge && WindRoseData){
+		if(this.config.showRoseOnDirGauge && WindRoseData){
 			let rosepoints = WindRoseData.length;
 			let roseSectionAngle = 360/rosepoints;
 			let roseAreas = [];
@@ -178,7 +193,7 @@ class WindDirGauge extends Component<CommonProps, State> {
 
 	componentDidUpdate() {
 		this.gauge.setArea(this.state.area);
-		if(this.props.controller.gaugeConfig.showRoseOnDirGauge) {
+		if(this.config.showRoseOnDirGauge) {
 			this.gauge.setSection(this.state.section);
 		}
 
@@ -191,8 +206,8 @@ class WindDirGauge extends Component<CommonProps, State> {
 			<div className={styles.gauge}>
 				<canvas 
 					ref={this.canvasRef}
-					width={this.params.size}
-					height={this.params.size}
+					width={this.props.size}
+					height={this.props.size}
 					style={this.style}
 				></canvas>
 			</div>
@@ -200,12 +215,49 @@ class WindDirGauge extends Component<CommonProps, State> {
 	}
 }
 
+
+interface Config {
+	dirLstPointer: PointerType,
+	dirAvgPointer: PointerType,
+	dirAvgPointerColor: ColorDef,
+	showWindVariation: boolean,
+	variationSectorColor: RGBAColor,
+	minMaxAreaColor: RGBAColor,
+	showRoseOnDirGauge: boolean,
+	showWindMetar: boolean,
+	showGaugeShadow: boolean,
+	shadowColor: RGBAColor
+}
+
 interface State {
 	valueLatest: number,
 	valueAverage: number,
 	VRB: string,
-	section:[],
-	area:[],
+	section: Section[],
+	area: Section[],
+}
+
+
+/**
+ * @param startCol 
+ * @param endCol 
+ * @param fraction 
+ */
+ export const gradient = (startCol : string, endCol : string, fraction :number) => {
+	var redOrigin, grnOrigin, bluOrigin,
+			gradientSizeRed, gradientSizeGrn, gradientSizeBlu;
+
+	redOrigin = parseInt(startCol.substr(0, 2), 16);
+	grnOrigin = parseInt(startCol.substr(2, 2), 16);
+	bluOrigin = parseInt(startCol.substr(4, 2), 16);
+
+	gradientSizeRed = parseInt(endCol.substr(0, 2), 16)  - redOrigin; // Graduation Size Red
+	gradientSizeGrn = parseInt(endCol.substr(2, 2), 16)  - grnOrigin;
+	gradientSizeBlu = parseInt(endCol.substr(4, 2), 16)  - bluOrigin;
+
+	return (redOrigin + (gradientSizeRed * fraction)).toFixed(0) + ',' +
+		(grnOrigin + (gradientSizeGrn * fraction)).toFixed(0) + ',' +
+		(bluOrigin + (gradientSizeBlu * fraction)).toFixed(0);
 }
 
 export default WindDirGauge;
