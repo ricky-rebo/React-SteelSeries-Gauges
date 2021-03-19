@@ -4,8 +4,8 @@ import { Radial, TrendState, Section, Trendstate } from "steelseries";
 import styles from '../style/common.css';
 import Cookies from 'universal-cookie/es6';
 import { InOutType, CommonProps, RGBAColor } from './types';
-import { gaugeShadow, getMinTemp, getMaxTemp } from './utils.js';
-import { Lang, RtData, TempUnit } from '../controller/types.js';
+import { gaugeShadow, getMinTemp, getMaxTemp, createTempSections } from './utils';
+import { Lang, RtData, TempUnit } from '../controller/types';
 import { getCommonParams, MIN_MAX_AREA_COLOR, SHADOW_COLOR, SHOW_GAUGE_SHADOW, SHOW_TEMP_INDOOR, SHOW_TEMP_TREND, TempScaleDef } from './defaults';
 
 const COOKIE_NAME = 'temp-display';
@@ -282,54 +282,6 @@ function mapLocalData(data: RtData): LocalDataDef {
 }
 
 /**
- * //TODO move in Temp Gauge
- * Creates an array of gauge sections appropriate for Celsius or Fahrenheit scales
- * @param useCelsius True id you're using Celsius, False otherwise
- */
-function createTempSections (useCelsius: boolean) {
-	if (useCelsius) {
-		return [
-			Section(-100, -35, 'rgba(195, 92, 211, 0.4)'),
-			Section(-35, -30, 'rgba(139, 74, 197, 0.4)'),
-			Section(-30, -25, 'rgba(98, 65, 188, 0.4)'),
-			Section(-25, -20, 'rgba(62, 66, 185, 0.4)'),
-			Section(-20, -15, 'rgba(42, 84, 194, 0.4)'),
-			Section(-15, -10, 'rgba(25, 112, 210, 0.4)'),
-			Section(-10, -5, 'rgba(9, 150, 224, 0.4)'),
-			Section(-5, 0, 'rgba(2, 170, 209, 0.4)'),
-			Section(0, 5, 'rgba(0, 162, 145, 0.4)'),
-			Section(5, 10, 'rgba(0, 158, 122, 0.4)'),
-			Section(10, 15, 'rgba(54, 177, 56, 0.4)'),
-			Section(15, 20, 'rgba(111, 202, 56, 0.4)'),
-			Section(20, 25, 'rgba(248, 233, 45, 0.4)'),
-			Section(25, 30, 'rgba(253, 142, 42, 0.4)'),
-			Section(30, 40, 'rgba(236, 45, 45, 0.4)'),
-			Section(40, 100, 'rgba(245, 109, 205, 0.4)')
-		];
-	} else {
-		return [
-			Section(-200, -30, 'rgba(195, 92, 211, 0.4)'),
-			Section(-30, -25, 'rgba(139, 74, 197, 0.4)'),
-			Section(-25, -15, 'rgba(98, 65, 188, 0.4)'),
-			Section(-15, -5, 'rgba(62, 66, 185, 0.4)'),
-			Section(-5, 5, 'rgba(42, 84, 194, 0.4)'),
-			Section(5, 15, 'rgba(25, 112, 210, 0.4)'),
-			Section(15, 25, 'rgba(9, 150, 224, 0.4)'),
-			Section(25, 32, 'rgba(2, 170, 209, 0.4)'),
-			Section(32, 40, 'rgba(0, 162, 145, 0.4)'),
-			Section(40, 50, 'rgba(0, 158, 122, 0.4)'),
-			Section(50, 60, 'rgba(54, 177, 56, 0.4)'),
-			Section(60, 70, 'rgba(111, 202, 56, 0.4)'),
-			Section(70, 80, 'rgba(248, 233, 45, 0.4)'),
-			Section(80, 90, 'rgba(253, 142, 42, 0.4)'),
-			Section(90, 110, 'rgba(236, 45, 45, 0.4)'),
-			Section(110, 200, 'rgba(245, 109, 205, 0.4)')
-		];
-	}
-}
-
-/**
- * //TODO move in Temp Gauge
  * Converts a temperature trend value into a localised string, or +1, 0, -1 depending on the value of bTxt
  * @param trend 
  * @param units 

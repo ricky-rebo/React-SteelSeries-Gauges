@@ -1,14 +1,14 @@
 // @ts-ignore
 import { Section, TrendState, gradientWrapper, rgbaColor } from "steelseries";
-import { RtData, TempUnit } from '../controller/types';
+import { RtData } from '../controller/types';
 import { LocalDataDef as TempData } from './temp';
 import { LocalDataDef as DewData } from './dew';
 
 /**
- * //TODO move in Temp Gauge
  * Creates an array of gauge sections appropriate for Celsius or Fahrenheit scales
  * @param useCelsius True id you're using Celsius, False otherwise
  */
+//Used by Temp and Dew gauges
 export const createTempSections = (useCelsius: boolean) => {
 	if (useCelsius) {
 		return [
@@ -49,30 +49,6 @@ export const createTempSections = (useCelsius: boolean) => {
 			Section(110, 200, 'rgba(245, 109, 205, 0.4)')
 		];
 	}
-}
-
-/**
- * //TODO move in Temp Gauge
- * Converts a temperature trend value into a localised string, or +1, 0, -1 depending on the value of bTxt
- * @param trend 
- * @param units 
- * @param bTxt 
- * @param strings 
- */
-export const tempTrend = (trend: number, units: TempUnit, strings?: any) => {
-	// Scale is over 3 hours, in Celsius
-	var val = trend * 3 * (units === "°C" ? 1 : (5 / 9));
-			
-	if (trend === -9999) 	return (strings ? '--' : TrendState.OFF);
-	else if (val > 5) 		return (strings ? strings.RisingVeryRapidly : TrendState.UP);
-	else if (val > 3)			return (strings ? strings.RisingQuickly : TrendState.UP);
-	else if (val > 1) 		return (strings ? strings.Rising : TrendState.UP);
-	else if (val > 0.5) 	return (strings ? strings.RisingSlowly : TrendState.UP);
-	else if (val >= -0.5) return (strings ? strings.Steady : TrendState.STEADY);
-	else if (val >= -1) 	return (strings ? strings.FallingSlowly : TrendState.DOWN);
-	else if (val >= -3) 	return (strings ? strings.Falling : TrendState.DOWN);
-	else if (val >= -5) 	return (strings ? strings.FallingQuickly : TrendState.DOWN);
-	else									return (strings ? strings.FallingVeryRapidly : TrendState.DOWN);
 }
 
 
