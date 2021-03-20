@@ -2,8 +2,6 @@
 
 - implementare custom config tramite props?
 
-- sistemare iface LocalDataDef in Dew e Hum
-
 - rimuovere ObjectRef e usare id per gauge
 
 - ricreare Gauge Obj se props.size cambia

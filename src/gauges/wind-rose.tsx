@@ -96,16 +96,15 @@ class WindRoseGauge extends Component<CommonProps, State> {
 		}
 	}
 
-	async update({ WindRoseData, windrun }: RtData) {
+	async update({ WindRoseData, windrun, windrununit }: RtData) {
 		if(WindRoseData) {
 			let newState: any = {
 				roseData: WindRoseData,
 				odoValue: windrun
 			}
 
-			let { windrun: windrunUnit } = this.props.controller.getDisplayUnits();
-			if(this.state.odoUnit !== windrunUnit) {
-				newState.odoUnit = windrunUnit;
+			if(this.state.odoUnit !== windrununit) {
+				newState.odoUnit = windrununit;
 			}
 
 			this.setState(newState);

@@ -15,7 +15,6 @@ class BaroGauge extends Component<CommonProps, State> {
 
 	config: Config;
 
-	//params: any;
 	style: React.CSSProperties;
 
 	constructor(props: CommonProps) {
@@ -224,8 +223,8 @@ interface State {
 	value: number,
 	minValue: number,
 	maxValue: number,
-	sections: { start: number, stop: number, color: any}[],
-	areas: { start: number, stop: number, color: any}[],
+	sections: Section[],
+	areas: Section[],
 	trend: TrendState,
 
 	displayUnit: PressUnit,

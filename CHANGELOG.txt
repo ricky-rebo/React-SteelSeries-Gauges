@@ -7,17 +7,17 @@ Diffs from MASTER branch
 
 - Fixed controller Status
 	- defined a standard structure for all statuses
-	- now we only have 
+	- no ledBlink bool flag, ledState now has three states: "on" | "blink" | "off"
+	- now we only have:
 		- Loading (initial state)
 		- OK
 		- Warning (station offline)
-		- Error (file not found, controller timeout, generical error) -> HERE the controller STOPS all his works
-	- More work on Status planned (see /controller/AA_TODO)
+		- Error (file not found, controller timeout, generical error) -> HERE the controller STOPS
 
 
 - Fixed 'RtData' interface:
 	- Only WD data structure, no optional attributes (based on customclientrawlocat.txt v14)
-	- Modified even customclientrawlocal.txt template, now provide directly nbumerical values,
+	- Modified even customclientrawlocal.txt template, now provide directly numerical values,
 		no string to number conversion needed
 
 
@@ -29,8 +29,8 @@ Diffs from MASTER branch
 	- gauge/gauge_types.ts 					-> gauges/types.ts
 
 
-- Moved all config related to gauge style and format away from the controller [ONGOING] (see gauges/AA_TODO)
-	- All gauge default configs moved in gauges/defaults.ts [DONE]
+- Moved all config related to gauge style and format away from the controller
+	- All gauge default configs moved in gauges/defaults.ts
 	- Removed various configs, including 'gaugeScaling' -> now gauge use directly 'props.size'
 	- Removed 'params' container from gauges, now it is created and passed directly in 'componendDidMount()'
 		when the gauge is created
@@ -39,8 +39,7 @@ Diffs from MASTER branch
 		(maybe in future implement the possibility to use custom configs via props?)
 
 
-- Specific utility functions, used by a single gauge, moved within the gauge .tsx file itself [ONGOING]
+- Specific utility functions, used by a single gauge, moved within the gauge .tsx file itself
 
 
 - Fixed various types in gauges
-	

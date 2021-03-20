@@ -44,7 +44,7 @@ class LedGauge extends Component<Props, State> {
 			this.setState({ title: ledTitle });
 	}
 
-	async statusUpdate({ ledTitle, ledColor, ledBlink, ledState }: StatusDef) {
+	async statusUpdate({ ledTitle, ledColor, ledState }: StatusDef) {
 		let newState: any = {};
 
 		if(ledTitle !== "")
@@ -52,10 +52,10 @@ class LedGauge extends Component<Props, State> {
 		
 		newState.color = ledColor;
 
-		newState.blink = ledBlink;
+		newState.blink = (ledState==="blink");
 		
-		if(!ledBlink)
-			newState.isOn = ledState;
+		//if(!newState.blink)
+			newState.isOn = (ledState==="on");
 		
 		this.setState(newState);
 	}
@@ -68,11 +68,10 @@ class LedGauge extends Component<Props, State> {
 			if(prevState.color !== this.state.color)
 				this.gauge.setLedColor(this.state.color);
 
-			if(prevState.isOn !== this.state.isOn)
-				this.gauge.setLedOnOff(this.state.isOn);
-			
-			if(prevState.blink !== this.state.blink)
+			//if(prevState.blink !== this.state.blink)
 				this.gauge.blink(this.state.blink);
+			//else if(prevState.isOn !== this.state.isOn)
+				this.gauge.setLedOnOff(this.state.isOn)
 		}
 	}
 
@@ -94,7 +93,7 @@ interface Props {
 
 interface State {
 	title: string,
-	color: any,
+	color: LedColor,
 	isOn: boolean,
 	blink: boolean
 }

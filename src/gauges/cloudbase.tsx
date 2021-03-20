@@ -16,7 +16,6 @@ class CloudBaseGauge extends Component<CommonProps, State> {
 
 	config: Config;
 
-	//params: any;
 	style: React.CSSProperties;
 
 	constructor(props: CommonProps) {
@@ -159,7 +158,7 @@ class CloudBaseGauge extends Component<CommonProps, State> {
 
 interface State {
 	value: number,
-	sections: any[],
+	sections: Section[],
 	maxValue: number,
 	displayUnit: string
 	//popUpTxt: string,

@@ -164,22 +164,22 @@ class TempGauge extends Component<CommonProps, State> {
 		let lowScale = getMinTemp(minValue, data);
 		let highScale = getMaxTemp(maxValue, data);
 		let scaleStep = data.tempunit === "°C" ? 10 : 20;
-		while (lowScale < newState.minValue) {
+		while (lowScale < minValue) {
 			minValue -= scaleStep;
-			if (highScale <= newState.maxValue - scaleStep) {
+			if (highScale <= maxValue - scaleStep) {
 				maxValue -= scaleStep;
 			}
 		}
 		
-		while (highScale > newState.maxValue) {
+		while (highScale > maxValue) {
 			maxValue += scaleStep;
-			if (newState.minValue >= newState.minValue + scaleStep) {
-				minValue += scaleStep;
+			if (minValue >= minValue + scaleStep) {
+				minValue += scaleStep; 
 			}
 		}
 
-		if(minValue < this.state.minValue) newState.minValue = minValue;
-		if(maxValue > this.state.maxValue) newState.maxValue = maxValue;
+		newState.minValue = minValue;
+		newState.maxValue = maxValue;
 		
 		this.setState(newState);
 	}

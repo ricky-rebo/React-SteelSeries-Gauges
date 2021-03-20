@@ -4,8 +4,8 @@ import StatusTimerGauge from '../gauges/status-timer';
 
 import Cookies from 'universal-cookie/es6';
 
-import { ControllerConfig, CustomConfig, DisplayUnits, GaugeConfig, Lang, RawData, RtData, StatusDef, StatusType } from './types';
-import { CONTROLLER_DEF, GAUGE_DEF, DISPLAY_UNITS, Status } from './defaults';
+import { ControllerConfig, CustomConfig, DisplayUnits, /*GaugeConfig,*/ Lang, RawData, RtData, StatusDef, StatusType } from './types';
+import { CONTROLLER_DEF/*, GAUGE_DEF*/, DISPLAY_UNITS, Status } from './defaults';
 import { convBaroData, convCloudBaseData, convRainData, convTempData, convWindData, getWindrunUnits, isStationOffline, parseLastRain, parseRawData } from './utils';
 
 const MIN_SCHEME_VER = 14;
@@ -14,8 +14,8 @@ const COOKIE_NAME = 'units';
 export default class GaugesController {
 	lang: Lang;
 	config: ControllerConfig;
-	gaugeConfig: GaugeConfig;
-	commonParams: any;
+	//gaugeConfig: GaugeConfig;
+	//commonParams: any;
 
 	fetchController: AbortController;
 	status: StatusDef = Status.Loading;
@@ -40,8 +40,6 @@ export default class GaugesController {
 			useCookies        : (config.useCookies !== undefined) ? config.useCookies : CONTROLLER_DEF.useCookies,  
 		}
 
-		this.gaugeConfig = setGaugeConfigs(config);
-
 		if(this.config.useCookies) {
 			this.cookies = new Cookies();
 			let units = this.cookies.get(COOKIE_NAME);
@@ -58,29 +56,6 @@ export default class GaugesController {
 		}
 
 		this.lang = lang;
-
-
-		// Common parameters for all the SteelSeries gauges
-		//TODO remove
-		this.commonParams = {
-				fullScaleDeflectionTime: 4,             // Bigger numbers (seconds) slow the gauge pointer movements more
-				gaugeType              : this.gaugeConfig.gaugeType,
-				minValue               : 0,
-				niceScale              : true,
-				ledVisible             : false,
-				frameDesign            : this.gaugeConfig.frameDesign,
-				backgroundColor        : this.gaugeConfig.background,
-				foregroundType         : this.gaugeConfig.foreground,
-				pointerType            : this.gaugeConfig.pointer,
-				pointerColor           : this.gaugeConfig.pointerColor,
-				knobType               : this.gaugeConfig.knob,
-				knobStyle              : this.gaugeConfig.knobStyle,
-				lcdColor               : this.gaugeConfig.lcdColor,
-				lcdDecimals            : 1,
-				digitalFont            : false,
-				tickLabelOrientation   : this.gaugeConfig.tickLabelOrientation,
-				labelNumberFormat      : this.gaugeConfig.labelFormat
-		}
 
 		this.fetchController = new AbortController();
 
@@ -110,6 +85,7 @@ export default class GaugesController {
 		}
 
 		this._getRealTime();
+		//DEBUG setTimeout(() => this._getRealTime(), 2000);
 
 		if(this.config.pageUpdateLimit > 0) {
 			setTimeout(
@@ -399,6 +375,7 @@ export default class GaugesController {
 		if(timer && status.timerState) status.timerReset = timer;
 
 		if(status.type === StatusType.ERROR) {
+			//TODO use this.stop()?
 			clearTimeout(this.rtDownLoadTimer);
 			this.fetchController.abort();
 		}
@@ -409,7 +386,7 @@ export default class GaugesController {
 	}
 }
 
-
+/*
 const setGaugeConfigs = (conf: CustomConfig) => {
 	const def = GAUGE_DEF;
 	let gaugeConfig: GaugeConfig = {
@@ -480,7 +457,7 @@ const setGaugeConfigs = (conf: CustomConfig) => {
 		cloudScaleDefMaxm     : def.cloudScaleDefMaxm
 	};
 	return gaugeConfig;
-}
+}*/
 
 const setDisplayUnits = ({ tempUnit, rainUnit, pressUnit, windUnit, cloudUnit }: CustomConfig) => {
 	let customUnits: boolean = false;

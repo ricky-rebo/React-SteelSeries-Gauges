@@ -19,7 +19,6 @@ class HumGauge extends Component<CommonProps, State> {
 
 	config: Config;
 
-	//params: any;
 	style: React.CSSProperties;
 	cookies: Cookie;
 
@@ -175,12 +174,11 @@ interface State {
 
 	value: number,
 	title: string,
-	areas: any[],
+	areas: Section[],
 
 	selected: InOutType,
 
-	//popUpTxt: string,
-	//graph: string
+	//popUpTxt: string
 }
 
 interface Config {
@@ -191,14 +189,7 @@ interface Config {
 	shadowColor: RGBAColor
 }
 
-interface LocalDataDef {
-	hum: number, 
-	humTL: number,
-	humTH: number,
-	inhum: number,
-	inhumTL: number,
-	inhumTH: number
-}
+type LocalDataDef = Pick<RtData, "hum"|"humTL"|"humTH"|"inhum"|"inhumTL"|"inhumTH">
 
 
 function mapLocalData(data: RtData) {

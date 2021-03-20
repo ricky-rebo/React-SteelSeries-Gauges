@@ -115,6 +115,7 @@ export const parseRawData = (raw: RawData): RtData => {
 
 		tempunit: parseTempunit(raw.tempunit),
 		windunit: parseWindunit(raw.windunit),
+		windrununit: getWindrunUnits(parseWindunit(raw.windunit)),
 		pressunit: parsePressunit(raw.pressunit),
 		rainunit: parseRainunit(raw.rainunit),
 		cloudbaseunit: parseCloudunit(raw.cloudbaseunit),
@@ -303,6 +304,7 @@ export const convWindData = function (data: RtData, to: WindUnit) {
 	data.wlatest = toFunc1(fromFunc1(data.wlatest), 1);
 	data.wspeed = toFunc1(fromFunc1(data.wspeed), 1);
 	data.windunit = to;
+	data.windrununit = getWindrunUnits(to);
 }
 
 /**

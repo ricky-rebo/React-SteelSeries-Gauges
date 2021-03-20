@@ -173,10 +173,10 @@ interface State {
 		maxValue: number,
 
 		displayUnit: string,
-		sections: any,
+		sections: Section[],
 		lcdDecimals: number,
 		scaleDecimals: number,
-		labelNumberFormat: any
+		labelNumberFormat: LabelNumberFormat
 
 		//popUpTxt?: string
 }

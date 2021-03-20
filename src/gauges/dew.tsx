@@ -19,7 +19,6 @@ class DewGauge extends Component<CommonProps, State> {
 
 	config: Config;
 
-	//params: any;
 	style: React.CSSProperties;
 	cookies: Cookies;
 
@@ -286,8 +285,8 @@ interface State {
 	minMeasuredVisible: boolean,
 	maxMeasuredVisible: boolean,
 
-	sections: any[],
-	areas: any[],
+	sections: Section[],
+	areas: Section[],
 
 	//popUpTxt: string
 }
@@ -302,23 +301,7 @@ interface Config {
 	shadowColor: RGBAColor
 }
 
-
-export interface LocalDataDef {
-	tempunit: TempUnit,
-	tempTL: number,
-	tempTH: number
-	dew: number,
-	dewpointTL: number,
-	dewpointTH: number,
-	apptemp: number,
-	apptempTL: number,
-	apptempTH: number,
-	wchill: number,
-	wchillTL: number,
-	heatindex: number,
-	heatindexTH: number,
-	humidex: number
-}
+type LocalDataDef = Pick<RtData, "tempunit"|"tempTL"|"tempTH"|"dew"|"dewpointTL"|"dewpointTH"|"apptemp"|"apptempTL"|"apptempTH"|"wchill"|"wchillTL"|"heatindex"|"heatindexTH"|"humidex">;
 
 
 function getTitle(sel: string, lang: Lang) {
