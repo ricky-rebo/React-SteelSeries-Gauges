@@ -1,19 +1,13 @@
 import React, { Component } from 'react';
 // @ts-ignore
-import { drawFrame, drawForeground, drawBackground, Odometer } from "steelseries";
+import { drawFrame, drawForeground, drawBackground, Odometer, FrameDesign, BackgroundColor, ForegroundType } from "steelseries";
 // @ts-ignore
 import RGraph from '../libs/RGraph.rose.js';
 import styles from '../style/common.css';
-import { gaugeShadow } from './utils.js';
-import { RtData, WindrunUnit } from '../controller/types.js';
-import { CommonProps } from './types.js';
-
-function createCanvas(size: number) {
-	let canvas = document.createElement('canvas');
-	canvas.width = size;
-	canvas.height = size;
-	return canvas;
-}
+import { gaugeShadow } from './utils';
+import { RtData, WindrunUnit } from '../controller/types';
+import { CommonProps, RGBAColor } from './types';
+import { BACKGROUND, FOREGROUND, FRAME_DESIGN, SHADOW_COLOR, SHOW_GAUGE_SHADOW, SHOW_ODO_ROSE_GAUGE } from './defaults';
 
 
 class WindRoseGauge extends Component<CommonProps, State> {
@@ -22,28 +16,14 @@ class WindRoseGauge extends Component<CommonProps, State> {
 	canvasRef: React.RefObject<HTMLCanvasElement>;
 	odoRef: React.RefObject<HTMLCanvasElement>;
 	plotRef: React.RefObject<HTMLCanvasElement>;
-	buffers: any;
 
-	gaugeParams: {
-		size: number,
-		size2: number,
-		plotSize: number,
-		plotSize2: number,
-		titleString: string,
-		compassStrings: string[],
+	config: Config;
 
-		style?: React.CSSProperties
-	};
+	buffer: RoseBuffer;
 
-	showOdo: boolean;
-	odoParams: {
-		odoDigits: number,
+	odoGauge: Odometer;
 
-		width: number,
-		height: number,
-		style?: string
-	}
-	odoGauge: any;
+	style: React.CSSProperties;
 		
 	constructor(props: CommonProps) {
 		super(props);
@@ -51,40 +31,39 @@ class WindRoseGauge extends Component<CommonProps, State> {
 		this.canvasRef = React.createRef();
 		this.plotRef = React.createRef();
 
+		let odoH = Math.ceil(this.props.size * 0.08); // Sets the size of the odometer
+		this.config = {
+			showGaugeShadow: SHOW_GAUGE_SHADOW,
+			shadowColor: SHADOW_COLOR,
+
+			size: props.size,
+			plotSize: Math.floor(props.size * 0.68),
+			title: props.controller.lang.windrose,
+			compass: props.controller.lang.compass,
+			frameDesign: FRAME_DESIGN,
+			bgColor: BACKGROUND,
+			fgType: FOREGROUND,
+
+			showOdo: SHOW_ODO_ROSE_GAUGE,
+			odoDigits: 5,
+			odoH: odoH,
+			odoW: Math.ceil(Math.floor(odoH * 0.68) * 5)  // 0.68 = 'Magic' number, do not alter // 5 = number of digits
+		}
+
 		let { windrun } = props.controller.getDisplayUnits();
 		this.state = {
-			WindRoseData: [],
+			roseData: [],
 			odoValue: 0,
 			odoUnit: props.controller.lang[windrun]
 		}
 
-		let size = Math.ceil(props.size * props.controller.gaugeConfig.gaugeScaling)
-		this.gaugeParams = {
-			size: size,
-			size2: size / 2,
-			plotSize: Math.floor(size * 0.68),
-			plotSize2: Math.floor(size * 0.68) / 2,
-
-			compassStrings: props.controller.lang.compass,
-			titleString: props.controller.lang.windrose
-		}
-		this.gaugeParams.style = props.controller.gaugeConfig.showGaugeShadow
-			? gaugeShadow(this.gaugeParams.size, props.controller.gaugeConfig.shadowColour)
+		this.style = this.config.showGaugeShadow
+			? gaugeShadow(this.config.size, this.config.shadowColor)
 			: {}
 
-		
-		this.showOdo = props.controller.gaugeConfig.showRoseGaugeOdo;
-		let digits = 5,	h = Math.ceil(this.gaugeParams.size * 0.08); // Sets the size of the odometer
-		this.odoParams = {
-			odoDigits:  digits,
-			height: h,
-			width: Math.ceil(Math.floor(h * 0.68) * digits)  // 'Magic' number, do not alter
-		}
-		if(this.showOdo) {
+		if(this.config.showOdo) {
 			this.odoRef = React.createRef();
 		}
-
-		this.buffers = {};
 
 		this.update = this.update.bind(this);
 		this.props.controller.subscribe(WindRoseGauge.NAME, this.update);
@@ -92,67 +71,24 @@ class WindRoseGauge extends Component<CommonProps, State> {
 
 	componentDidMount() {
 		let roseCanvas = this.canvasRef.current;
-		let rosePlot = this.plotRef.current;
-		if(roseCanvas && rosePlot) {
-			//this.buffers.plot = rosePlot;
-			this.buffers.ctxRoseCanvas = roseCanvas.getContext('2d');
-			this.buffers.ctxPlot = rosePlot.getContext('2d');
-
-			// Create a steelseries gauge frame
-			this.buffers.frame = createCanvas(this.gaugeParams.size);
-			this.buffers.ctxFrame = this.buffers.frame.getContext('2d');
-			drawFrame(
-				this.buffers.ctxFrame,
-				this.props.controller.gaugeConfig.frameDesign,
-				this.gaugeParams.size2,
-				this.gaugeParams.size2,
-				this.gaugeParams.size,
-				this.gaugeParams.size
-			);
-
-			// Create a steelseries gauge background
-			this.buffers.background = createCanvas(this.gaugeParams.size);
-			this.buffers.ctxBackground = this.buffers.background.getContext('2d');
-			drawBackground(
-				this.buffers.ctxBackground,
-				this.props.controller.gaugeConfig.background,
-				this.gaugeParams.size2,
-				this.gaugeParams.size2,
-				this.gaugeParams.size,
-				this.gaugeParams.size
-			);
-
-			// Add the compass points
-			this._drawCompassPoints(this.buffers.ctxBackground, this.gaugeParams.size);
-
-			// Create a steelseries gauge foreground
-			this.buffers.foreground = createCanvas(this.gaugeParams.size);
-			this.buffers.ctxForeground = this.buffers.foreground.getContext('2d');
-			drawForeground(
-				this.buffers.ctxForeground,
-				this.props.controller.gaugeConfig.foreground,
-				this.gaugeParams.size,
-				this.gaugeParams.size,
-				false
-			);
-
+		let plotCanvas = this.plotRef.current;
+		if(roseCanvas && plotCanvas) {
+			this.buffer = initBuffers(roseCanvas, this.config, plotCanvas);
 			
-			if(this.buffers.ctxRoseCanvas) {
+			if(this.buffer.roseCtx) {
 				// Render an empty gauge, looks better than just the shadow background and odometer ;)
-				this._drawEmptyGauge(this.buffers.ctxRoseCanvas);
+				drawGaugeBase(
+					this.buffer.roseCtx,
+					this.buffer.frameCanvas,
+					this.buffer.bgCanvas,
+					this.buffer.fgCanvas
+				)
 
-				if (this.showOdo && this.odoRef.current && this.odoParams) {
-					/*let top = Math.ceil(this.gaugeParams.size * 0.7 + roseCanvas.offsetTop);
-					let left = Math.ceil((this.gaugeParams.size - this.odoParams.width) / 2 + roseCanvas.offsetLeft);
-					this.odoParams.style = `position: absolute; top: ${top}px; left: ${left}px`
-					this.odoRef.current.setAttribute('style', this.odoParams.style);*/
-					this.odoRef.current.setAttribute("class", styles.odo);
-					
-					// Create the odometer
+				if (this.config.showOdo && this.odoRef.current) {
 					this.odoGauge = new Odometer(
 						this.odoRef.current, {
-							height  : this.odoParams.height,
-							digits  : this.odoParams.odoDigits - 1,
+							height  : this.config.odoH,
+							digits  : this.config.odoDigits - 1,
 							decimals: 1
 					});
 				}
@@ -163,7 +99,7 @@ class WindRoseGauge extends Component<CommonProps, State> {
 	async update({ WindRoseData, windrun }: RtData) {
 		if(WindRoseData) {
 			let newState: any = {
-				WindRoseData: WindRoseData,
+				roseData: WindRoseData,
 				odoValue: windrun
 			}
 
@@ -177,47 +113,32 @@ class WindRoseGauge extends Component<CommonProps, State> {
 	}
 
 	componentDidUpdate(_prevProps: CommonProps, prevState: State) {
-		if(this.canvasRef.current && this.plotRef.current) {
+		if(this.canvasRef.current && this.plotRef.current && this.buffer.roseCtx && this.buffer.plotCtx) {
 			// Clear the gauge
-			this.buffers.ctxRoseCanvas.clearRect(0, 0, this.gaugeParams.size, this.gaugeParams.size);
-			this.buffers.ctxPlot.clearRect(0, 0, this.gaugeParams.plotSize, this.gaugeParams.plotSize);
+			this.buffer.roseCtx.clearRect(0, 0, this.config.size, this.config.size);
+			this.buffer.plotCtx.clearRect(0, 0, this.config.plotSize, this.config.plotSize);
 
 			//Redraw the empty gauge
-			this._drawEmptyGauge(this.buffers.ctxRoseCanvas);
+			drawGaugeBase(
+				this.buffer.roseCtx,
+				this.buffer.frameCanvas,
+				this.buffer.bgCanvas,
+				this.buffer.fgCanvas
+			)
 
-			// Create a new rose plot
-			let rose = new RGraph.Rose(this.plotRef.current, this.state.WindRoseData);
-			rose.Set('chart.strokestyle', 'black');
-			rose.Set('chart.background.axes.color', 'gray');
-			rose.Set('chart.colors.alpha', 0.5);
-			rose.Set('chart.colors', ['Gradient(#408040:red:#7070A0)']);
-			rose.Set('chart.margin', Math.ceil(40 / this.state.WindRoseData.length));
-
-			rose.Set('chart.title', this.gaugeParams.titleString);
-			rose.Set('chart.title.size', Math.ceil(0.05 * this.gaugeParams.plotSize));
-			rose.Set('chart.title.bold', false);
-			rose.Set('chart.title.color', this.props.controller.gaugeConfig.background.labelColor.getRgbColor());
-			rose.Set('chart.gutter.top', 0.2 * this.gaugeParams.plotSize);
-			rose.Set('chart.gutter.bottom', 0.2 * this.gaugeParams.plotSize);
-
-			rose.Set('chart.tooltips.effect', 'snap');
-			rose.Set('chart.labels.axes', '');
-			rose.Set('chart.background.circles', true);
-			rose.Set('chart.background.grid.spokes', 16);
-			rose.Set('chart.radius', this.gaugeParams.plotSize2);
-			rose.Draw();
+			drawRose(this.buffer.plotCanvas, this.state.roseData, this.config);
 
 			// Add title to windrun odometer to the plot
-			if (this.showOdo) {
-				this._drawOdoTitle(this.buffers.ctxPlot);
+			if (this.config.showOdo) {
+				drawOdoTitle(this.buffer.plotCtx, this.state.odoUnit, this.config);
 			}
 
 			// Paint the rose plot
-			let offset = Math.floor(this.gaugeParams.size2 - this.gaugeParams.plotSize2);
-			this.buffers.ctxRoseCanvas.drawImage(this.plotRef.current, offset, offset);
+			let offset = Math.floor(this.config.size/2 - this.config.plotSize/2);
+			this.buffer.roseCtx.drawImage(this.plotRef.current, offset, offset);
 
 			// update the odometer
-			if (this.showOdo) {
+			if (this.config.showOdo) {
 				if(this.state.odoUnit !== prevState.odoUnit) {
 					this.odoGauge.setValue(0);
 				}
@@ -232,16 +153,17 @@ class WindRoseGauge extends Component<CommonProps, State> {
 			<div className={styles.gauge}>
 				<canvas 
 					ref={this.canvasRef}
-					width={this.gaugeParams.size}
-					height={this.gaugeParams.size}
-					style={this.gaugeParams.style}
+					width={this.config.size}
+					height={this.config.size}
+					style={this.style}
 				></canvas>
 				{
-					(this.showOdo && this.odoParams)
+					(this.config.showOdo)
 						? <canvas
 								ref={this.odoRef}
-								width={this.odoParams.width}
-								height={this.odoParams.height}
+								width={this.config.odoW}
+								height={this.config.odoH}
+								className={styles.odo}
 							></canvas>
 						: ''
 				}
@@ -255,71 +177,174 @@ class WindRoseGauge extends Component<CommonProps, State> {
 				<div style={{ display: 'none' }}>
 					<canvas
 						ref={this.plotRef}
-						width={this.gaugeParams.plotSize}
-						height={this.gaugeParams.plotSize}
+						width={this.config.plotSize}
+						height={this.config.plotSize}
 					></canvas>
 				</div>
 			</div>
 		);
 	}
+}
 
 
-	/* ADDITIONAL FUNCTIONS FOR DRAWING ROSE */
-	_drawEmptyGauge(ctx: any) {
-		// Paint the gauge frame
-		ctx.drawImage(this.buffers.frame, 0, 0);
+interface Config {
+	showGaugeShadow: boolean,
+	shadowColor: RGBAColor,
 
-		// Paint the gauge background
-		ctx.drawImage(this.buffers.background, 0, 0);
+	size: number,
+	plotSize: number,
+	title: string,
+	compass: string[],
+	frameDesign: FrameDesign,
+	bgColor: BackgroundColor,
+	fgType: ForegroundType,
 
-		// Paint the gauge foreground
-		ctx.drawImage(this.buffers.foreground, 0, 0);
-	}
+	showOdo: boolean,
+	odoDigits: number,
+	odoH: number,
+	odoW: number
+}
 
-	// Helper function to put the compass points on the background
-	_drawCompassPoints(ctx: any, size: number) {
-			ctx.save();
-			// set the font
-			ctx.font = 0.08 * size + 'px serif';
-			ctx.strokeStyle = this.props.controller.gaugeConfig.background.labelColor.getRgbaColor();
-			ctx.fillStyle = this.props.controller.gaugeConfig.background.labelColor.getRgbColor();
-			ctx.textAlign = 'center';
-			ctx.textBaseline = 'middle';
+interface RoseBuffer {
+	roseCanvas: HTMLCanvasElement,
+	roseCtx: CanvasRenderingContext2D | null,
 
-			// Draw the compass points
-			for (var i = 0; i < 4; i++) {
-					ctx.translate(size / 2, size * 0.125);
-					ctx.fillText(this.gaugeParams.compassStrings[i * 2], 0, 0, size);
-					ctx.translate(-size / 2, -size * 0.125);
-					// Move to center
-					ctx.translate(size / 2, size / 2);
-					ctx.rotate(Math.PI / 2);
-					ctx.translate(-size / 2, -size / 2);
-			}
-			ctx.restore();
-	}
+	plotCanvas: HTMLCanvasElement,
+	plotCtx: CanvasRenderingContext2D | null,
 
-	_drawOdoTitle(ctx: any) {
-			ctx.save();
-			ctx.textAlign = 'center';
-			ctx.textBaseline = 'middle';
-			ctx.font = 0.05 * this.gaugeParams.size + 'px Arial,Verdana,sans-serif';
-			ctx.strokeStyle = this.props.controller.gaugeConfig.background.labelColor.getRgbaColor();
-			ctx.fillStyle = this.props.controller.gaugeConfig.background.labelColor.getRgbaColor();
-			ctx.fillText(
-				this.state.odoUnit,
-				this.gaugeParams.plotSize2,
-				this.gaugeParams.plotSize * 0.75,
-				this.gaugeParams.plotSize * 0.5
-			);
-			ctx.restore();
-	}
+	frameCanvas: HTMLCanvasElement,
+	frameCtx: CanvasRenderingContext2D | null,
+
+	bgCanvas: HTMLCanvasElement,
+	bgCtx: CanvasRenderingContext2D | null,
+
+	fgCanvas: HTMLCanvasElement,
+	fgCtx: CanvasRenderingContext2D | null
 }
 
 interface State {
-	WindRoseData: number[],
+	roseData: number[],
 	odoValue: number,
 	odoUnit: WindrunUnit
+}
+
+
+function createCanvas(size: number) {
+	let canvas = document.createElement('canvas');
+	canvas.width = size;
+	canvas.height = size;
+	return canvas;
+}
+
+function drawGaugeBase(ctx: CanvasRenderingContext2D, frame: HTMLCanvasElement, bg: HTMLCanvasElement, fg: HTMLCanvasElement) {
+	// Paint the gauge frame
+	ctx.drawImage(frame, 0, 0);
+
+	// Paint the gauge background
+	ctx.drawImage(bg, 0, 0);
+
+	// Paint the gauge foreground
+	ctx.drawImage(fg, 0, 0);
+}
+
+// Helper function to put the compass points on the background
+function drawCompassPoints(ctx: CanvasRenderingContext2D, { size, bgColor, compass }: Config) {
+	ctx.save();
+	// set the font
+	ctx.font = 0.08 * size + 'px serif';
+	ctx.strokeStyle = bgColor.labelColor.getRgbaColor();
+	ctx.fillStyle = bgColor.labelColor.getRgbColor();
+	ctx.textAlign = 'center';
+	ctx.textBaseline = 'middle';
+
+	// Draw the compass points
+	for (var i = 0; i < 4; i++) {
+			ctx.translate(size / 2, size * 0.125);
+			ctx.fillText(compass[i * 2], 0, 0, size);
+			ctx.translate(-size / 2, -size * 0.125);
+			// Move to center
+			ctx.translate(size / 2, size / 2);
+			ctx.rotate(Math.PI / 2);
+			ctx.translate(-size / 2, -size / 2);
+	}
+	ctx.restore();
+}
+
+function drawOdoTitle(ctx: CanvasRenderingContext2D, title: string, { size, bgColor, plotSize }: Config) {
+	ctx.save();
+	ctx.textAlign = 'center';
+	ctx.textBaseline = 'middle';
+	ctx.font = 0.05 * size + 'px Arial,Verdana,sans-serif';
+	ctx.strokeStyle = bgColor.labelColor.getRgbaColor();
+	ctx.fillStyle = bgColor.labelColor.getRgbaColor();
+	ctx.fillText(title, plotSize/2, plotSize*0.79, plotSize*0.5);
+	ctx.restore();
+}
+
+function drawRose(canvas: HTMLCanvasElement, data: number[], { title, plotSize, bgColor }: Config) {
+	// Create a new rose plot
+	let rose = new RGraph.Rose(canvas, data);
+	rose.Set('chart.strokestyle', 'black');
+	rose.Set('chart.background.axes.color', 'gray');
+	rose.Set('chart.colors.alpha', 0.5);
+	rose.Set('chart.colors', ['Gradient(#408040:red:#7070A0)']);
+	rose.Set('chart.margin', Math.ceil(40 / data.length));
+
+	rose.Set('chart.title', title);
+	rose.Set('chart.title.size', Math.ceil(0.05 * plotSize));
+	rose.Set('chart.title.bold', false);
+	rose.Set('chart.title.color', bgColor.labelColor.getRgbColor());
+	rose.Set('chart.gutter.top', 0.2 * plotSize);
+	rose.Set('chart.gutter.bottom', 0.2 * plotSize);
+
+	rose.Set('chart.tooltips.effect', 'snap');
+	rose.Set('chart.labels.axes', '');
+	rose.Set('chart.background.circles', true);
+	rose.Set('chart.background.grid.spokes', 16);
+	rose.Set('chart.radius', plotSize/2);
+	rose.Draw();
+}
+
+function initBuffers(mainCanvas: HTMLCanvasElement, config: Config, plotCanvas: HTMLCanvasElement): RoseBuffer {
+	let { size, frameDesign, bgColor, fgType } = config;
+	let frameCanvas = createCanvas(size);
+	let bgCanvas = createCanvas(size);
+	let fgCanvas = createCanvas(size);
+
+	let buffers: RoseBuffer = {
+		roseCanvas: mainCanvas,
+		roseCtx: mainCanvas.getContext('2d'),
+
+		plotCanvas: plotCanvas,
+		plotCtx: plotCanvas.getContext('2d'),
+
+		frameCanvas: frameCanvas,
+		frameCtx: frameCanvas.getContext("2d"),
+
+		bgCanvas: bgCanvas,
+		bgCtx: bgCanvas.getContext("2d"),
+
+		fgCanvas: fgCanvas,
+		fgCtx: fgCanvas.getContext("2d")
+	}
+
+	let size2 = size/2;
+	if(buffers.frameCtx) {
+		drawFrame(buffers.frameCtx, frameDesign, size2, size2, size, size);
+	}
+	
+	if(buffers.bgCtx) {
+		drawBackground(buffers.bgCtx, bgColor, size2, size2, size, size);
+
+		// Add the compass points
+		drawCompassPoints(buffers.bgCtx, config);
+	}
+	
+	if(buffers.fgCtx) {
+		drawForeground(buffers.fgCtx, fgType, size, size, false);
+	}
+
+	return buffers;
 }
 
 export default WindRoseGauge;
