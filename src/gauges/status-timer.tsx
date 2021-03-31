@@ -39,7 +39,7 @@ class StatusTimerGauge extends Component<Props, State> {
   }
 
   componentDidMount() {
-    if(this.canvasRef) {
+    if(this.canvasRef.current) {
       this.gauge = new DisplaySingle(this.canvasRef.current, {
         width            : this.config.width,
         height           : this.config.height,

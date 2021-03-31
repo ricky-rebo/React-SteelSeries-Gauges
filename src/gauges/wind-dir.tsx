@@ -59,7 +59,7 @@ class WindDirGauge extends Component<CommonProps, State> {
 				...getCommonParams(),
 	
 				size: this.props.size,
-				lcdtitleStrings: [this.props.controller.lang.latest_web, this.props.controller.lang.tenminavg_web],
+				lcdTitleStrings: [this.props.controller.lang.latest_web, this.props.controller.lang.tenminavg_web],
 				pointerTypeLatest: this.config.dirLstPointer, 
 				pointerTypeAverage: this.config.dirAvgPointer,
 				pointerColorAverage: this.config.dirAvgPointerColor,
