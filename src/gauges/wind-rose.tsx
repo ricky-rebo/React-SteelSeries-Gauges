@@ -15,7 +15,6 @@ class WindRoseGauge extends Component<CommonProps, State> {
 
 	canvasRef: React.RefObject<HTMLCanvasElement>;
 	odoRef: React.RefObject<HTMLCanvasElement>;
-	plotRef: React.RefObject<HTMLCanvasElement>;
 
 	config: Config;
 
@@ -29,7 +28,6 @@ class WindRoseGauge extends Component<CommonProps, State> {
 		super(props);
 
 		this.canvasRef = React.createRef();
-		this.plotRef = React.createRef();
 
 		let odoH = Math.ceil(this.props.size * 0.08); // Sets the size of the odometer
 		this.config = {
@@ -71,9 +69,8 @@ class WindRoseGauge extends Component<CommonProps, State> {
 
 	componentDidMount() {
 		let roseCanvas = this.canvasRef.current;
-		let plotCanvas = this.plotRef.current;
-		if(roseCanvas && plotCanvas) {
-			this.buffer = initBuffers(roseCanvas, this.config, plotCanvas);
+		if(roseCanvas) {
+			this.buffer = initBuffers(roseCanvas, this.config/*, this.plotCanvas*/);
 			
 			if(this.buffer.roseCtx) {
 				// Render an empty gauge, looks better than just the shadow background and odometer ;)
@@ -112,7 +109,7 @@ class WindRoseGauge extends Component<CommonProps, State> {
 	}
 
 	componentDidUpdate(_prevProps: CommonProps, prevState: State) {
-		if(this.canvasRef.current && this.plotRef.current && this.buffer.roseCtx && this.buffer.plotCtx) {
+		if(this.canvasRef.current && this.buffer.roseCtx && this.buffer.plotCtx) {
 			// Clear the gauge
 			this.buffer.roseCtx.clearRect(0, 0, this.config.size, this.config.size);
 			this.buffer.plotCtx.clearRect(0, 0, this.config.plotSize, this.config.plotSize);
@@ -134,7 +131,8 @@ class WindRoseGauge extends Component<CommonProps, State> {
 
 			// Paint the rose plot
 			let offset = Math.floor(this.config.size/2 - this.config.plotSize/2);
-			this.buffer.roseCtx.drawImage(this.plotRef.current, offset, offset);
+			//this.buffer.roseCtx.drawImage(this.plotRef.current, offset, offset);
+			this.buffer.roseCtx.drawImage(this.buffer.plotCanvas, offset, offset);
 
 			// update the odometer
 			if (this.config.showOdo) {
@@ -171,14 +169,6 @@ class WindRoseGauge extends Component<CommonProps, State> {
 					<button onClick={() => this.props.controller.changeUnits({ wind: "kts" })}> kts </button>
 					<button onClick={() => this.props.controller.changeUnits({ wind: "mph" })}> mph </button>
 					<button onClick={() => this.props.controller.changeUnits({ wind: "m/s" })}> m/s </button>
-				</div>
-
-				<div style={{ display: 'none' }}>
-					<canvas
-						ref={this.plotRef}
-						width={this.config.plotSize}
-						height={this.config.plotSize}
-					></canvas>
 				</div>
 			</div>
 		);
@@ -304,8 +294,9 @@ function drawRose(canvas: HTMLCanvasElement, data: number[], { title, plotSize, 
 	rose.Draw();
 }
 
-function initBuffers(mainCanvas: HTMLCanvasElement, config: Config, plotCanvas: HTMLCanvasElement): RoseBuffer {
-	let { size, frameDesign, bgColor, fgType } = config;
+function initBuffers(mainCanvas: HTMLCanvasElement, config: Config/*, plotCanvas: HTMLCanvasElement*/): RoseBuffer {
+	let { size, plotSize, frameDesign, bgColor, fgType } = config;
+	let plotCanvas = createCanvas(plotSize);
 	let frameCanvas = createCanvas(size);
 	let bgCanvas = createCanvas(size);
 	let fgCanvas = createCanvas(size);
