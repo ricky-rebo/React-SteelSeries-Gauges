@@ -79,22 +79,7 @@ class DewGauge extends Component<CommonProps, State> {
 			maxMeasuredVisible: (sel === "hea"),
 			sections: createTempSections(temp === "°C"),
 			areas: [],
-
-			//popUpTxt: '',
-			//graph: '',
 		}
-
-		/*this.params = {
-			...this.props.controller.commonParams,
-			size: this.props.size,
-			section: this.state.sections,
-			area: this.state.areas,
-			minValue: this.state.minValue,
-			maxValue: this.state.maxValue,
-			thresholdVisible: false,
-			titleString: this.state.title,
-			unitString: this.state.displayUnit
-		};*/
 
 		this.style = this.config.showGaugeShadow
 			? gaugeShadow(this.props.size, this.config.shadowColor)
@@ -301,7 +286,7 @@ interface Config {
 	shadowColor: RGBAColor
 }
 
-type LocalDataDef = Pick<RtData, "tempunit"|"tempTL"|"tempTH"|"dew"|"dewpointTL"|"dewpointTH"|"apptemp"|"apptempTL"|"apptempTH"|"wchill"|"wchillTL"|"heatindex"|"heatindexTH"|"humidex">;
+export type LocalDataDef = Pick<RtData, "tempunit"|"tempTL"|"tempTH"|"dew"|"dewpointTL"|"dewpointTH"|"apptemp"|"apptempTL"|"apptempTH"|"wchill"|"wchillTL"|"heatindex"|"heatindexTH"|"humidex">;
 
 
 function getTitle(sel: string, lang: Lang) {

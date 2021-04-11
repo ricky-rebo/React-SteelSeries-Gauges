@@ -288,7 +288,7 @@ function mapLocalData(data: RtData): LocalDataDef {
  * @param bTxt 
  * @param strings 
  */
-function tempTrend(trend: number, units: TempUnit, strings?: Lang): Trendstate|string {
+function tempTrend(trend: number, units: TempUnit, strings?: Lang): TrendState|string {
 	// Scale is over 3 hours, in Celsius
 	var val = trend * 3 * (units === "°C" ? 1 : (5 / 9));
 			
