@@ -2,6 +2,8 @@
 import { drawFrame, drawBackground, drawForeground, BackgroundColor, ColorDef, FrameDesign, ForegroundType, Odometer } from "steelseries"
 // @ts-ignore
 import RGraph from '../libs/RGraph.rose.js';
+// @ts-ignore
+import Tween from "steelseries/docs/tween.js";
 
 class Rose {
 	setValue: (newValue: number[]) => this
@@ -10,8 +12,11 @@ class Rose {
 	setBackgroundColor: (newBackgroundColor: any) => this
 	setForegroundType: (newForegroundType: any) => this
 	repaint: () => void
-	setOdoValue: (newValue: number) => void;
-	setOdoValueAnimated: (newValue: number, callback: () => void) => void;
+	setOdoValue: (newValue: number) => this;
+	setOdoValueAnimated: (newValue: number, callback?: () => void) => this;
+	getOdoValue: () => number;
+	setTitleString: (newTitle: string | number) => this;
+	setUnitString: (newUnit: string) => this;
 
 	constructor(canvas: HTMLCanvasElement | string, parameters: any) {
 		parameters = parameters || {}
@@ -25,8 +30,6 @@ class Rose {
 		let pointSymbols: string[] = undefined === parameters.pointSymbols
 			? ["N", "E", "S", "W"]
 			: parameters.pointSymbols;
-
-		//TODO disegnare unitstring quando necessario
 
 		let frameDesign =
 			undefined === parameters.frameDesign
@@ -73,6 +76,7 @@ class Rose {
 		mainCtx.canvas.height = size
 
 		let repainting = false
+		let tween: any
 
 		let value: number[] = []
 		let odoValue: number;
@@ -165,7 +169,7 @@ class Rose {
 
 			initialized = true
 
-			if (drawFrame2 && frameVisible) {
+			if (drawFrame2 && frameVisible && frameContext) {
 				drawFrame(
 					frameContext,
 					frameDesign,
@@ -212,7 +216,7 @@ class Rose {
 				rose.Draw();
 			}
 
-			if (drawForeground2 && foregroundVisible) {
+			if (drawForeground2 && foregroundVisible && foregroundContext) {
 				drawForeground(
 					foregroundContext,
 					foregroundType,
@@ -222,7 +226,7 @@ class Rose {
 				)
 			}
 
-			if (drawOdo && useOdometer) {
+			if (drawOdo && useOdometer && odoContext) {
 				//TODO controllare correttezza parametri
 				// wind-rose.tsx for reference
 				odoGauge = new Odometer('', {
@@ -235,7 +239,7 @@ class Rose {
           decimalForeColor: odometerParams.decimalForeColor,
           decimalBackColor: odometerParams.decimalBackColor,
           font: odometerParams.font,
-          value: value
+          value: odoValue
         })
 				odoPosX = (imageWidth - odoBuffer.width) / 2
 			}
@@ -293,66 +297,28 @@ class Rose {
 		this.setOdoValue = function (newValue: number) {
 			odoValue = newValue < 0 ? 0 : newValue;
 			this.repaint();
+			return this
 		}
 
 		this.getOdoValue = function () {
 			return odoValue;
 		}
 
-		this.setOdoValueAnimated = function (newValue: number, callback?: () => void) {
-			const targetValue = newValue < 0 ? 0 : newValue;
+		this.setOdoValueAnimated = function (newVal: number, callback?: () => void) {
+			const gauge = this
+			if(newVal < 0) newVal = 0
 
-			if (odoValue !== targetValue) {
+			if (odoValue !== newVal) {
 				//TODO define animated odometer value update 
 				// see Odometer.setValueAnimated() for reference
 
-				/*if (undefined !== tween && tween.isPlaying) {
+				if (undefined !== tween && tween.isPlaying) {
 					tween.stop()
 				}
-				time =
-					(fullScaleDeflectionTime * Math.abs(targetValue - value)) /
-					(maxValue - minValue)
-				time = Math.max(time, fullScaleDeflectionTime / 5)
-				tween = new Tween(
-					{},
-					'',
-					Tween.regularEaseInOut,
-					value,
-					targetValue,
-					time
-				)
-				// tween = new Tween({}, '', Tween.regularEaseInOut, value, targetValue, 1);
-				// tween = new Tween(new Object(), '', Tween.strongEaseInOut, value, targetValue, 1);
 	
-				tween.onMotionChanged = function (event) {
+				tween = new Tween({}, '', Tween.strongEaseOut, value, newVal, 2)
+				tween.onMotionChanged = function (event: any) {
 					value = event.target._pos
-	
-					if (
-						(value >= threshold && !ledBlinking && thresholdRising) ||
-						(value <= threshold && !ledBlinking && !thresholdRising)
-					) {
-						ledBlinking = true
-						blink(ledBlinking)
-						if (playAlarm) {
-							audioElement.play()
-						}
-					} else if (
-						(value < threshold && ledBlinking && thresholdRising) ||
-						(value > threshold && ledBlinking && !thresholdRising)
-					) {
-						ledBlinking = false
-						blink(ledBlinking)
-						if (playAlarm) {
-							audioElement.pause()
-						}
-					}
-	
-					if (value > maxMeasuredValue) {
-						maxMeasuredValue = value
-					}
-					if (value < minMeasuredValue) {
-						minMeasuredValue = value
-					}
 					if (!repainting) {
 						repainting = true
 						requestAnimFrame(gauge.repaint)
@@ -364,8 +330,22 @@ class Rose {
 					tween.onMotionFinished = callback
 				}
 	
-				tween.start()*/
+				tween.start()
 			}
+			return this
+		}
+
+		this.setTitleString = function (newTitle: string|number) {
+			resetBuffers({ rose: true })
+			titleString = newTitle
+			init({ rose: true })
+			this.repaint();
+			return this
+		}
+
+		this.setUnitString = function (newUnit: string) {
+			unitString = newUnit;
+			this.repaint();
 			return this
 		}
 
@@ -415,35 +395,13 @@ class Rose {
 				mainCtx.drawImage(backgroundBuffer, 0, 0)
 			}
 
-			// Create a new rose plot
-			/*let rose = new RGraph.Rose(plotBuffer, value);
-			rose.Set('chart.strokestyle', 'black');
-			rose.Set('chart.background.axes.color', 'gray');
-			rose.Set('chart.colors.alpha', 0.5);
-			rose.Set('chart.colors', ['Gradient(#408040:red:#7070A0)']);
-			rose.Set('chart.margin', Math.ceil(40 / value.length));
-		
-			rose.Set('chart.title', titleString);
-			rose.Set('chart.title.size', Math.ceil(0.05 * plotSize));
-			rose.Set('chart.title.bold', false);
-			rose.Set('chart.title.color', backgroundColor.labelColor.getRgbColor());
-			rose.Set('chart.gutter.top', 0.2 * plotSize);
-			rose.Set('chart.gutter.bottom', 0.2 * plotSize);
-		
-			rose.Set('chart.tooltips.effect', 'snap');
-			rose.Set('chart.labels.axes', '');
-			rose.Set('chart.background.circles', true);
-			rose.Set('chart.background.grid.spokes', 16);
-			rose.Set('chart.radius', plotSize/2);
-			rose.Draw();*/
-
 			// Paint the rose plot
 			let offset = Math.floor(size/2 - plotSize/2);
 			mainCtx.drawImage(plotBuffer, offset, offset);
 
 			//Draw Odometer
 			if (useOdometer) {
-        odoGauge.setValue(value)
+        odoGauge.setValue(odoValue)
         mainCtx.drawImage(odoBuffer, odoPosX, odoPosY)
 				
 				if (unitString !== "") {
@@ -466,14 +424,8 @@ class Rose {
 
 		return this
 	}
-	getOdoValue() {
-		throw new Error("Method not implemented.");
-	}
 }
 
-/*const Rose = function (canvas: HTMLCanvasElement|string, parameters: any) {
-  
-}*/
 export default Rose
 
 
@@ -494,3 +446,16 @@ function getCanvasContext (elementOrId: HTMLCanvasElement | string) {
 	// @ts-ignore
 	return (element) ? element.getContext('2d') : null
 }
+
+export const requestAnimFrame = (function () {
+  return (
+    window.requestAnimationFrame ||
+    window.webkitRequestAnimationFrame ||
+    //window.mozRequestAnimationFrame ||
+    //window.oRequestAnimationFrame ||
+    //window.msRequestAnimationFrame ||
+    function (callback) {
+      window.setTimeout(callback, 1000 / 16)
+    }
+  )
+})()
