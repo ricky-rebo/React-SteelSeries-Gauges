@@ -1,5 +1,7 @@
 // @ts-ignore
 import { drawFrame, drawBackground, drawForeground, BackgroundColor, ColorDef, FrameDesign, ForegroundType, Odometer } from "steelseries"
+// @ts-ignore
+import RGraph from '../libs/RGraph.rose.js';
 
 class Rose {
 	setValue: (newValue: number[]) => this
@@ -8,6 +10,8 @@ class Rose {
 	setBackgroundColor: (newBackgroundColor: any) => this
 	setForegroundType: (newForegroundType: any) => this
 	repaint: () => void
+	setOdoValue: (newValue: number) => void;
+	setOdoValueAnimated: (newValue: number, callback: () => void) => void;
 
 	constructor(canvas: HTMLCanvasElement | string, parameters: any) {
 		parameters = parameters || {}
@@ -22,7 +26,7 @@ class Rose {
 			? ["N", "E", "S", "W"]
 			: parameters.pointSymbols;
 
-			//TODO disegnare unitstring quando necessario
+		//TODO disegnare unitstring quando necessario
 
 		let frameDesign =
 			undefined === parameters.frameDesign
@@ -71,6 +75,7 @@ class Rose {
 		let repainting = false
 
 		let value: number[] = []
+		let odoValue: number;
 
 		const imageWidth = size
 		const imageHeight = size
@@ -84,7 +89,10 @@ class Rose {
 		let initialized = false
 
 		// **************   Buffer creation  ********************
-		// Buffer for all static background painting code
+		const frameBuffer = createBuffer(size, size);
+		let frameContext = frameBuffer.getContext("2d");
+
+		// Buffer for static background painting code
 		const backgroundBuffer = createBuffer(size, size)
 		let backgroundContext = backgroundBuffer.getContext('2d')
 
@@ -94,7 +102,7 @@ class Rose {
 
 		//Buffer for Rose chart plot
 		const plotBuffer = createBuffer(plotSize, plotSize);
-		let plotContext = plotBuffer.getContext("2d");
+		//let plotContext = plotBuffer.getContext("2d");
 
 		let odoGauge: Odometer, odoBuffer: HTMLCanvasElement, odoContext: CanvasRenderingContext2D|null;
 		if(useOdometer) {
@@ -131,14 +139,35 @@ class Rose {
 			ctx.restore();
 		}
 
+		function drawOdoTitle(ctx: CanvasRenderingContext2D) {
+			ctx.save();
+			ctx.textAlign = 'center';
+			ctx.textBaseline = 'middle';
+			ctx.font = `${0.05 * size}px ${stdFontName}`;
+			ctx.strokeStyle = backgroundColor.labelColor.getRgbaColor();
+			ctx.fillStyle = backgroundColor.labelColor.getRgbaColor();
+			ctx.fillText(unitString, plotSize/2, plotSize*0.79, plotSize*0.5);
+			ctx.restore();
+		}
+
 		// **************   Initialization  ********************
 		// Draw all static painting code to background
-		const init = function () {
+		const init = function (parameters?: { frame?: boolean, background?: boolean, rose?: boolean, foreground?: boolean, odo?: boolean }) {
+			parameters = parameters || {}
+			const drawFrame2 =
+      undefined === parameters.frame ? false : parameters.frame
+			const drawBackground2 =
+				undefined === parameters.background ? false : parameters.background
+			const drawRose = undefined === parameters.rose ? false : parameters.rose;
+			const drawForeground2 =
+				undefined === parameters.foreground ? false : parameters.foreground
+			const drawOdo = undefined === parameters.odo ? false : parameters.odo
+
 			initialized = true
 
-			if (frameVisible) {
+			if (drawFrame2 && frameVisible) {
 				drawFrame(
-					backgroundContext,
+					frameContext,
 					frameDesign,
 					centerX,
 					centerY,
@@ -147,7 +176,7 @@ class Rose {
 				)
 			}
 
-			if (backgroundVisible && backgroundContext) {
+			if (drawBackground2 && backgroundVisible && backgroundContext) {
 				drawBackground(
 					backgroundContext,
 					backgroundColor,
@@ -159,7 +188,31 @@ class Rose {
 				drawCompassPoints(backgroundContext);
 			}
 
-			if (foregroundVisible) {
+			if (drawRose && value !== []) {
+				// Create a new rose plot
+				const rose = new RGraph.Rose(plotBuffer, value);
+				rose.Set('chart.strokestyle', 'black');
+				rose.Set('chart.background.axes.color', 'gray');
+				rose.Set('chart.colors.alpha', 0.5);
+				rose.Set('chart.colors', ['Gradient(#408040:red:#7070A0)']);
+				rose.Set('chart.margin', Math.ceil(40 / value.length));
+			
+				rose.Set('chart.title', titleString);
+				rose.Set('chart.title.size', Math.ceil(0.05 * plotSize));
+				rose.Set('chart.title.bold', false);
+				rose.Set('chart.title.color', backgroundColor.labelColor.getRgbColor());
+				rose.Set('chart.gutter.top', 0.2 * plotSize);
+				rose.Set('chart.gutter.bottom', 0.2 * plotSize);
+			
+				rose.Set('chart.tooltips.effect', 'snap');
+				rose.Set('chart.labels.axes', '');
+				rose.Set('chart.background.circles', true);
+				rose.Set('chart.background.grid.spokes', 16);
+				rose.Set('chart.radius', plotSize/2);
+				rose.Draw();
+			}
+
+			if (drawForeground2 && foregroundVisible) {
 				drawForeground(
 					foregroundContext,
 					foregroundType,
@@ -169,7 +222,9 @@ class Rose {
 				)
 			}
 
-			if(useOdometer) {
+			if (drawOdo && useOdometer) {
+				//TODO controllare correttezza parametri
+				// wind-rose.tsx for reference
 				odoGauge = new Odometer('', {
           _context: odoContext,
           height: Math.ceil(size * 0.08),
@@ -186,31 +241,45 @@ class Rose {
 			}
 		}
 
-		const resetBuffers = function () {
-			backgroundBuffer.width = size
-			backgroundBuffer.height = size
-			backgroundContext = backgroundBuffer.getContext('2d')
+		const resetBuffers = function (buffers?: { frame?: boolean, background?: boolean, rose?: boolean, foreground?: boolean }) {
+			buffers = buffers || {}
+			const resetFrame = undefined === buffers.frame ? false : buffers.frame
+			const resetBackground =
+				undefined === buffers.background ? false : buffers.background
+			const resetPlot = undefined === buffers.rose ? false : buffers.rose
+			const resetForeground =
+				undefined === buffers.foreground ? false : buffers.foreground
 
-			// Buffer for pointer image painting code
-			//pointerBuffer.width = size
-			//pointerBuffer.height = size
-			//pointerContext = pointerBuffer.getContext('2d')
-
-			// Buffer for step pointer image painting code
-			//stepPointerBuffer.width = size
-			//stepPointerBuffer.height = size
-			//stepPointerContext = stepPointerBuffer.getContext('2d')
-
-			// Buffer for static foreground painting code
-			foregroundBuffer.width = size
-			foregroundBuffer.height = size
-			foregroundContext = foregroundBuffer.getContext('2d')
+			if (resetFrame && frameVisible) {
+				frameBuffer.width = size;
+				frameBuffer.height = size;
+				frameContext = frameBuffer.getContext("2d");
+			}
+			
+			if(resetBackground && backgroundVisible) {
+				backgroundBuffer.width = size
+				backgroundBuffer.height = size
+				backgroundContext = backgroundBuffer.getContext('2d')
+			}
+			
+			if(resetPlot) {
+				plotBuffer.width = plotSize
+				plotBuffer.height = plotSize
+			}
+			
+			if(resetForeground && foregroundVisible) {
+				foregroundBuffer.width = size
+				foregroundBuffer.height = size
+				foregroundContext = foregroundBuffer.getContext('2d')
+			}
 		}
 
 		//* *********************************** Public methods **************************************
 		this.setValue = function (newValue: number[]) {
 			if (value !== newValue) {
-				
+				resetBuffers({ rose: true })
+				value = newValue
+				init({ rose: true })
 
 				this.repaint()
 			}
@@ -221,50 +290,165 @@ class Rose {
 			return value
 		}
 
+		this.setOdoValue = function (newValue: number) {
+			odoValue = newValue < 0 ? 0 : newValue;
+			this.repaint();
+		}
+
+		this.getOdoValue = function () {
+			return odoValue;
+		}
+
+		this.setOdoValueAnimated = function (newValue: number, callback?: () => void) {
+			const targetValue = newValue < 0 ? 0 : newValue;
+
+			if (odoValue !== targetValue) {
+				//TODO define animated odometer value update 
+				// see Odometer.setValueAnimated() for reference
+
+				/*if (undefined !== tween && tween.isPlaying) {
+					tween.stop()
+				}
+				time =
+					(fullScaleDeflectionTime * Math.abs(targetValue - value)) /
+					(maxValue - minValue)
+				time = Math.max(time, fullScaleDeflectionTime / 5)
+				tween = new Tween(
+					{},
+					'',
+					Tween.regularEaseInOut,
+					value,
+					targetValue,
+					time
+				)
+				// tween = new Tween({}, '', Tween.regularEaseInOut, value, targetValue, 1);
+				// tween = new Tween(new Object(), '', Tween.strongEaseInOut, value, targetValue, 1);
+	
+				tween.onMotionChanged = function (event) {
+					value = event.target._pos
+	
+					if (
+						(value >= threshold && !ledBlinking && thresholdRising) ||
+						(value <= threshold && !ledBlinking && !thresholdRising)
+					) {
+						ledBlinking = true
+						blink(ledBlinking)
+						if (playAlarm) {
+							audioElement.play()
+						}
+					} else if (
+						(value < threshold && ledBlinking && thresholdRising) ||
+						(value > threshold && ledBlinking && !thresholdRising)
+					) {
+						ledBlinking = false
+						blink(ledBlinking)
+						if (playAlarm) {
+							audioElement.pause()
+						}
+					}
+	
+					if (value > maxMeasuredValue) {
+						maxMeasuredValue = value
+					}
+					if (value < minMeasuredValue) {
+						minMeasuredValue = value
+					}
+					if (!repainting) {
+						repainting = true
+						requestAnimFrame(gauge.repaint)
+					}
+				}
+	
+				// do we have a callback function to process?
+				if (callback && typeof callback === 'function') {
+					tween.onMotionFinished = callback
+				}
+	
+				tween.start()*/
+			}
+			return this
+		}
+
 		this.setFrameDesign = function (newFrameDesign) {
-			resetBuffers()
+			resetBuffers({ frame: true })
 			frameDesign = newFrameDesign
-			init()
+			init({ frame: true })
 			this.repaint()
 			return this
 		}
 
 		this.setBackgroundColor = function (newBackgroundColor) {
-			resetBuffers()
+			resetBuffers({
+				background: true,
+				rose: true
+			})
 			backgroundColor = newBackgroundColor
-			init()
+			init({
+				background: true,
+				rose: true
+			})
 			this.repaint()
 			return this
 		}
 
 		this.setForegroundType = function (newForegroundType) {
-			resetBuffers()
+			resetBuffers({ foreground: true })
 			foregroundType = newForegroundType
-			init()
+			init({ foreground: true })
 			this.repaint()
 			return this
 		}
 
 		this.repaint = function () {
 			if (!initialized) {
-				init()
+				init({ frame: true, background: true, foreground: true, odo: useOdometer });
 			}
 
 			mainCtx.save()
 			mainCtx.clearRect(0, 0, mainCtx.canvas.width, mainCtx.canvas.height)
 
 			// Draw buffered image to visible canvas
-			if (frameVisible || backgroundVisible) {
+			if(frameVisible) {
+				mainCtx.drawImage(frameBuffer, 0, 0)
+			}
+			if (backgroundVisible) {
 				mainCtx.drawImage(backgroundBuffer, 0, 0)
 			}
 
-			//Draw Rose
-			//TODO - draw rose chart
+			// Create a new rose plot
+			/*let rose = new RGraph.Rose(plotBuffer, value);
+			rose.Set('chart.strokestyle', 'black');
+			rose.Set('chart.background.axes.color', 'gray');
+			rose.Set('chart.colors.alpha', 0.5);
+			rose.Set('chart.colors', ['Gradient(#408040:red:#7070A0)']);
+			rose.Set('chart.margin', Math.ceil(40 / value.length));
+		
+			rose.Set('chart.title', titleString);
+			rose.Set('chart.title.size', Math.ceil(0.05 * plotSize));
+			rose.Set('chart.title.bold', false);
+			rose.Set('chart.title.color', backgroundColor.labelColor.getRgbColor());
+			rose.Set('chart.gutter.top', 0.2 * plotSize);
+			rose.Set('chart.gutter.bottom', 0.2 * plotSize);
+		
+			rose.Set('chart.tooltips.effect', 'snap');
+			rose.Set('chart.labels.axes', '');
+			rose.Set('chart.background.circles', true);
+			rose.Set('chart.background.grid.spokes', 16);
+			rose.Set('chart.radius', plotSize/2);
+			rose.Draw();*/
+
+			// Paint the rose plot
+			let offset = Math.floor(size/2 - plotSize/2);
+			mainCtx.drawImage(plotBuffer, offset, offset);
 
 			//Draw Odometer
 			if (useOdometer) {
         odoGauge.setValue(value)
         mainCtx.drawImage(odoBuffer, odoPosX, odoPosY)
+				
+				if (unitString !== "") {
+					drawOdoTitle(mainCtx);
+				}
       }
 
 			// Draw foreground
@@ -281,6 +465,9 @@ class Rose {
 		this.repaint()
 
 		return this
+	}
+	getOdoValue() {
+		throw new Error("Method not implemented.");
 	}
 }
 
