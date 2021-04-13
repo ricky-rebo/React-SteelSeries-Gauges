@@ -3,7 +3,7 @@ import { drawFrame, drawBackground, drawForeground, BackgroundColor, ColorDef, F
 // @ts-ignore
 import RGraph from '../libs/RGraph.rose.js';
 // @ts-ignore
-import Tween from "steelseries/docs/tween.js";
+import Tween from "./tween.js";
 
 class Rose {
 	setValue: (newValue: number[]) => this
@@ -61,7 +61,6 @@ class Rose {
 		const odometerParams =
 			undefined === parameters.odometerParams ? {} : parameters.odometerParams
 
-
 		// Get the canvas context and clear it
 		const mainCtx = getCanvasContext(canvas)
 		// Has a size been specified?
@@ -79,7 +78,7 @@ class Rose {
 		let tween: any
 
 		let value: number[] = []
-		let odoValue: number;
+		let odoValue: number = 0;
 
 		const imageWidth = size
 		const imageHeight = size
@@ -88,7 +87,7 @@ class Rose {
 		const centerY = imageHeight / 2
 
 		let odoPosX: number;
-		const odoPosY = imageHeight * 0.67;
+		const odoPosY = imageHeight * 0.7;
 
 		let initialized = false
 
@@ -106,7 +105,6 @@ class Rose {
 
 		//Buffer for Rose chart plot
 		const plotBuffer = createBuffer(plotSize, plotSize);
-		//let plotContext = plotBuffer.getContext("2d");
 
 		let odoGauge: Odometer, odoBuffer: HTMLCanvasElement, odoContext: CanvasRenderingContext2D|null;
 		if(useOdometer) {
@@ -150,7 +148,7 @@ class Rose {
 			ctx.font = `${0.05 * size}px ${stdFontName}`;
 			ctx.strokeStyle = backgroundColor.labelColor.getRgbaColor();
 			ctx.fillStyle = backgroundColor.labelColor.getRgbaColor();
-			ctx.fillText(unitString, plotSize/2, plotSize*0.79, plotSize*0.5);
+			ctx.fillText(unitString, size/2, size*0.67, size*0.5);  
 			ctx.restore();
 		}
 
@@ -227,13 +225,11 @@ class Rose {
 			}
 
 			if (drawOdo && useOdometer && odoContext) {
-				//TODO controllare correttezza parametri
-				// wind-rose.tsx for reference
 				odoGauge = new Odometer('', {
           _context: odoContext,
           height: Math.ceil(size * 0.08),
           decimals: odometerParams.decimals === undefined ? 1 : odometerParams.decimals,
-          digits: odometerParams.digits === undefined ? 5 : odometerParams.digits,
+          digits: odometerParams.digits === undefined ? 4 : odometerParams.digits,
           valueForeColor: odometerParams.valueForeColor,
           valueBackColor: odometerParams.valueBackColor,
           decimalForeColor: odometerParams.decimalForeColor,
@@ -309,16 +305,13 @@ class Rose {
 			if(newVal < 0) newVal = 0
 
 			if (odoValue !== newVal) {
-				//TODO define animated odometer value update 
-				// see Odometer.setValueAnimated() for reference
-
 				if (undefined !== tween && tween.isPlaying) {
 					tween.stop()
 				}
 	
-				tween = new Tween({}, '', Tween.strongEaseOut, value, newVal, 2)
+				tween = new Tween({}, '', Tween.strongEaseOut, odoValue, newVal, 2)
 				tween.onMotionChanged = function (event: any) {
-					value = event.target._pos
+					odoValue = event.target._pos
 					if (!repainting) {
 						repainting = true
 						requestAnimFrame(gauge.repaint)
