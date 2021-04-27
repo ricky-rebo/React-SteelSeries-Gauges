@@ -1,8 +1,6 @@
 import React, { Component } from 'react';
 // @ts-ignore
 import { drawFrame, drawForeground, drawBackground, Odometer, FrameDesign, BackgroundColor, ForegroundType } from "steelseries";
-// @ts-ignore
-import RGraph from '../libs/RGraph.rose.js';
 import styles from '../style/common.css';
 import { gaugeShadow } from './utils';
 import { RtData, WindrunUnit } from '../controller/types';
