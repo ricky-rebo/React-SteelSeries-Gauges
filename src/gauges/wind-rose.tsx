@@ -8,7 +8,7 @@ import { gaugeShadow } from './utils';
 import { RtData, WindrunUnit } from '../controller/types';
 import { CommonProps, RGBAColor } from './types';
 import { BACKGROUND, FOREGROUND, FRAME_DESIGN, SHADOW_COLOR, SHOW_GAUGE_SHADOW, SHOW_ODO_ROSE_GAUGE } from './defaults';
-import Rose from './rose-gauge.js';
+import { Rose } from 'steelseries-rose-gauge';
 
 
 class WindRoseGauge extends Component<CommonProps, State> {
