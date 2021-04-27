@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-// @ts-ignore
 import { RadialBargraph, LabelNumberFormat, ColorDef, gradientWrapper, rgbaColor, Section } from "steelseries";
 import styles from '../style/common.css';
 import { RainUnit, RtData } from '../controller/types.js';
@@ -76,7 +75,6 @@ class RainGauge extends Component<CommonProps, State> {
 				
 				size: this.props.size,
 				titleString: this.state.title,
-				//thresholdVisible: false,
 				useValueGradient: this.config.useGradient,
 				useSectionColors: this.config.useSections,
 				niceScale: false,

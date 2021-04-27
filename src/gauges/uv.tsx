@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-// @ts-ignore
 import { RadialBargraph, Section, GaugeType, gradientWrapper, rgbaColor } from "steelseries";
 import styles from '../style/common.css';
 import { gaugeShadow, nextHighest } from './utils.js';

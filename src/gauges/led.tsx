@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import GaugesController from '../controller/controller';
-// @ts-ignore
 import { Led, LedColor } from "steelseries";
 import { RtData, StatusDef } from '../controller/types';
 

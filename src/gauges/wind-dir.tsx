@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
-// @ts-ignore
-import { WindDirection, Section, PointerType, ColorDef, rgbaColor } from "steelseries";
+import { WindDirection, Section, PointerType, ColorDef } from "steelseries";
 import styles from '../style/common.css';
 import { gaugeShadow } from './utils.js';
 import { RtData } from '../controller/types.js';

@@ -1,10 +1,9 @@
 import React, { Component } from 'react';
-// @ts-ignore
 import { Radial, Section } from "steelseries";
 import styles from '../style/common.css';
 import { gaugeShadow, nextHighest } from './utils';
 import { RtData, WindUnit } from '../controller/types';
-import { CommonProps, RGBAColor/*, GaugeComponent*/ } from './types';
+import { CommonProps, RGBAColor } from './types';
 import { getCommonParams, MIN_MAX_AREA_COLOR, SHADOW_COLOR, SHOW_GAUGE_SHADOW, WindScaleDef, WIND_AVG_AREA_COLOR } from './defaults';
 
 

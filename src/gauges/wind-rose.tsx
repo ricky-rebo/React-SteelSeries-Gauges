@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
-// @ts-ignore
-import { drawFrame, drawForeground, drawBackground, Odometer, FrameDesign, BackgroundColor, ForegroundType } from "steelseries";
+import { FrameDesign, BackgroundColor, ForegroundType } from "steelseries";
 import styles from '../style/common.css';
 import { gaugeShadow } from './utils';
 import { RtData, WindrunUnit } from '../controller/types';

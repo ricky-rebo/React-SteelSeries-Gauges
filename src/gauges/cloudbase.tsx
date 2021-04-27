@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-// @ts-ignore
 import { Radial, Section } from "steelseries";
 import styles from '../style/common.css';
 import { RtData } from '../controller/types';

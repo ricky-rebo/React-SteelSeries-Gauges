@@ -1,6 +1,5 @@
 import { ControllerConfig, DisplayUnits, StatusDef, /*GaugeConfig,*/ StatusType } from "./types";
-// @ts-ignore
-import { FrameDesign, BackgroundColor, ForegroundType, PointerType, ColorDef, GaugeType, LcdColor, LedColor, KnobType, KnobStyle, LabelNumberFormat, TickLabelOrientation } from "steelseries";
+import { LedColor } from "steelseries";
 
 
 export const CONTROLLER_DEF: ControllerConfig = {

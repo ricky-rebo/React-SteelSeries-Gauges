@@ -1,5 +1,4 @@
-// @ts-ignore
-import { Section, TrendState, gradientWrapper, rgbaColor } from "steelseries";
+import { Section } from "steelseries";
 import { RtData } from '../controller/types';
 import { LocalDataDef as TempData } from './temp';
 import { LocalDataDef as DewData } from './dew';

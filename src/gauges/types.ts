@@ -1,6 +1,5 @@
 import GaugesController from "../controller/controller";
-// @ts-ignore
-import { Radial, RadialBargraph, FrameDesign, BackgroundColor, ForegroundType, PointerType, ColorDef, GaugeType, LcdColor, LedColor, KnobType, KnobStyle, LabelNumberFormat, TickLabelOrientation } from "steelseries";
+import { FrameDesign, BackgroundColor, ForegroundType, PointerType, ColorDef, GaugeType, LcdColor, KnobType, KnobStyle, LabelNumberFormat, TickLabelOrientation } from "steelseries";
 
 
 export type DewType = "app"|"dew"|"wnd"|"hea"|"hum";

@@ -1,4 +1,3 @@
-// @ts-ignore
 import { LedColor } from "steelseries";
 
 export interface ControllerConfig {

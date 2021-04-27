@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
-// @ts-ignore
-import { Radial, TrendState, Section, Trendstate } from "steelseries";
+import { Radial, TrendState, Section } from "steelseries";
 import styles from '../style/common.css';
 import Cookies from 'universal-cookie/es6';
 import { InOutType, CommonProps, RGBAColor } from './types';

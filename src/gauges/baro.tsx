@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-// @ts-ignore
 import { Radial, TrendState, LabelNumberFormat, Section } from "steelseries";
 import styles from '../style/common.css';
 import { Lang, PressUnit, RtData } from '../controller/types';

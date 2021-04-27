@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import GaugesController from '../controller/controller';
-// @ts-ignore
 import { DisplaySingle, LcdColor } from "steelseries";
 import { RtData, StatusDef } from '../controller/types';
 import { LCD_COLOR } from './defaults';
